@@ -36,6 +36,17 @@ final class OnTracFlowTests: XCTestCase {
         for _ in 0..<5 where !element.isHittable { app.swipeUp() }
         XCTAssertTrue(element.isHittable)
     }
+    // Fixed-key state only: never print alert text, labels, paths or a hierarchy.
+    private func chooserDiagnostics() -> String {
+        let fullID = "manifest.file.manifest_2026-01-02.csv"
+        let emptyID = "manifest.file.manifest_2026-01-01.csv"
+        let anyFull = app.descendants(matching: .any).matching(identifier: fullID)
+        let type = anyFull.firstMatch.exists ? String(anyFull.firstMatch.elementType.rawValue) : "none"
+        let control = app.buttons["test.import"]
+        let status = control.exists ? (control.value as? String ?? "no-status") : "control-not-visible"
+        let submit = app.buttons["manifest.import"]
+        return "state=\(app.state.rawValue);appAlert=\(app.alerts["ApartmentFinder"].exists);importAlert=\(app.alerts["Could not import"].exists);preview=\(app.navigationBars["Preview manifest"].exists);fullButtons=\(app.buttons.matching(identifier: fullID).count);emptyButtons=\(app.buttons.matching(identifier: emptyID).count);fullAny=\(anyFull.count);fullType=\(type);submit=\(submit.exists);submitEnabled=\(submit.exists && submit.isEnabled);\(status)"
+    }
     func testSourceUnitPinAppearsOnMapAfterOnTracImport() {
         app.buttons["test.import"].tap()
         chooseDay()
@@ -60,7 +71,7 @@ final class OnTracFlowTests: XCTestCase {
     }
     func testZIPPreviewCancellationEmptyDayAndApartmentNavigation() {
         app.buttons["test.import"].tap()
-        XCTAssertTrue(app.buttons["manifest.file.manifest_2026-01-02.csv"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["manifest.file.manifest_2026-01-02.csv"].waitForExistence(timeout: 10), chooserDiagnostics())
         XCTAssertFalse(app.buttons["manifest.import"].exists)
         chooseDay()
         let submit = app.buttons["manifest.import"]; reach(submit)
@@ -108,7 +119,7 @@ final class OnTracFlowTests: XCTestCase {
     }
     private func chooseDay() {
         let day = app.buttons["manifest.file.manifest_2026-01-02.csv"]
-        XCTAssertTrue(day.waitForExistence(timeout: 10)); day.tap()
+        XCTAssertTrue(day.waitForExistence(timeout: 10), chooserDiagnostics()); day.tap()
     }
     func testShuffledOnTracNumbersRemainOrderedAndVisibleAfterRelaunch() {
         let mixed = app.buttons["test.mixed"]

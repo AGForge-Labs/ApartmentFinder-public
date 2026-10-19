@@ -67,7 +67,7 @@ final class ApartmentRouteFollowupTests: XCTestCase {
         var store: AppStore? = try fictionalStore(at: target)
         let first = DeliveryStop(id: "original-4102", sequence: 1, address: "1200 Fictional Courtyard Way",
                                  unit: "4102", completed: true, sourceStopLabel: "44")
-        let door = Place(id: "owner-4108", communityID: "fictional-courtyard", address: first.address, unit: "4108",
+        let door = Place(id: "owner-4108", communityID: "fictional-courtyard", address: first.address, building: "F", unit: "4108", floor: "1",
             kind: .door, verification: .fieldVerified, coordinate: Coordinate(latitude: 0.002, longitude: 0.002))
         try store!.importBackup(PersonalBackup(places: [door], stops: [first]).data())
         let manifest = store!.personal.activeManifest?.id

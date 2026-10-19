@@ -1,5 +1,6 @@
 """Portable integrity checks. These do not claim Swift or app acceptance."""
 import importlib.util
+import base64
 import json
 from pathlib import Path
 import re
@@ -16,6 +17,36 @@ def module(name, path):
 
 
 class PublicPreflightTests(unittest.TestCase):
+    def test_ontrac_ui_setup_uses_the_validated_fixture_without_bypassing_import(self):
+        support = (ROOT / 'App/UITestSupport.swift').read_text()
+        encoded = re.search(r'Data\(base64Encoded: "([A-Za-z0-9+/=]+)"\)', support).group(1)
+        archive = ROOT / 'Tests/ApartmentCoreTests/Fixtures/ontrac-synthetic.zip'
+        self.assertEqual(base64.b64decode(encoded, validate=True), archive.read_bytes())
+        self.assertIn('static func fictionalManifestPayload() throws -> DataPackPayload', support)
+        self.assertIn('guard enabled, storeURL() != nil else', support)
+        self.assertIn('guard store.pack?.catalog.packVersion != "fictional-ontrac-v1" else', support)
+        self.assertIn('try store.importPrivatePack(fictionalManifestPayload())', support)
+        self.assertIn('imports.open(try UITestSupport.manifestURL(), addresses: store.knownApartmentAddresses)', support)
+        native = (ROOT / 'NativeTests/OnTracImportSetupTests.swift').read_text()
+        for boundary in ('UITestSupport.fictionalManifestPayload()', 'UITestSupport.manifestURL()',
+                         'SharedManifestContainer.data(url)', 'ManifestReader.read(', 'coordinator.open('):
+            self.assertIn(boundary, native)
+        self.assertNotIn('coordinator.request =', native)
+
+    def test_append_restore_fixture_keeps_the_known_door_identity(self):
+        source = (ROOT / 'NativeTests/ApartmentRouteFollowupTests.swift').read_text()
+        locations = json.loads(re.search(r'let locations = #"(.*?)"#', source).group(1))
+        door = re.search(r'let door = Place\(id: "owner-4108",(.*?)\n        try store!\.importBackup',
+                         source, re.S).group(1)
+        identity = dict(re.findall(r'\b(communityID|building|unit|floor): "([^"]*)"', door))
+        candidates = [feature['properties'] for feature in locations['features']
+                      if feature['properties']['communityID'] == identity['communityID']
+                      and feature['properties']['unit'] == identity['unit']]
+        self.assertEqual(len(candidates), 1)
+        for field in ('building', 'floor'):
+            self.assertEqual(identity.get(field, ''), candidates[0][field],
+                             'A known checked door must not contradict its fictional source identity')
+
     def test_fictional_native_pack_payloads_contain_schema_valid_locations(self):
         fixtures = 0
         for path in sorted((ROOT / 'NativeTests').glob('*.swift')):
@@ -47,9 +78,9 @@ class PublicPreflightTests(unittest.TestCase):
 
     def test_reviewed_native_inventory_matches_current_source(self):
         artifact = module('public_preflight_artifact', ROOT / 'scripts/testflight-artifact.py')
-        self.assertEqual(artifact.expected_test_count(ROOT), 114)
+        self.assertEqual(artifact.expected_test_count(ROOT), 115)
         profile = json.loads((ROOT / 'scripts/iteration-profile.json').read_text())
-        self.assertEqual(profile['full_acceptance'], {'native': 74, 'ui': 40, 'original_pngs': 45})
+        self.assertEqual(profile['full_acceptance'], {'native': 75, 'ui': 40, 'original_pngs': 45})
 
 
     def test_public_selection_is_exact_and_excludes_private_acceptance(self):
@@ -58,7 +89,7 @@ class PublicPreflightTests(unittest.TestCase):
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
             ('core', 'Tests/ApartmentCoreTests', '', 88),
-            ('native', 'NativeTests', 'ApartmentFinderTests/', 59),
+            ('native', 'NativeTests', 'ApartmentFinderTests/', 60),
             ('ui', 'UITests', 'ApartmentFinderUITests/', 2),
         ):
             values = selection[key]

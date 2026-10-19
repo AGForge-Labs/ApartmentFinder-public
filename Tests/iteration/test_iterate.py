@@ -20,7 +20,7 @@ PROFILE={'schema_version':1,'scheme':'ApartmentFinder','project':'ApartmentFinde
  'core_focus':{'Sources/ApartmentCore/MiniRouteCameraFraming.swift':['MiniRouteCameraFramingTests']},
  'native_focus':{'App/DeliveryMapStyle.swift':['ApartmentFinderUITests/MapAppearanceTests'],
  'Sources/ApartmentCore/MiniRouteCameraFraming.swift':['ApartmentFinderUITests/AutomaticLocationTests','ApartmentFinderUITests/HeadingUpNavigationTests','ApartmentFinderUITests/ApartmentMiniRouteTests']},
- 'full_acceptance':{'native':74,'ui':40,'original_pngs':45}}
+ 'full_acceptance':{'native':75,'ui':40,'original_pngs':45}}
 
 class IterationTests(unittest.TestCase):
     @classmethod

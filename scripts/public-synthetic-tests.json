@@ -143,6 +143,7 @@
     "ApartmentFinderTests/MiniRouteSelectionTests/testStaleRenderedManifestCannotCompleteTheSameSelectedStopBeforeReset",
     "ApartmentFinderTests/MiniRouteSelectionTests/testSwitchingAwayAndBackDuringSavePreservesTheNewManualSelection",
     "ApartmentFinderTests/MiniRouteSelectionTests/testUndoFocusCannotOverwriteAMoreRecentSelection",
+    "ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS",
     "ApartmentFinderTests/SelectedStopCompletionStoreTests/testBackupRestoreWithTheSameStopIDsRejectsThePreviouslyRenderedManifest",
     "ApartmentFinderTests/SelectedStopCompletionStoreTests/testCompletingSelectedLaterStopPersistsOnlyItsIDAndKeepsFirstPendingStop",
     "ApartmentFinderTests/SelectedStopCompletionStoreTests/testRepeatedDeliveryTapIsRejectedAndCannotAdvanceToAnotherStop",

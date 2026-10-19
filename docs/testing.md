@@ -9,7 +9,7 @@ It proposes one standard `macos-15-intel` job, manual dispatch only, with an exa
 The exact source-checked allowlist in `scripts/public-synthetic-tests.json` selects:
 
 - 88 synthetic core tests: parsing, duplicate deliveries, navigation, GPS freshness, initial framing, manual camera state, completion and rollback
-- 59 synthetic native tests: personal storage, pack migration/failure, Finder independence, selection races, append, completion/undo, location and actual arrow rendering
+- 60 synthetic native tests: personal storage, pack migration/failure, Finder independence, selection races, append, completion/undo, location and actual arrow rendering
 - Two fictional OnTrac UI tests: ZIP preview/cancel/empty day, map display, pin-review cancellation, persistence and relaunch
 
 All other core/native/UI tests remain present. The public check verifies exact passed test identities and rejects zero tests, failures, skips, expected failures, substitutions and missing selected methods. It cannot satisfy private acceptance or authorize release. It does not run the genuine catalog/property tests or the full private validation script.
@@ -29,7 +29,7 @@ GitHub currently lists standard hosted runners as free for public repositories, 
 
 ## Private acceptance and release
 
-The current full source inventory is 74 native tests plus 40 UI tests, with 45 required screenshots. The old 68-native/108-total evidence is insufficient for this source. Source inventory, actual passed identities and result counts must agree, without skipped or substituted tests.
+The current full source inventory is 75 native tests plus 40 UI tests, with 45 required screenshots. The old 68-native/108-total evidence is insufficient for this source. Source inventory, actual passed identities and result counts must agree, without skipped or substituted tests.
 
 Real-data core and native assertions require `APARTMENTFINDER_PRIVATE_PACK_DIRECTORY`, pointing outside the public source tree to genuine `catalog.json`, `locations.geojson` and `paths.geojson`. Supporting provenance assertions also use `APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY`. Missing inputs must fail clearly. Synthetic output is not genuine catalog acceptance.
 
