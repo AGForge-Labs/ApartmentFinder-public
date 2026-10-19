@@ -117,7 +117,7 @@ private struct FinderView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 5) {
                             Text("Find the right entrance").font(.title2.bold())
-                            Text("Your saved apartment maps · 89113 + 89148").font(.caption).foregroundStyle(.secondary)
+                            Text("Your saved apartment maps").font(.caption).foregroundStyle(.secondary)
                         }
                         Spacer()
                         Image(systemName: "location.fill").font(.title2).foregroundStyle(.mint)

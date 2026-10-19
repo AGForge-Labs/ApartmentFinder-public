@@ -177,6 +177,7 @@ struct ApartmentDeliveryMap: View {
             DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                            color: pin.color, selected: selectedStopID == pin.stop.id, estimated: pin.place.verification == .estimated)
         }.buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
             .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")
             .accessibilityIdentifier("mini.pin.\(pin.stop.sequence).\(pin.place.id)")
     }

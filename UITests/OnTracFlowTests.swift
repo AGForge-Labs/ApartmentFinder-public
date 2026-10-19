@@ -97,6 +97,12 @@ final class OnTracFlowTests: XCTestCase {
         let buttons = app.buttons.matching(predicate)
         let elements = app.descendants(matching: .any).matching(predicate)
         let type = elements.firstMatch.exists ? String(elements.firstMatch.elementType.rawValue) : "none"
+        let maps = app.maps.firstMatch
+        let mapElements = maps.descendants(matching: .any)
+        let titles = mapElements.matching(NSPredicate(format: "label == %@", "Unit 4102"))
+        let labels = mapElements.matching(NSPredicate(format: "label == %@", "Stop 1, unit 4102, building F, Suggested location"))
+        let titleType = titles.firstMatch.exists ? String(titles.firstMatch.elementType.rawValue) : "none"
+        let labelType = labels.firstMatch.exists ? String(labels.firstMatch.elementType.rawValue) : "none"
         let statuses = app.staticTexts.matching(identifier: "mini.coverage")
         let coverage: String
         if statuses.count == 1 {
@@ -112,7 +118,7 @@ final class OnTracFlowTests: XCTestCase {
         } else {
             coverage = "absentOrAmbiguous"
         }
-        return "sourcePinButtons=\(min(buttons.count, 3));sourcePinAny=\(min(elements.count, 3));sourcePinType=\(type);maps=\(min(app.maps.count, 3));coverage=\(coverage)"
+        return "sourcePinButtons=\(min(buttons.count, 3));sourcePinAny=\(min(elements.count, 3));sourcePinType=\(type);maps=\(min(app.maps.count, 3));coverage=\(coverage);mapUnitTitle=\(min(titles.count, 3));mapUnitTitleType=\(titleType);mapPinLabel=\(min(labels.count, 3));mapPinLabelType=\(labelType)"
     }
     func testSourceUnitPinAppearsOnMapAfterOnTracImport() {
         let packImport = app.buttons["Import private map pack"]
@@ -132,6 +138,19 @@ final class OnTracFlowTests: XCTestCase {
         // XCTest evaluates this assertion-message autoclosure only on failure.
         XCTAssertTrue(pin.waitForExistence(timeout: 5), sourcePinDiagnostics())
         XCTAssertTrue(pin.label.contains("4102"))
+        let laterPin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.2.")).firstMatch
+        XCTAssertTrue(laterPin.waitForExistence(timeout: 5))
+        XCTAssertTrue(laterPin.label.contains("4108"))
+        XCTAssertTrue(laterPin.isHittable)
+        XCTAssertTrue(app.maps.firstMatch.frame.contains(CGPoint(x: laterPin.frame.midX, y: laterPin.frame.midY)))
+        laterPin.tap()
+        XCTAssertTrue(app.staticTexts["Unit 4108"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["mini.delivered"].label.contains("4108"))
+        XCTAssertTrue(pin.isHittable)
+        XCTAssertTrue(app.maps.firstMatch.frame.contains(CGPoint(x: pin.frame.midX, y: pin.frame.midY)))
+        pin.tap()
+        XCTAssertTrue(app.staticTexts["Unit 4102"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["mini.delivered"].label.contains("4102"))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         capture("OnTrac unit 4102 shown on mini-route map")
         app.buttons["mini.prepare"].tap()
