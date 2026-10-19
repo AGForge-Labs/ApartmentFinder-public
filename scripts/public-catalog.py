@@ -18,7 +18,8 @@ from urllib.parse import parse_qsl, urlsplit
 
 SCHEMA = 1
 ALLOWED_ZIPS = {'89113', '89148', '89123', '89183'}
-SOURCE_FIELDS = {'id', 'title', 'url', 'retrievedAt'}
+SOURCE_FIELD_ORDER = ('retrievedAt', 'id', 'url', 'title')
+SOURCE_FIELDS = set(SOURCE_FIELD_ORDER)
 COMMUNITY_FIELDS = {'id', 'name', 'address', 'zip', 'countyZIPs', 'deliveryAddresses', 'aliases',
                     'sourceIDs', 'researchStatus', 'gapNotes', 'latitude', 'longitude', 'publicEvidence'}
 POINT_FIELDS = {'communityID', 'address', 'building', 'unit', 'floor', 'kind', 'verification',
@@ -87,6 +88,47 @@ def json_bytes(value):
 def read_json(path, maximum=64_000_000):
     require(path.is_file() and not path.is_symlink() and path.stat().st_size <= maximum, 'Missing, linked or oversized input')
     return json.loads(path.read_bytes())
+
+
+def position_note(feature):
+    """Construct fixed public text; reserve the reviewed dispute for its exact identity."""
+    p = feature['properties']
+    if feature['id'] == 'spanish-ridge-7380-unit-county-2179616-201':
+        expected = dict(communityID='spanish-ridge-7380', address='7380 W RUSSELL RD',
+            building='', unit='201', floor='', kind='unitPosition', verification='sourceMapped')
+        sources = ['spanish-ridge-7380-county-unit-labels', 'spanish-ridge-7380-county-unit-buildings']
+        require(all(p.get(key) == value for key, value in expected.items()) and
+                p.get('sourceIDs') in (sources, list(reversed(sources))), 'Unreviewed disputed unit source shape')
+        return SOURCE_NOTE + ' Building A for 201 is not asserted. Building and floor remain unknown.'
+    riley_sources = ('riley-county-6350', 'riley-county-6355')
+    sources = p.get('sourceIDs', [])
+    if (p.get('communityID') in ('alcove', 'alcove-6350') or
+            isinstance(feature['id'], str) and feature['id'].startswith(('alcove-unit-', 'alcove-6350-unit-')) or
+            isinstance(sources, list) and any(source in sources for source in riley_sources)):
+        moved = p.get('communityID') == 'alcove-6350'
+        street = '6350' if moved else '6355'
+        prefix = 'alcove-6350-unit-' if moved else 'alcove-unit-'
+        require(p.get('communityID') == ('alcove-6350' if moved else 'alcove') and
+                isinstance(feature['id'], str) and re.fullmatch(re.escape(prefix) + r'[0-9]{8}', feature['id']) and
+                p.get('address') == street + ' S Riley St' and p.get('kind') == 'unitPosition' and
+                p.get('verification') == 'sourceMapped' and isinstance(sources, list) and len(sources) == 4 and
+                set(sources) == {'alcove-geo-0', 'alcove-map-api-0', 'alcove-building-groups-0', 'riley-county-' + street} and
+                (p.get('building') in ('6', '7') if moved else p.get('building') not in ('6', '7')),
+                'Unreviewed Riley position source shape')
+        uncertain_identities = {'alcove-6350-unit-10839846': ('6', '327', '3'),
+            'alcove-6350-unit-10839920': ('7', '303', '3')}
+        identity = tuple(p.get(key) for key in ('building', 'unit', 'floor'))
+        expected_identity = uncertain_identities.get(feature['id'])
+        require((identity == expected_identity and p.get('identityUncertain') is True) if expected_identity else
+                (p.get('identityUncertain') is not True and identity not in uncertain_identities.values()),
+                'Unreviewed Riley position source shape')
+        if moved:
+            note = SOURCE_NOTE + ' Street address is supported by the 6350 county parcel containing this published position. County ZIP is 89113; the retained directory postal ZIP 89148 is not independently verified for 6350.'
+            if p.get('identityUncertain') is True:
+                note += ' The same unit label is not confirmed by the county parcel records; check the unit/building on arrival.'
+            return note
+        return SOURCE_NOTE + ' This 6355 position falls in the retained 89148 county polygon, consistent with the official postal address.'
+    return ESTIMATE_NOTE if p['verification'] == 'estimated' else SOURCE_NOTE
 
 
 def validate_payload(catalog, locations, paths):
@@ -164,7 +206,7 @@ def validate_payload(catalog, locations, paths):
                 require(feature['geometry']['type'] == 'Point', 'Invalid public point geometry')
                 coordinate(feature['geometry']['coordinates'])
                 require(p['kind'] in ('building', 'unitPosition') and p['verification'] in ('sourceMapped', 'estimated'), 'Unsupported public precision or field verification')
-                require(p['notes'] == (ESTIMATE_NOTE if p['verification'] == 'estimated' else SOURCE_NOTE), 'Unexpected public position text')
+                require(p['notes'] == position_note(feature), 'Unexpected public position text')
                 for key in ('address', 'building', 'unit', 'floor'):
                     text(p[key], 'position ' + key, empty=True)
                 require('identityUncertain' not in p or type(p['identityUncertain']) is bool, 'Invalid uncertainty flag')
@@ -268,11 +310,11 @@ def prepare(source, output, version, additions, evidence_file=None):
     require(all(x['packVersion'] == original['packVersion'] for x in raw.values()), 'Source versions must match')
     catalog = {k: copy.deepcopy(v) for k, v in original.items() if k in CATALOG_FIELDS}
     catalog.update(packVersion=version, generatedAt=datetime.now(timezone.utc).isoformat(), coverage={'inventoryComplete': False, 'notes': COVERAGE_NOTES})
-    catalog['sources'] = [{k: s[k] for k in SOURCE_FIELDS} for s in original['sources']]
+    catalog['sources'] = [{k: s[k] for k in SOURCE_FIELD_ORDER} for s in original['sources']]
     catalog['communities'] = [{k: copy.deepcopy(v) for k, v in c.items() if k in COMMUNITY_FIELDS} for c in original['communities']]
     for filename in additions:
         extra = read_json(filename, 2_000_000)
-        catalog['sources'].extend({k: s[k] for k in SOURCE_FIELDS} for s in extra['sources'])
+        catalog['sources'].extend({k: s[k] for k in SOURCE_FIELD_ORDER} for s in extra['sources'])
         catalog['communities'].extend({k: copy.deepcopy(v) for k, v in c.items() if k in COMMUNITY_FIELDS} for c in extra['communities'])
         for patch in extra.get('communityEnrichments', []):
             require(set(patch) <= {'id', 'deliveryAddresses', 'aliasesToAdd', 'latitude', 'longitude',
@@ -304,10 +346,13 @@ def prepare(source, output, version, additions, evidence_file=None):
         collection['features'] = [{k: copy.deepcopy(v) for k, v in f.items() if k in {'type', 'id', 'geometry', 'properties'}} for f in collection['features']]
         for feature in collection['features']:
             p = feature['properties'] = {k: v for k, v in feature['properties'].items() if k in fields}
-            p['notes'] = ESTIMATE_NOTE if point and p['verification'] == 'estimated' else SOURCE_NOTE if point else PATH_NOTE
+            if not point:
+                p['notes'] = PATH_NOTE
         collections.append(collection)
     locations, paths = collections
     split_reviewed_riley(catalog, locations, original['packVersion'])
+    for feature in locations['features']:
+        feature['properties']['notes'] = position_note(feature)
     for community in catalog['communities']:
         community['researchStatus'] = 'publicSourceInventory'
         community['gapNotes'] = gap_notes(community)

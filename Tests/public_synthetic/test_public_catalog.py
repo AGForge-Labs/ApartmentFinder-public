@@ -1,4 +1,5 @@
-"""Public bundle export checks use invented fixtures only."""
+"""Public export fixtures use invented coordinates and no private source text."""
+import copy
 import json
 import hashlib
 from pathlib import Path
@@ -58,6 +59,7 @@ class PublicCatalogExportTests(unittest.TestCase):
         catalog = json.loads((self.output / 'public-catalog.json').read_text())
         places = json.loads((self.output / 'public-locations.geojson').read_text())
         self.assertEqual(catalog['packVersion'], '2026.10.19.1-public')
+        self.assertEqual(list(catalog['sources'][0]), ['retrievedAt', 'id', 'url', 'title'])
         self.assertEqual(catalog['communities'][0]['address'], '100 Fictional Rd')
         feature = places['features'][0]
         self.assertEqual(feature['geometry']['coordinates'], [0.0,0.0])
@@ -80,6 +82,320 @@ class PublicCatalogExportTests(unittest.TestCase):
         p = json.loads((self.output / 'public-locations.geojson').read_text())['features'][0]['properties']
         self.assertEqual(p['verification'], 'estimated')
         self.assertIn('May be inaccurate', p['notes'])
+
+    def configure_disputed_unit(self):
+        # Only the reserved public identity is real; all fixture geometry is invented.
+        sources = ['spanish-ridge-7380-county-unit-labels', 'spanish-ridge-7380-county-unit-buildings']
+        self.catalog['sources'] = [dict(id=source, title='Synthetic published source',
+            url='https://example.invalid/map', retrievedAt='2026-01-01T00:00:00Z') for source in sources]
+        self.catalog['communities'][0].update(id='spanish-ridge-7380', address='7380 W RUSSELL RD', sourceIDs=sources)
+        feature = self.locations['features'][0]
+        feature['id'] = 'spanish-ridge-7380-unit-county-2179616-201'
+        feature['properties'].update(communityID='spanish-ridge-7380', address='7380 W RUSSELL RD',
+            building='', unit='201', floor='', sourceIDs=sources,
+            notes='ARBITRARY RAW NOTE: Building A has been verified; secret resident detail')
+        return feature
+
+    def run_validate(self, valid=True):
+        result = subprocess.run([sys.executable, '-B', str(ROOT / 'scripts/public-catalog.py'), 'validate',
+            '--directory', str(self.output)], text=True, capture_output=True)
+        if valid:
+            self.assertEqual(result.returncode, 0, result.stderr)
+        else:
+            self.assertNotEqual(result.returncode, 0)
+        return result
+
+    def write_locations_with_reviewed_digest(self, value):
+        path = self.output / 'public-locations.geojson'
+        path.write_text(json.dumps(value))
+        manifest = self.output / 'public-catalog-review.json'
+        review = json.loads(manifest.read_text())
+        review['resourcesSHA256'][path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        manifest.write_text(json.dumps(review))
+
+    def test_disputed_unit_retains_fixed_qualifier_without_copying_raw_notes(self):
+        original = copy.deepcopy(self.configure_disputed_unit())
+        self.run_export()
+        feature = json.loads((self.output / 'public-locations.geojson').read_text())['features'][0]
+        self.assertEqual(feature['properties']['notes'],
+            'Published unit position; not an entrance or exact door. Verify the physical street, unit and building on arrival. '
+            'Building A for 201 is not asserted. Building and floor remain unknown.')
+        original['properties'].pop('notes')
+        original['properties'].pop('gateCode')
+        actual = copy.deepcopy(feature)
+        actual['properties'].pop('notes')
+        self.assertEqual(actual, original)
+        self.assertNotIn('ARBITRARY RAW NOTE', (self.output / 'public-locations.geojson').read_text())
+        self.run_validate()
+
+    def test_disputed_unit_rejects_unreviewed_field_or_source_shape_before_export(self):
+        feature = self.configure_disputed_unit()
+        original = copy.deepcopy(feature['properties'])
+        mutations = [dict(communityID='fictional'), dict(address='7340 W RUSSELL RD'), dict(building='A'),
+            dict(unit='202'), dict(floor='2'), dict(kind='building'), dict(verification='estimated'),
+            dict(sourceIDs=['spanish-ridge-7380-county-unit-labels']),
+            dict(sourceIDs=['spanish-ridge-7380-county-unit-labels', 'spanish-ridge-7380-county-unit-labels']),
+            dict(sourceIDs=['spanish-ridge-7380-county-unit-labels', 'unreviewed-source'])]
+        self.catalog['sources'].append(dict(id='unreviewed-source', title='Synthetic replacement source',
+            url='https://example.invalid/replacement', retrievedAt='2026-01-01T00:00:00Z'))
+        self.catalog['communities'].append(dict(id='fictional', name='Another Fictional Property',
+            address='100 Fictional Rd', zip='89113', aliases=[], sourceIDs=['unreviewed-source'],
+            researchStatus='mapped', gapNotes=[]))
+        for index, mutation in enumerate(mutations):
+            with self.subTest(mutation=mutation):
+                feature['properties'] = dict(copy.deepcopy(original), **mutation)
+                self.output = self.directory / ('rejected-' + str(index))
+                result = self.run_export(valid=False)
+                self.assertIn('Unreviewed disputed unit source shape', result.stderr)
+                self.assertFalse(self.output.exists())
+
+    def test_disputed_unit_source_order_does_not_change_reviewed_identity(self):
+        feature = self.configure_disputed_unit()
+        feature['properties']['sourceIDs'] = list(reversed(feature['properties']['sourceIDs']))
+        self.run_export()
+        exported = json.loads((self.output / 'public-locations.geojson').read_text())['features'][0]
+        self.assertIn('Building A for 201 is not asserted', exported['properties']['notes'])
+        self.assertEqual(exported['properties']['sourceIDs'], feature['properties']['sourceIDs'])
+        self.run_validate()
+
+    def test_reserved_qualifier_is_not_applied_to_other_feature_ids(self):
+        feature = self.configure_disputed_unit()
+        feature['id'] += '-unreviewed'
+        self.run_export()
+        p = json.loads((self.output / 'public-locations.geojson').read_text())['features'][0]['properties']
+        self.assertEqual(p['notes'], 'Published unit position; not an entrance or exact door. '
+            'Verify the physical street, unit and building on arrival.')
+
+    def test_validator_rejects_missing_wrong_or_augmented_disputed_qualifier(self):
+        self.configure_disputed_unit()
+        self.run_export()
+        locations = json.loads((self.output / 'public-locations.geojson').read_text())
+        generic = 'Published unit position; not an entrance or exact door. Verify the physical street, unit and building on arrival.'
+        expected = generic + ' Building A for 201 is not asserted. Building and floor remain unknown.'
+        for note in (generic, generic + ' Building B for 201 is not asserted. Building and floor remain unknown.',
+                expected + ' ARBITRARY EXTRA FREE TEXT', expected.replace('unknown.', 'verified.')):
+            with self.subTest(note=note):
+                locations['features'][0]['properties']['notes'] = note
+                self.write_locations_with_reviewed_digest(locations)
+                result = self.run_validate(valid=False)
+                self.assertIn('Unexpected public position text', result.stderr)
+
+    def test_validator_rejects_reserved_unit_field_drift_despite_fixed_qualifier(self):
+        self.configure_disputed_unit()
+        self.run_export()
+        original = json.loads((self.output / 'public-locations.geojson').read_text())
+        for mutation in (dict(building='A'), dict(address='7340 W RUSSELL RD'), dict(unit='202'),
+                dict(sourceIDs=['spanish-ridge-7380-county-unit-labels'])):
+            with self.subTest(mutation=mutation):
+                locations = copy.deepcopy(original)
+                locations['features'][0]['properties'].update(mutation)
+                self.write_locations_with_reviewed_digest(locations)
+                result = self.run_validate(valid=False)
+                self.assertIn('Unreviewed disputed unit source shape', result.stderr)
+
+    def configure_riley_position(self, street):
+        community = 'alcove-6350' if street == '6350' else 'alcove'
+        county_source = 'riley-county-' + street
+        sources = ['alcove-geo-0', 'alcove-map-api-0', 'alcove-building-groups-0', county_source]
+        self.catalog['sources'].extend(dict(id=source, title='Synthetic published source',
+            url='https://example.invalid/map', retrievedAt='2026-01-01T00:00:00Z') for source in sources)
+        self.catalog['communities'][0].update(id=community, address=street + ' S Riley St',
+            sourceIDs=sources)
+        feature = self.locations['features'][0]
+        feature['id'] = community + ('-unit-10839817' if street == '6350' else '-unit-10839508')
+        feature['properties'].update(communityID=community, address=street + ' S Riley St',
+            building='6' if street == '6350' else '1', unit='138' if street == '6350' else '188',
+            sourceIDs=sources, identityUncertain=False,
+            notes='PRIVATE RILEY TEXT straddling both ZIPs')
+        return feature
+
+    def test_riley_positions_keep_fixed_street_scoped_zip_notes_without_raw_text(self):
+        fixtures = copy.deepcopy((self.catalog, self.locations))
+        generic = 'Published unit position; not an entrance or exact door. Verify the physical street, unit and building on arrival.'
+        caution = ' The same unit label is not confirmed by the county parcel records; check the unit/building on arrival.'
+        for street, clause in (
+                ('6350', ' Street address is supported by the 6350 county parcel containing this published position. '
+                    'County ZIP is 89113; the retained directory postal ZIP 89148 is not independently verified for 6350.'),
+                ('6355', ' This 6355 position falls in the retained 89148 county polygon, consistent with the official postal address.')):
+            for uncertain in ((None, False, True) if street == '6350' else (None, False)):
+                with self.subTest(street=street, uncertain=uncertain):
+                    self.catalog, self.locations = copy.deepcopy(fixtures)
+                    self.output = self.directory / ('riley-' + street + '-' + str(uncertain))
+                    feature = self.configure_riley_position(street)
+                    if uncertain is None:
+                        feature['properties'].pop('identityUncertain')
+                    else:
+                        feature['properties']['identityUncertain'] = uncertain
+                    if uncertain is True:
+                        feature['id'] = 'alcove-6350-unit-10839846'
+                        feature['properties'].update(building='6', unit='327', floor='3')
+                    expected = copy.deepcopy(feature)
+                    expected['properties'].pop('gateCode')
+                    expected['properties']['notes'] = generic + clause + (caution if street == '6350' and uncertain is True else '')
+                    self.run_export()
+                    actual = json.loads((self.output / 'public-locations.geojson').read_text())['features'][0]
+                    self.assertEqual(actual, expected)
+                    self.assertNotIn('PRIVATE RILEY TEXT', json.dumps(actual))
+                    self.assertNotIn('straddling', actual['properties']['notes'])
+                    self.run_validate()
+
+    def test_riley_note_exception_rejects_unreviewed_identity_precision_and_sources(self):
+        fixtures = copy.deepcopy((self.catalog, self.locations))
+        for street in ('6350', '6355'):
+            self.catalog, self.locations = copy.deepcopy(fixtures)
+            feature = self.configure_riley_position(street)
+            original = copy.deepcopy(feature)
+            wrong_street = '6355' if street == '6350' else '6350'
+            wrong_source = 'riley-county-' + wrong_street
+            self.catalog['sources'].append(dict(id=wrong_source, title='Synthetic other county source',
+                url='https://example.invalid/other', retrievedAt='2026-01-01T00:00:00Z'))
+            for index, mutation in enumerate((dict(communityID='fictional'), dict(address=wrong_street + ' S Riley St'), dict(kind='building'),
+                    dict(verification='estimated'), dict(sourceIDs=['official-fixture']),
+                    dict(sourceIDs=['official-fixture', wrong_source]),
+                    dict(sourceIDs=original['properties']['sourceIDs'] + [wrong_source]),
+                    dict(building='1' if street == '6350' else '6'))):
+                with self.subTest(street=street, mutation=mutation):
+                    feature['properties'] = dict(copy.deepcopy(original['properties']), **mutation)
+                    self.output = self.directory / ('invalid-riley-' + street + '-' + str(index))
+                    result = self.run_export(valid=False)
+                    self.assertIn('Unreviewed Riley position source shape', result.stderr)
+                    self.assertFalse(self.output.exists())
+            prefix = 'alcove-6350-unit-' if street == '6350' else 'alcove-unit-'
+            for index, wrong_id in enumerate(('fictional-unit-synthetic', prefix, prefix + 'invented',
+                    prefix + '1234567', prefix + '123456789', prefix + '１２３４５６７８')):
+                with self.subTest(street=street, wrong_id=wrong_id):
+                    feature['properties'] = copy.deepcopy(original['properties'])
+                    feature['id'] = wrong_id
+                    self.output = self.directory / ('invalid-riley-id-' + street + '-' + str(index))
+                    result = self.run_export(valid=False)
+                    self.assertIn('Unreviewed Riley position source shape', result.stderr)
+                    self.assertFalse(self.output.exists())
+
+    def test_riley_county_assertion_requires_every_reviewed_source(self):
+        fixtures = copy.deepcopy((self.catalog, self.locations))
+        for street in ('6350', '6355'):
+            self.catalog, self.locations = copy.deepcopy(fixtures)
+            feature = self.configure_riley_position(street)
+            sources = list(feature['properties']['sourceIDs'])
+            invalid_sources = [[source for source in sources if source != removed] for removed in sources]
+            invalid_sources += [[sources[-1]], sources[:3] + [sources[0]], sources + ['official-fixture']]
+            for index, source_ids in enumerate(invalid_sources):
+                with self.subTest(street=street, sources=source_ids):
+                    feature['properties']['sourceIDs'] = source_ids
+                    self.output = self.directory / ('removed-source-' + street + '-' + str(index))
+                    result = self.run_export(valid=False)
+                    self.assertIn('Unreviewed Riley position source shape', result.stderr)
+                    self.assertFalse(self.output.exists())
+            feature['properties']['sourceIDs'] = list(reversed(sources))
+            self.output = self.directory / ('reordered-sources-' + street)
+            self.run_export()
+            exported = json.loads((self.output / 'public-locations.geojson').read_text())['features'][0]
+            self.assertEqual(exported['properties']['sourceIDs'], list(reversed(sources)))
+            self.run_validate()
+
+    def test_riley_uncertainty_is_bound_to_both_exact_reviewed_ids_and_tuples(self):
+        fixtures = copy.deepcopy((self.catalog, self.locations))
+        reviewed = [('alcove-6350-unit-10839846', ('6', '327', '3')),
+            ('alcove-6350-unit-10839920', ('7', '303', '3'))]
+        for index, (feature_id, identity) in enumerate(reviewed):
+            self.catalog, self.locations = copy.deepcopy(fixtures)
+            feature = self.configure_riley_position('6350')
+            feature['id'] = feature_id
+            feature['properties'].update(zip(('building', 'unit', 'floor'), identity))
+            feature['properties']['identityUncertain'] = True
+            self.output = self.directory / ('reviewed-uncertain-' + str(index))
+            self.run_export()
+            validated_output = self.output
+            original = json.loads((self.output / 'public-locations.geojson').read_text())
+            self.assertIn('same unit label is not confirmed', original['features'][0]['properties']['notes'])
+            self.run_validate()
+            locations = copy.deepcopy(original)
+            locations['features'][0]['id'] = 'alcove-6350-unit-10839817'
+            self.write_locations_with_reviewed_digest(locations)
+            result = self.run_validate(valid=False)
+            self.assertIn('Unreviewed Riley position source shape', result.stderr)
+            for mutation_index, mutation in enumerate((dict(identityUncertain=False), dict(unit='999'),
+                    dict(floor='2'), dict(building='7' if identity[0] == '6' else '6'))):
+                with self.subTest(feature_id=feature_id, mutation=mutation):
+                    self.output = validated_output
+                    locations = copy.deepcopy(original)
+                    locations['features'][0]['properties'].update(mutation)
+                    self.write_locations_with_reviewed_digest(locations)
+                    result = self.run_validate(valid=False)
+                    self.assertIn('Unreviewed Riley position source shape', result.stderr)
+                    feature['properties'] = dict(copy.deepcopy(original['features'][0]['properties']), **mutation)
+                    self.output = self.directory / ('uncertainty-drift-' + str(index) + '-' + str(mutation_index))
+                    result = self.run_export(valid=False)
+                    self.assertIn('Unreviewed Riley position source shape', result.stderr)
+                    self.assertFalse(self.output.exists())
+            feature['properties'] = copy.deepcopy(original['features'][0]['properties'])
+            feature['properties'].pop('identityUncertain')
+            locations = copy.deepcopy(original)
+            locations['features'][0]['properties'].pop('identityUncertain')
+            self.output = validated_output
+            self.write_locations_with_reviewed_digest(locations)
+            result = self.run_validate(valid=False)
+            self.assertIn('Unreviewed Riley position source shape', result.stderr)
+            self.output = self.directory / ('missing-uncertainty-' + str(index))
+            self.run_export(valid=False)
+            self.assertFalse(self.output.exists())
+
+    def test_riley_rejects_uncertainty_claims_and_reviewed_tuples_on_other_ids(self):
+        fixtures = copy.deepcopy((self.catalog, self.locations))
+        for street in ('6350', '6355'):
+            for index, mutation in enumerate((dict(identityUncertain=True),
+                    dict(building='6', unit='327', floor='3'), dict(building='7', unit='303', floor='3'))):
+                with self.subTest(street=street, mutation=mutation):
+                    self.catalog, self.locations = copy.deepcopy(fixtures)
+                    feature = self.configure_riley_position(street)
+                    feature['properties'].update(mutation)
+                    self.output = self.directory / ('unreviewed-uncertainty-' + street + '-' + str(index))
+                    result = self.run_export(valid=False)
+                    self.assertIn('Unreviewed Riley position source shape', result.stderr)
+                    self.assertFalse(self.output.exists())
+
+    def test_validator_requires_exact_riley_qualifiers_and_reviewed_shape(self):
+        fixtures = copy.deepcopy((self.catalog, self.locations))
+        for street in ('6350', '6355'):
+            self.catalog, self.locations = copy.deepcopy(fixtures)
+            self.output = self.directory / ('validated-riley-' + street)
+            self.configure_riley_position(street)
+            self.run_export()
+            original = json.loads((self.output / 'public-locations.geojson').read_text())
+            note = original['features'][0]['properties']['notes']
+            for mutation in (dict(notes=note.split(' Street address')[0].split(' This 6355')[0]),
+                    dict(notes=note + ' PRIVATE FREE TEXT'), dict(address='100 Fictional Rd'),
+                    dict(sourceIDs=['official-fixture']), dict(verification='estimated'),
+                    dict(sourceIDs=['riley-county-' + street]), dict(identityUncertain=True)):
+                with self.subTest(street=street, mutation=mutation):
+                    locations = copy.deepcopy(original)
+                    locations['features'][0]['properties'].update(mutation)
+                    self.write_locations_with_reviewed_digest(locations)
+                    self.run_validate(valid=False)
+            locations = copy.deepcopy(original)
+            locations['features'][0]['id'] = ('alcove-6350' if street == '6350' else 'alcove') + '-unit-invented'
+            self.write_locations_with_reviewed_digest(locations)
+            self.run_validate(valid=False)
+
+    def test_other_position_notes_keep_exact_generic_or_estimate_policy(self):
+        expected = {
+            'sourceMapped': 'Published unit position; not an entrance or exact door. '
+                'Verify the physical street, unit and building on arrival.',
+            'estimated': 'May be inaccurate. Estimated unit position; not an entrance or exact door. '
+                'Confirm the physical street, unit and building on arrival.',
+        }
+        for verification, note in expected.items():
+            with self.subTest(verification=verification):
+                self.locations['features'][0]['properties']['verification'] = verification
+                self.output = self.directory / ('generic-' + verification)
+                self.run_export()
+                locations = json.loads((self.output / 'public-locations.geojson').read_text())
+                self.assertEqual(locations['features'][0]['properties']['notes'], note)
+                self.run_validate()
+                locations['features'][0]['properties']['notes'] += ' ARBITRARY EXTRA FREE TEXT'
+                self.write_locations_with_reviewed_digest(locations)
+                result = self.run_validate(valid=False)
+                self.assertIn('Unexpected public position text', result.stderr)
 
     def test_exact_doors_and_confirmed_personal_paths_are_rejected(self):
         self.locations['features'][0]['properties']['kind'] = 'door'

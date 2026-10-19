@@ -14,7 +14,7 @@ final class PublicCatalogResourceTests: XCTestCase {
     }
     func testPublicPackDecodesQualifiedPositionsAndKeepsRileyAndRussellStreetsSeparate() throws {
         let data = try pack()
-        XCTAssertEqual(data.catalog.packVersion, "2026.10.19.1-public")
+        XCTAssertEqual(data.catalog.packVersion, "2026.10.19.2-public")
         XCTAssertEqual(data.catalog.communities.count, 92)
         XCTAssertEqual(data.places.count, 14_517)
         XCTAssertEqual(Set(data.places.map(\.id)).count, 14_517)
@@ -36,6 +36,18 @@ final class PublicCatalogResourceTests: XCTestCase {
         }
         XCTAssertEqual(FinderSearch.locations(address: "7340 Russell", unit: "2072", places: data.places, communities: data.catalog.communities).count, 1)
         XCTAssertTrue(FinderSearch.locations(address: "7380 Russell", unit: "2072", places: data.places, communities: data.catalog.communities).isEmpty)
+        let disputed = try XCTUnwrap(FinderSearch.locations(address: "7380 Russell", unit: "201", places: data.places,
+            communities: data.catalog.communities).first)
+        XCTAssertEqual(disputed.building, "")
+        XCTAssertEqual(disputed.floor, "")
+        XCTAssertEqual(disputed.verification, .sourceMapped)
+        XCTAssertTrue(disputed.notes.contains("Building A for 201 is not asserted"))
+        XCTAssertTrue(data.places.filter { $0.communityID == "alcove-6350" }.allSatisfy {
+            $0.notes.contains("89113") && $0.notes.contains("not independently verified")
+        })
+        XCTAssertTrue(data.places.filter { $0.communityID == "alcove" }.allSatisfy {
+            $0.notes.contains("89148") && !$0.notes.contains("straddles")
+        })
     }
     func testSilveradoPropertiesRemainUnitUnmappedAndShareIndexContainsEveryVerifiedStreet() throws {
         let data = try pack()

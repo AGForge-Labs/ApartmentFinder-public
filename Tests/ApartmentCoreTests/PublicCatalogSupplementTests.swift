@@ -146,15 +146,19 @@ final class PublicCatalogSupplementTests: XCTestCase {
     }
     func testMalformedRetainedPublicRileyShapeCannotBypassFingerprintCorrection() {
         let raw = community("alcove", address: "6355 S Riley St")
-        XCTAssertThrowsError(try read(pack([raw], places: [place("invented", community: raw)], version: "2026.10.19.1-public")))
+        for version in ["2026.10.19.1-public", "2026.10.19.2-public"] {
+            XCTAssertThrowsError(try read(pack([raw], places: [place("invented", community: raw)], version: version)))
+        }
     }
     func testPublicRileyPlaceholderAndMalformedSeparationCannotBypassCorrection() {
         let original = community("alcove", address: "6355 S Riley St")
-        for address in ["6350 S Riley St", "100 Fictional Rd"] {
-            let separate = community("alcove-6350", address: address)
-            let value = pack([original, separate], places: [place("fictional-6355", community: original),
-                place("fictional-6350", community: separate)], version: "2026.10.19.1-public")
-            XCTAssertThrowsError(try read(value))
+        for version in ["2026.10.19.1-public", "2026.10.19.2-public"] {
+            for address in ["6350 S Riley St", "100 Fictional Rd"] {
+                let separate = community("alcove-6350", address: address)
+                let value = pack([original, separate], places: [place("fictional-6355", community: original),
+                    place("fictional-6350", community: separate)], version: version)
+                XCTAssertThrowsError(try read(value))
+            }
         }
     }
     func testLegacyRileyVersionStillRejectsPreviouslySeparatedCollidingShape() {

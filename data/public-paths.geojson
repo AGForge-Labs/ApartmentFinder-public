@@ -1,7 +1,7 @@
 {
   "type": "FeatureCollection",
   "schemaVersion": 1,
-  "packVersion": "2026.10.19.1-public",
+  "packVersion": "2026.10.19.2-public",
   "features": [
     {
       "type": "Feature",

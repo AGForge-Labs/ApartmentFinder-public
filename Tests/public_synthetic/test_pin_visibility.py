@@ -102,6 +102,14 @@ class PinVisibilityTests(unittest.TestCase):
             if '#if DEBUG' in line:
                 self.assertIn('targetEnvironment(simulator)', line)
 
+    def test_shuffled_stop_expectations_use_the_rendered_separator_without_losing_units(self):
+        source = (ROOT / 'UITests/OnTracFlowTests.swift').read_text()
+        flow = source.split('func testShuffledOnTracNumbersRemainOrderedAndVisibleAfterRelaunch() {', 1)[1].split('\n    func test', 1)[0]
+        self.assertNotIn('Â·', flow)
+        self.assertIn('secondPackage.label.contains("Stop 1 · Unit 2137")', flow)
+        self.assertIn('app.buttons["mini.stop.3"].label.contains("Stop 1.2 · Unit 2149")', flow)
+        self.assertIn('XCTAssertLessThan(tuscano.frame.minY, envision.frame.minY)', flow)
+
     def test_failed_grouping_is_removed_and_real_selection_acceptance_remains(self):
         source = (ROOT / 'App/ApartmentDeliveryMap.swift').read_text()
         button = source.split('private func pinButton(_ pin: Pin) -> some View {', 1)[1].split('\n    private func center', 1)[0]

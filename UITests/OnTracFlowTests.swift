@@ -394,8 +394,8 @@ final class OnTracFlowTests: XCTestCase {
         tuscano.tap()
         let secondPackage = app.buttons["mini.stop.2"]
         XCTAssertTrue(secondPackage.waitForExistence(timeout: 10))
-        XCTAssertTrue(secondPackage.label.contains("Stop 1 Â· Unit 2137"))
-        XCTAssertTrue(app.buttons["mini.stop.3"].label.contains("Stop 1.2 Â· Unit 2149"))
+        XCTAssertTrue(secondPackage.label.contains("Stop 1 · Unit 2137"))
+        XCTAssertTrue(app.buttons["mini.stop.3"].label.contains("Stop 1.2 · Unit 2149"))
     }
     func testNewManifestReplacesPreviousApartmentsAndPutsTuscanoStopOneFirst() {
         let mixed = app.buttons["test.mixed"]
