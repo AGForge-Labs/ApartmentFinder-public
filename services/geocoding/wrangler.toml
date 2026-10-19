@@ -1,0 +1,21 @@
+name = "apartmentfinder-private-geocoding"
+main = "worker.mjs"
+compatibility_date = "2026-09-01"
+workers_dev = true
+send_metrics = false
+
+[observability]
+enabled = false
+
+[vars]
+DAILY_LIMIT = "100"
+MONTHLY_LIMIT = "3100"
+QUOTAS_VERIFIED_UNTIL = ""
+
+[[durable_objects.bindings]]
+name = "QUOTA"
+class_name = "GeocodeQuota"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GeocodeQuota"]
