@@ -1,0 +1,20 @@
+{
+  "bundle_id": "dev.galaxybigbird.ApartmentFinder",
+  "team_id": "YU2A5J5978",
+  "app_store_connect_app_id": "6814202457",
+  "marketing_version": "0.1.0",
+  "profile_name": "ApartmentFinder Shared TestFlight",
+  "profile_uuid": "aeae4f2d-0de2-4ef5-8e65-f3fd9354523f",
+  "profile_sha256": "0fa4ad135bd4368c1e8c1408f4852fef90dec152f4ae7eb26af4d1edf934e379",
+  "certificate_sha256": "339aa98ac7a1eec704b60eb0e12c8a7986231a66c272482d4e9cc261ea460f8f",
+  "api_key_id": "89788L8TG2",
+  "issuer_id": "fafeb7f1-ba53-4935-892e-80da735ed265",
+  "api_public_key_sha256": "512b71f6d53be914978ab1b592dc99ce4fcab86c85b232607615bcfc235f4395",
+  "app_group": "group.dev.galaxybigbird.ApartmentFinder",
+  "share_extension": {
+    "bundle_id": "dev.galaxybigbird.ApartmentFinder.Share",
+    "profile_name": "ApartmentFinder Share TestFlight",
+    "profile_uuid": "f147f6f2-6a89-4ab4-9ce0-a327d922603d",
+    "profile_sha256": "ce9190e1be7fc9d242a59fe6d9425e0cea04e686671f6dbf663d41b3bd7e8b1e"
+  }
+}
