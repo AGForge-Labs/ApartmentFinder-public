@@ -307,10 +307,13 @@ def xctestrun_references(path,products,platforms=None):
     platforms=Path(platforms).resolve() if platforms else None
     def resolve(value,host=None):
         require(isinstance(value,str) and value,'Missing product reference')
-        value=value.replace('__TESTROOT__',str(products))
-        if host is not None:value=value.replace('__TESTHOST__',str(host))
-        if platforms is not None:value=value.replace('__PLATFORMS__',str(platforms))
-        require('__' not in value,'Unresolved product reference: '+value)
+        replacements={'__TESTROOT__':str(products)}
+        if host is not None:replacements['__TESTHOST__']=str(host)
+        if platforms is not None:replacements['__PLATFORMS__']=str(platforms)
+        expression='|'.join(map(re.escape,replacements))
+        # Validate the template, then insert bound filesystem paths exactly once.
+        require('__' not in re.sub(expression,'',value),'Unresolved product reference: '+value)
+        value=re.sub(expression,lambda match:replacements[match.group()],value)
         result=Path(value)
         require(result.is_absolute(),'Relative product reference without TESTROOT')
         require(result.exists(),'Missing product reference: '+value);resolved=result.resolve()

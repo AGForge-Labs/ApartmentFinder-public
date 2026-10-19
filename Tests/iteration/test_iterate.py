@@ -383,6 +383,44 @@ class IterationTests(unittest.TestCase):
         value=m.fingerprint(root,PROFILE,{'sdk':'26.2'},m.source_snapshot(root))
         with self.assertRaisesRegex(ValueError,'bundle|product|reference'):m.save_cache(root,PROFILE,cache,value)
 
+    def test_xctestrun_expansion_keeps_double_underscores_in_filesystem_roots_literal(self):
+        m=self.module();root=self.fixture()
+        self.write(root,'ApartmentFinder.xcodeproj/project.pbxproj','generated')
+        for name in ('tmpey__71oo','literal__TESTHOST__','literal__PLATFORMS__','literal__UNKNOWN__'):
+            with self.subTest(directory=name):
+                cache=root/'build'/name;products=cache/'DerivedData/Build/Products';self.build_products(products)
+                self.write(products,'App.app/PlugIns/Tests.xctest/Tests','test-binary')
+                target={'TestHostPath':'__TESTROOT__/App.app',
+                        'TestBundlePath':'__TESTHOST__/PlugIns/Tests.xctest'}
+                (products/'run.xctestrun').write_bytes(plistlib.dumps({'Tests':target}))
+                references=m.xctestrun_references(products/'run.xctestrun',products)
+                self.assertEqual(set(references),{str((products/'App.app').resolve()),
+                    str((products/'App.app/PlugIns/Tests.xctest').resolve())})
+                value=m.fingerprint(root,PROFILE,{'sdk':'26.2'},m.source_snapshot(root))
+                m.save_cache(root,PROFILE,cache,value)
+                self.assertTrue(m.reusable(root,PROFILE,cache,value))
+
+    def test_xctestrun_unknown_or_unbound_template_macros_still_fail(self):
+        m=self.module();root=self.fixture();products=root/'build/Products';self.build_products(products)
+        self.write(products,'__UNKNOWN__/Tests.xctest/Tests','untrusted literal macro directory')
+        for template in ('__UNKNOWN__/Tests.xctest','__TESTROOT__/__UNKNOWN__/Tests.xctest',
+                         '__TESTHOST__/Tests.xctest','__PLATFORMS__/Tests.xctest','__TESTROOT__/__BROKEN'):
+            with self.subTest(template=template):
+                (products/'run.xctestrun').write_bytes(plistlib.dumps({'Tests':{'TestBundlePath':template}}))
+                with self.assertRaisesRegex(ValueError,'Unresolved product reference'):
+                    m.xctestrun_references(products/'run.xctestrun',products)
+
+    def test_xctestrun_platform_macro_inserts_a_literal_bound_platform_path_once(self):
+        m=self.module();root=self.fixture();products=root/'build/Products';self.build_products(products)
+        platforms=root/'build/literal__TESTROOT__/Platforms'
+        agent=self.write(platforms,'iPhoneSimulator.platform/agent','platform runner')
+        target={'TestBundlePath':'__TESTROOT__/Tests.xctest',
+                'TestHostPath':'__PLATFORMS__/iPhoneSimulator.platform/agent'}
+        (products/'run.xctestrun').write_bytes(plistlib.dumps({'Tests':target}))
+        references=m.xctestrun_references(products/'run.xctestrun',products,platforms)
+        self.assertEqual(set(references),{str((products/'Tests.xctest').resolve()),str(agent.resolve())})
+        self.assertEqual(references[str(agent.resolve())]['sha256'],m.sha(agent))
+
     def test_xctestrun_checks_hosts_ui_apps_dependencies_and_bound_platform_bytes(self):
         m=self.module();root=self.fixture();cache=root/'build/cache';products=cache/'DerivedData/Build/Products'
         self.build_products(products);self.write(root,'ApartmentFinder.xcodeproj/project.pbxproj','generated')
