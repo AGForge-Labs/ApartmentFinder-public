@@ -32,6 +32,8 @@ final class AppStore: ObservableObject {
     private var container: ModelContainer?
     private var personalStorageWritable = false
     private var privatePackStore: PrivateDataPackStore?
+    private var publicCatalogSupplement: LocalDataPack?
+    private var loadedBasePack: LocalDataPack?
     var requiresPrivatePack: Bool { pack == nil }
 
     var communities: [Community] { pack?.catalog.communities ?? [] }
@@ -46,7 +48,7 @@ final class AppStore: ObservableObject {
     var communityPlaces: [Place] { places.filter { $0.communityID == selectedCommunityID } }
     var communityPaths: [PathSegment] { paths.filter { $0.communityID == selectedCommunityID } }
 
-    init(storeURL: URL? = nil, resourceBundle: Bundle = .main, packDirectory: URL? = nil) {
+    init(storeURL: URL? = nil, resourceBundle: Bundle = .main, packDirectory: URL? = nil, loadPublicCatalog: Bool = true) {
         if let directory = packDirectory ?? storeURL?.appendingPathExtension("private-packs") {
             privatePackStore = PrivateDataPackStore(directory: directory)
         } else { privatePackStore = try? SharedManifestContainer.privatePacks() }
@@ -57,7 +59,7 @@ final class AppStore: ObservableObject {
             let context = ModelContext(container); context.autosaveEnabled = false; self.context = context
             if let saved = try document("personal-v1") { personal = try PersonalBackup.read(saved.payload) }
             personalStorageWritable = true
-            try loadPack(resourceBundle: resourceBundle)
+            try loadPack(resourceBundle: resourceBundle, loadPublicCatalog: loadPublicCatalog)
         } catch {
             errorMessage = "Local storage could not be loaded: \(error.localizedDescription). Existing files were not replaced."
         }
@@ -76,7 +78,19 @@ final class AppStore: ObservableObject {
         if let record = try document(key) { record.payload = data; record.updatedAt = .now }
         else { context.insert(StoredDocument(key: key, payload: data)) }
     }
-    private func loadPack(resourceBundle: Bundle) throws {
+    private func loadPack(resourceBundle: Bundle, loadPublicCatalog: Bool) throws {
+        if loadPublicCatalog {
+            do { publicCatalogSupplement = try PublicCatalogSupplement.read(from: resourceBundle) }
+            catch { errorMessage = "The bundled public catalog could not be verified. Existing saved data was preserved." }
+        }
+        defer {
+            loadedBasePack = pack
+            if let publicCatalogSupplement {
+                let publicFallback = pack == nil
+                pack = supplementedPack(pack, with: publicCatalogSupplement)
+                if publicFallback { packStatus = "Bundled public map catalog loaded" }
+            }
+        }
         var unreadableSavedPack = false
         if let privatePackStore {
             do {
@@ -100,7 +114,7 @@ final class AppStore: ObservableObject {
                 return
             }
         } catch { unreadableSavedPack = true }
-        // Compatibility for a private full-data build; public sources have only an address index.
+        // Compatibility for existing full-data builds; these keep their original persistence behavior.
         if let catalog = resourceBundle.url(forResource: "catalog", withExtension: "json"),
            let points = resourceBundle.url(forResource: "locations", withExtension: "geojson"),
            let lines = resourceBundle.url(forResource: "paths", withExtension: "geojson") {
@@ -136,8 +150,48 @@ final class AppStore: ObservableObject {
         // Activation has committed. Publish its exact selection even after a late cancellation.
         applyPrivatePack(selected)
     }
+    private func reservedPublicCommunityIDs(in backup: PersonalBackup) -> Set<String> {
+        guard let publicCatalogSupplement else { return [] }
+        let owned = Set(backup.places.map(\.communityID))
+            .union(backup.paths.map(\.communityID))
+            .union(backup.apartmentRules.compactMap(\.communityID))
+            .union(backup.miniRouteCompletions.map(\.groupID))
+        var addresses: [String: Set<String>] = [:]
+        for place in backup.places {
+            addresses[place.communityID, default: []].insert(LocalSearch.addressKey(place.address))
+        }
+        for rule in backup.apartmentRules {
+            if let id = rule.communityID { addresses[id, default: []].insert(LocalSearch.addressKey(rule.address)) }
+        }
+        let stopsByID = Dictionary(backup.stops.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let knownAddresses = publicCatalogSupplement.catalog.communities.flatMap(\.matchingAddresses) +
+            backup.apartmentRules.map(\.address) + backup.places.map(\.address)
+        for receipt in backup.miniRouteCompletions {
+            for id in receipt.scope.stopIDs {
+                guard let stop = stopsByID[id] else {
+                    addresses[receipt.groupID, default: []].insert(""); continue
+                }
+                let resolved = DeliveryAddress.resolve(stop.address, unit: stop.unit, knownAddresses: knownAddresses)
+                addresses[receipt.groupID, default: []].insert(resolved.hasConflictingUnit ? "" : LocalSearch.addressKey(resolved.address))
+            }
+        }
+        return Set(publicCatalogSupplement.catalog.communities.compactMap { community in
+            guard owned.contains(community.id) else { return nil }
+            let supported = Set(community.matchingAddresses.map { LocalSearch.addressKey($0) })
+            // Old paths carry no physical address. Without pin/rule/receipt
+            // evidence, keep their previously personal-only ID reserved.
+            guard let evidence = addresses[community.id], !evidence.isEmpty,
+                  evidence.isSubset(of: supported) else { return community.id }
+            return nil
+        })
+    }
+    private func supplementedPack(_ base: LocalDataPack?, with supplement: LocalDataPack) -> LocalDataPack {
+        PublicCatalogSupplement.applying(supplement, to: base, reservingCommunityIDs: reservedPublicCommunityIDs(in: personal))
+    }
     private func applyPrivatePack(_ selected: PrivateDataPackSelection) {
-        pack = selected.pack; packStatus = "Private map pack installed"
+        loadedBasePack = selected.pack
+        pack = publicCatalogSupplement.map { supplementedPack(selected.pack, with: $0) } ?? selected.pack
+        packStatus = "Private map pack installed"
         rebuildPlaceIndex()
         rebuildApartmentPlan()
         if let selectedCommunityID, !communities.contains(where: { $0.id == selectedCommunityID }) { self.selectedCommunityID = nil }
@@ -166,9 +220,24 @@ final class AppStore: ObservableObject {
         records.places.removeAll { $0.id == place.id }; records.places.append(place)
     } }
     @discardableResult
-    func save(_ path: PathSegment) -> Bool { updatePersonal { records in
-        records.paths.removeAll { $0.id == path.id }; records.paths.append(path)
-    } }
+    func save(_ path: PathSegment) -> Bool {
+        let publicOnlyCommunity = communities.first { community in
+            community.id == path.communityID &&
+                publicCatalogSupplement?.catalog.communities.contains(where: { $0.id == community.id }) == true &&
+                loadedBasePack?.catalog.communities.contains(where: { $0.id == community.id }) != true
+        }
+        return updatePersonal { records in
+            records.paths.removeAll { $0.id == path.id }; records.paths.append(path)
+            if let community = publicOnlyCommunity,
+               !records.apartmentRules.contains(where: { $0.communityID == community.id ||
+                   $0.id == LocalSearch.addressKey(community.address) || LocalSearch.addressKey($0.address) == LocalSearch.addressKey(community.address) }) {
+                // The explicit path save and its exact currently selected public
+                // street identity commit together. Startup never creates rules.
+                records.apartmentRules.append(ApartmentAddressRule(address: community.address, kind: .apartment,
+                    name: community.name, communityID: community.id))
+            }
+        }
+    }
     func search(address: String, unit: String, building: String = "") -> [Place] {
         let found = FinderSearch.locations(address: address, unit: unit, building: building,
                                            places: places, communities: communities)
@@ -246,8 +315,13 @@ final class AppStore: ObservableObject {
         cachedDoorMatches.removeAll()
     }
     private func refreshPersonal(from previous: PersonalBackup) {
+        let communityOwnershipChanged = reservedPublicCommunityIDs(in: previous) != reservedPublicCommunityIDs(in: personal)
+        if communityOwnershipChanged, let publicCatalogSupplement {
+            pack = supplementedPack(loadedBasePack, with: publicCatalogSupplement)
+            packRevision &+= 1
+        }
         let placesChanged = previous.places != personal.places
-        if placesChanged { rebuildPlaceIndex() }
+        if placesChanged || communityOwnershipChanged { rebuildPlaceIndex() }
         let sameDeliveries = previous.stops.count == personal.stops.count && zip(previous.stops, personal.stops).allSatisfy { old, new in
             var comparable = new; comparable.completed = old.completed
             return comparable == old
@@ -255,7 +329,7 @@ final class AppStore: ObservableObject {
         let restoredLegacyScope = personal.miniRouteCompletions.contains { receipt in
             receipt.groupID.hasPrefix("personal-apartment-") && apartmentGroup(receipt.groupID) == nil
         }
-        if !sameDeliveries || placesChanged || previous.paths != personal.paths || restoredLegacyScope ||
+        if !sameDeliveries || placesChanged || communityOwnershipChanged || previous.paths != personal.paths || restoredLegacyScope ||
             previous.apartmentRules != personal.apartmentRules || previous.stopCorrections != personal.stopCorrections {
             rebuildApartmentPlan()
         } else if previous.stops != personal.stops {

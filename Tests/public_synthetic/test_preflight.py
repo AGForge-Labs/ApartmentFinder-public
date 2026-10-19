@@ -325,9 +325,9 @@ class PublicPreflightTests(unittest.TestCase):
 
     def test_reviewed_native_inventory_matches_current_source(self):
         artifact = module('public_preflight_artifact', ROOT / 'scripts/testflight-artifact.py')
-        self.assertEqual(artifact.expected_test_count(ROOT), 115)
+        self.assertEqual(artifact.expected_test_count(ROOT), 126)
         profile = json.loads((ROOT / 'scripts/iteration-profile.json').read_text())
-        self.assertEqual(profile['full_acceptance'], {'native': 75, 'ui': 40, 'original_pngs': 45})
+        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 40, 'original_pngs': 45})
 
 
     def test_public_selection_is_exact_and_excludes_private_acceptance(self):
@@ -335,8 +335,8 @@ class PublicPreflightTests(unittest.TestCase):
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 88),
-            ('native', 'NativeTests', 'ApartmentFinderTests/', 60),
+            ('core', 'Tests/ApartmentCoreTests', '', 108),
+            ('native', 'NativeTests', 'ApartmentFinderTests/', 71),
             ('ui', 'UITests', 'ApartmentFinderUITests/', 2),
         ):
             values = selection[key]

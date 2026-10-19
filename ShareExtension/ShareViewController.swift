@@ -31,13 +31,15 @@ final class ShareViewController: UIViewController {
         }
     }
     private func knownAddresses() throws -> [String] {
-        if let store = try? SharedManifestContainer.privatePacks(), let addresses = try? store.knownAddresses() {
-            return addresses
+        let installed = (try? SharedManifestContainer.privatePacks()).flatMap { try? $0.knownAddresses() }
+        let bundled = Bundle.main.url(forResource: "known-addresses", withExtension: "json").flatMap {
+            try? KnownAddressIndex.read(DataPackPayload.readCatalogFile($0)).addresses
         }
-        guard let url = Bundle.main.url(forResource: "known-addresses", withExtension: "json") else {
-            throw CoreError("The installed app is missing its address index.")
+        if let bundled {
+            return KnownAddressIndex.supplementalAddresses(installed: installed ?? [], bundled: bundled)
         }
-        return try KnownAddressIndex.read(DataPackPayload.readCatalogFile(url)).addresses
+        if let installed { return installed }
+        throw CoreError("The installed app is missing a valid address index.")
     }
     private func attachment(_ provider: NSItemProvider) async throws -> (Data, String) {
         let types = [UTType.zip, .commaSeparatedText, .plainText, .data]

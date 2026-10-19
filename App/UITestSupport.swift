@@ -13,6 +13,15 @@ enum UITestSupport {
         guard UUID(uuidString: id) != nil else { return nil }
         return FileManager.default.temporaryDirectory.appendingPathComponent("UITest-\(id).store")
     }
+    // Keep the original no-pack UI regression explicit after shipping a public bundle.
+    static var loadPublicCatalog: Bool {
+        #if targetEnvironment(simulator)
+        return !(enabled && storeURL() != nil &&
+            ProcessInfo.processInfo.arguments.contains("--without-public-catalog"))
+        #else
+        return true
+        #endif
+    }
     static func preferences() -> UserDefaults {
         guard let testStore = storeURL() else { return .standard }
         return UserDefaults(suiteName: "dev.galaxybigbird.ApartmentFinder.\(testStore.deletingPathExtension().lastPathComponent)") ?? .standard

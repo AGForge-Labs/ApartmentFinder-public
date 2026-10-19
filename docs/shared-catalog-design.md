@@ -1,6 +1,6 @@
-# Shared apartment catalog and corrected pins: proposed boundary
+# Public catalog and later correction sharing
 
-This is a design proposal after the existing fixes and validation. No backend, account, grant, upload or synchronization has been created.
+The source-qualified property catalog is now an authorized public bundle; see [its current boundary](public-catalog.md). The correction-sharing design below remains a future proposal. No backend, account, grant, personal-pin upload or synchronization has been created. The proposed driver-group access controls apply to a later correction workflow, not to the public catalog snapshot.
 
 ## Data separation
 

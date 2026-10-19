@@ -225,6 +225,14 @@ def inspect_ipa(path, config, expected_build):
                       if name.startswith(prefix + 'PlugIns/') and '.appex/' in name}
         expected_extensions = {'ApartmentFinderShare.appex'} if config.get('share_extension') else set()
         require(extensions == expected_extensions, 'IPA is missing the share extension or contains an unexpected extension.')
+        legacy_resources = ('catalog.json', 'locations.geojson', 'paths.geojson')
+        public_resources = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson')
+        has_legacy = any(prefix + name in names for name in legacy_resources)
+        has_public = any(prefix + name in names for name in public_resources)
+        require(not (has_legacy and has_public), 'IPA mixes public and legacy resource families.')
+        resource_names = public_resources if has_public else legacy_resources
+        if has_public or prefix + 'known-addresses.json' in names:
+            resource_names += ('known-addresses.json',)
         if config.get('share_extension'):
             extension = dict(config, **config['share_extension'])
             share = prefix + 'PlugIns/ApartmentFinderShare.appex/'
@@ -238,10 +246,15 @@ def inspect_ipa(path, config, expected_build):
                     'Share extension does not accept a manifest file.')
             require(hashlib.sha256(archive.read(share + 'embedded.mobileprovision')).hexdigest() == extension['profile_sha256'],
                     'Exported extension contains a different provisioning profile.')
-            require(archive.read(share + 'catalog.json') == archive.read(prefix + 'catalog.json'),
-                    'Share extension community catalog differs from the app.')
+            forbidden_resources = legacy_resources + public_resources if has_public else public_resources
+            require(not any(share + name in names for name in forbidden_resources),
+                    'Share extension contains unexpected catalog or GeoJSON resources.')
+            shared_resource = 'known-addresses.json' if has_public else 'catalog.json'
+            require(archive.read(share + shared_resource) == archive.read(prefix + shared_resource),
+                    'Share extension known-address index differs from the app.' if has_public
+                    else 'Share extension community catalog differs from the app.')
         resources = {name: hashlib.sha256(archive.read(prefix + name)).hexdigest()
-                     for name in ('catalog.json', 'locations.geojson', 'paths.geojson')}
+                     for name in resource_names}
     return {'bundle_id': config['bundle_id'], 'team_id': config['team_id'],
             'version': config['marketing_version'], 'build_number': expected_build,
             'ipa_sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'resources_sha256': resources}

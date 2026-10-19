@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "packVersion": "2026.10.14.1",
+  "packVersion": "2026.10.19.1-public",
   "entries": [
     {
       "address": "7960 Rafael Rivera Way",
@@ -366,6 +366,175 @@
       "address": "5175 S Jerry Tarkanian Way",
       "deliveryAddresses": [
         "5175 S JERRY TARKANIAN WAY"
+      ]
+    },
+    {
+      "address": "9490 Bermuda Road",
+      "deliveryAddresses": [
+        "9400 Bermuda Road",
+        "9490 Bermuda Road"
+      ]
+    },
+    {
+      "address": "9850 Bermuda Road",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9405 Eastern Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "304 East Silverado Ranch Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "875 East Silverado Ranch Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "240 East Silverado Ranch Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2325 East Torino Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8610 South Maryland Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10000 South Maryland Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10192 South Maryland Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8400 South Maryland Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8445 Las Vegas Boulevard South",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "1450 East Pebble Road",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10175 Spencer Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "1235 East Shelbourne Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10115 Jeffreys Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10244 Jeffreys Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2675 West Agate Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9000 South Las Vegas Boulevard",
+      "deliveryAddresses": [
+        "9000 South Las Vegas Boulevard"
+      ]
+    },
+    {
+      "address": "555 East Silverado Ranch Boulevard",
+      "deliveryAddresses": [
+        "555 East Silverado Ranch Boulevard"
+      ]
+    },
+    {
+      "address": "2300 East Silverado Ranch Boulevard",
+      "deliveryAddresses": [
+        "2300 East Silverado Ranch Boulevard"
+      ]
+    },
+    {
+      "address": "8805 Jeffreys Street",
+      "deliveryAddresses": [
+        "8805 Jeffreys Street"
+      ]
+    },
+    {
+      "address": "50 East Serene Avenue",
+      "deliveryAddresses": [
+        "20 East Serene Avenue",
+        "26 East Serene Avenue",
+        "32 East Serene Avenue",
+        "38 East Serene Avenue",
+        "44 East Serene Avenue",
+        "50 East Serene Avenue",
+        "56 East Serene Avenue",
+        "62 East Serene Avenue",
+        "68 East Serene Avenue"
+      ]
+    },
+    {
+      "address": "71 East Agate Avenue",
+      "deliveryAddresses": [
+        "15 East Agate Avenue",
+        "19 East Agate Avenue",
+        "23 East Agate Avenue",
+        "27 East Agate Avenue",
+        "31 East Agate Avenue",
+        "35 East Agate Avenue",
+        "39 East Agate Avenue",
+        "43 East Agate Avenue",
+        "47 East Agate Avenue",
+        "51 East Agate Avenue",
+        "55 East Agate Avenue",
+        "59 East Agate Avenue",
+        "63 East Agate Avenue",
+        "67 East Agate Avenue",
+        "71 East Agate Avenue",
+        "75 East Agate Avenue",
+        "79 East Agate Avenue",
+        "83 East Agate Avenue",
+        "87 East Agate Avenue",
+        "91 East Agate Avenue"
+      ]
+    },
+    {
+      "address": "30 East Silverado Ranch Boulevard",
+      "deliveryAddresses": [
+        "30 East Silverado Ranch Boulevard",
+        "40 East Silverado Ranch Boulevard",
+        "50 East Silverado Ranch Boulevard",
+        "60 East Silverado Ranch Boulevard",
+        "70 East Silverado Ranch Boulevard",
+        "90 East Silverado Ranch Boulevard",
+        "110 East Silverado Ranch Boulevard",
+        "130 East Silverado Ranch Boulevard",
+        "150 East Silverado Ranch Boulevard",
+        "170 East Silverado Ranch Boulevard",
+        "180 East Silverado Ranch Boulevard",
+        "190 East Silverado Ranch Boulevard"
+      ]
+    },
+    {
+      "address": "9145 South Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9655 Ensworth Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "6350 S Riley St",
+      "deliveryAddresses": [
+        "6350 S Riley St"
       ]
     }
   ]

@@ -6,8 +6,15 @@ import CryptoKit
 /// A bounded correction of the retained combined Riley source. Saved owner data is never rewritten.
 enum RileyPropertySeparation {
     static func apply(to catalog: inout Catalog, places: inout [Place]) throws {
-        guard catalog.packVersion == "2026.10.14.1",
+        let isPublicVersion = catalog.packVersion == "2026.10.19.1-public"
+        guard catalog.packVersion == "2026.10.14.1" || isPublicVersion,
               let index = catalog.communities.firstIndex(where: { $0.id == "alcove" && $0.address == "6355 S Riley St" }) else { return }
+        // A reviewed public generation may already carry the same separation.
+        // Legacy private inputs retain the original strict collision check below.
+        if isPublicVersion, let separate = catalog.communities.first(where: { $0.id == "alcove-6350" }) {
+            try validateSeparatedPublicShape(original: catalog.communities[index], separate: separate, places: places)
+            return
+        }
         let original = places.filter { $0.communityID == "alcove" }
         let found = original.filter { $0.building == "6" || $0.building == "7" }
         let selectedIDs = Set(found.map(\.id))
@@ -68,7 +75,28 @@ enum RileyPropertySeparation {
         }
     }
 
-    // Only the fingerprint is public; all position records remain in the existing private pack.
+    private static func validateSeparatedPublicShape(original: Community, separate: Community, places: [Place]) throws {
+        let retained = places.filter { $0.communityID == original.id }
+        let moved = places.filter { $0.communityID == separate.id }
+        guard separate.address == "6350 S Riley St", retained.count == 302, moved.count == 154,
+              original.matchingAddresses.allSatisfy({ LocalSearch.addressKey($0) == "6355 s riley st" }),
+              separate.matchingAddresses.allSatisfy({ LocalSearch.addressKey($0) == "6350 s riley st" }),
+              retained.allSatisfy({ $0.address == original.address && $0.building != "6" && $0.building != "7" }),
+              moved.allSatisfy({ $0.address == separate.address && ($0.building == "6" || $0.building == "7") &&
+                  $0.kind == .unitPosition && $0.verification == .sourceMapped && $0.id.hasPrefix("alcove-6350-unit-") }) else {
+            throw CoreError("The separated public Riley directory changed. Its address separation needs review.")
+        }
+        let fingerprintInput = moved.map { position in
+            var original = position
+            original.id = original.id.replacingOccurrences(of: "alcove-6350-unit-", with: "alcove-unit-")
+            return original
+        }
+        guard try sourceFingerprint(fingerprintInput) == expectedSourceFingerprint else {
+            throw CoreError("A separated public Riley source position changed. No address or pin was inferred.")
+        }
+    }
+
+    // The same fingerprint gates both retained private input and its reviewed public projection.
     private static let expectedSourceFingerprint = "da514c901a6e7d6657f1304a4765b43fe9f239771783319bc7370d92c3c1d594"
 
     private static func requiresCountyLabelConfirmation(_ place: Place) -> Bool {

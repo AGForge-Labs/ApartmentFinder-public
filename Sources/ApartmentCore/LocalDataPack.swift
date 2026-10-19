@@ -15,10 +15,13 @@ public struct LocalDataPack: Sendable {
             throw CoreError("The local data pack is unsupported or contains mismatched versions.")
         }
         let communityIDs = Set(catalog.communities.map(\.id)), sourceIDs = Set(catalog.sources.map(\.id))
+        let scopeZIPs = Set(catalog.scopeZIPs)
+        let supportedZIPs: Set<String> = ["89113", "89148", "89123", "89183"]
         guard communityIDs.count == catalog.communities.count, sourceIDs.count == catalog.sources.count,
               Set(points.features.map(\.id)).count == points.features.count,
               Set(lines.features.map(\.id)).count == lines.features.count,
-              Set(catalog.scopeZIPs) == Set(["89113", "89148"]) else { throw CoreError("Invalid or duplicate data-pack identifiers.") }
+              !scopeZIPs.isEmpty, scopeZIPs.count == catalog.scopeZIPs.count,
+              scopeZIPs.isSubset(of: supportedZIPs) else { throw CoreError("Invalid or duplicate data-pack identifiers.") }
         let exceptions = catalog.deliveryAreaExceptions ?? []
         guard exceptions.count <= 1 else { throw CoreError("Unsupported delivery-area exceptions.") }
         let sourceURLs = Dictionary(uniqueKeysWithValues: catalog.sources.map { ($0.id, $0.url) })

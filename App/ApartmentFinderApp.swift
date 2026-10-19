@@ -10,7 +10,7 @@ struct ApartmentFinderApp: App {
         #if DEBUG
         preferences = UITestSupport.preferences()
         UITestSupport.resetInboxIfRequested()
-        _store = StateObject(wrappedValue: AppStore(storeURL: UITestSupport.storeURL()))
+        _store = StateObject(wrappedValue: AppStore(storeURL: UITestSupport.storeURL(), loadPublicCatalog: UITestSupport.loadPublicCatalog))
         #else
         _store = StateObject(wrappedValue: AppStore())
         #endif

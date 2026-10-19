@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "publicFieldsOnly": true,
+  "version": "2026.10.19.1-public",
+  "counts": {
+    "communities": 92,
+    "positions": 14517,
+    "paths": 17,
+    "sources": 513
+  },
+  "sourcePackVersion": "2026.10.14.1",
+  "sourceSHA256": {
+    "catalog.json": "c042837c23c51ec69782eb35d891054ef4985039c2755eb52ab465fb5c1e54b4",
+    "locations.geojson": "4dc8e6c8a9d9bc3d26c07b113f1cb4f9e2d95cce5d665bdab7fed6cb36d90987",
+    "paths.geojson": "a0d8fbc6e4e3ca2b0690bcc3d79e2764a326226faa0d429a82e950cca54a7bc2"
+  },
+  "resourcesSHA256": {
+    "public-catalog.json": "e7e1ed981563762b925735980c30af82355758019fbd9260366826074e8e78fb",
+    "public-locations.geojson": "630c0442ce2b63a71f851a676077705ea4c72dff950d63cb0dddcc2c78cac6c9",
+    "public-paths.geojson": "613c78e9ed7fbef30fee53cf219e04bfd6c1b645e4a7dde1f63d2e47899b0ac8",
+    "known-addresses.json": "9f8aaa707de5f14c6c6159d658b8772e8fbf7d25c22a5a986254093bd087ba5b"
+  }
+}

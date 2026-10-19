@@ -24,6 +24,15 @@ public struct KnownAddressIndex: Codable, Sendable {
             return !key.isEmpty && seen.insert(key).inserted
         }
     }
+    /// The share extension can use new public streets before the main app has
+    /// opened, while retaining addresses from the installed private snapshot.
+    public static func supplementalAddresses(installed: [String], bundled: [String]) -> [String] {
+        var seen = Set(installed.map { LocalSearch.addressKey($0) })
+        return installed + bundled.filter { address in
+            let key = LocalSearch.addressKey(address)
+            return !key.isEmpty && seen.insert(key).inserted
+        }
+    }
     public func data() throws -> Data { try JSONEncoder().encode(self) }
     public static func read(_ data: Data) throws -> Self {
         guard data.count <= 2_000_000 else { throw CoreError("The address index is too large.") }

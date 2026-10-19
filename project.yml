@@ -29,6 +29,12 @@ targets:
       - path: SharedUI
       - path: data/known-addresses.json
         buildPhase: resources
+      - path: data/public-catalog.json
+        buildPhase: resources
+      - path: data/public-locations.geojson
+        buildPhase: resources
+      - path: data/public-paths.geojson
+        buildPhase: resources
     dependencies:
       - package: ApartmentCore
       - package: GoogleNavigation

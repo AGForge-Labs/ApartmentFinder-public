@@ -63,6 +63,7 @@ jobs:
           for input in data/catalog.json data/locations.geojson data/paths.geojson private-data private-baselines; do
             test ! -e "$input"
           done
+          python3 -B scripts/public-catalog.py validate --directory data
           test -z "$(git status --porcelain --untracked-files=all)"
           python3 -B -m unittest discover -s Tests/public_synthetic -v
           python3 -B -m unittest discover -s Tests/signing -v
@@ -161,14 +162,14 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected=2 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 62
+          expected=2 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 73
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           print('\n'.join(identities))
           PY
           FILTERS=()
           while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
-          EXPECTED_NATIVE_COUNT=62
+          EXPECTED_NATIVE_COUNT=73
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=2; fi
           [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then

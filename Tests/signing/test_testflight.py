@@ -282,6 +282,148 @@ class TestFlightChecks(unittest.TestCase):
             with self.assertRaises(KeyError):
                 testflight.inspect_ipa(path, self.config, '3.1')
 
+    def resource_ipa_entries(self, *, public=True, share=False):
+        main = 'Payload/ApartmentFinder.app/'
+        info = {'CFBundleIdentifier': self.config['bundle_id'],
+                'CFBundleShortVersionString': '0.1.0', 'CFBundleVersion': '3.1',
+                'UIDeviceFamily': [1]}
+        names = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson',
+                 'known-addresses.json') if public else ('catalog.json', 'locations.geojson', 'paths.geojson')
+        entries = {main + 'Info.plist': plistlib.dumps(info), main + 'embedded.mobileprovision': self.raw}
+        entries.update({main + name: ('synthetic-resource:' + name).encode() for name in names})
+        if share:
+            share_raw = b'synthetic-share-profile'
+            self.config['share_extension'] = {
+                'bundle_id': self.config['bundle_id'] + '.Share',
+                'profile_sha256': hashlib.sha256(share_raw).hexdigest(),
+            }
+            extension = main + 'PlugIns/ApartmentFinderShare.appex/'
+            share_info = dict(info, CFBundleIdentifier=self.config['share_extension']['bundle_id'],
+                NSExtension={'NSExtensionPointIdentifier': 'com.apple.share-services',
+                             'NSExtensionAttributes': {'NSExtensionActivationRule':
+                                {'NSExtensionActivationSupportsFileWithMaxCount': 1}}})
+            shared_resource = 'known-addresses.json' if public else 'catalog.json'
+            entries.update({extension + 'Info.plist': plistlib.dumps(share_info),
+                            extension + 'embedded.mobileprovision': share_raw,
+                            extension + shared_resource: entries[main + shared_resource]})
+        return entries
+
+    def inspect_resource_ipa(self, entries):
+        with tempfile.TemporaryDirectory() as temp:
+            path = pathlib.Path(temp) / 'synthetic.ipa'
+            with zipfile.ZipFile(path, 'w') as archive:
+                for name, value in entries.items():
+                    archive.writestr(name, value)
+            return testflight.inspect_ipa(path, self.config, '3.1')
+
+    def test_public_resource_family_hashes_all_four_exact_filenames(self):
+        main = 'Payload/ApartmentFinder.app/'
+        entries = self.resource_ipa_entries()
+        result = self.inspect_resource_ipa(entries)
+        expected_names = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson',
+                          'known-addresses.json')
+        self.assertEqual(result['resources_sha256'], {
+            name: hashlib.sha256(entries[main + name]).hexdigest() for name in expected_names})
+
+    def test_legacy_resource_family_hashes_optional_known_addresses_when_included(self):
+        main = 'Payload/ApartmentFinder.app/'
+        entries = self.resource_ipa_entries(public=False)
+        entries[main + 'known-addresses.json'] = b'synthetic-address-index'
+        result = self.inspect_resource_ipa(entries)
+        self.assertEqual(result['resources_sha256'], {
+            name: hashlib.sha256(entries[main + name]).hexdigest()
+            for name in ('catalog.json', 'locations.geojson', 'paths.geojson', 'known-addresses.json')})
+
+    def test_each_resource_family_requires_every_member(self):
+        main = 'Payload/ApartmentFinder.app/'
+        for public in (False, True):
+            entries = self.resource_ipa_entries(public=public)
+            resources = [name for name in entries if name.endswith(('.json', '.geojson'))]
+            for missing in resources:
+                with self.subTest(public=public, missing=missing):
+                    partial = dict(entries)
+                    del partial[missing]
+                    with self.assertRaises((ValueError, KeyError)):
+                        self.inspect_resource_ipa(partial)
+            with self.subTest(public=public, missing='all resources'):
+                with self.assertRaises((ValueError, KeyError)):
+                    self.inspect_resource_ipa({name: value for name, value in entries.items()
+                                               if not name.startswith(main) or name not in resources})
+
+    def test_mixed_public_and_legacy_resource_families_are_rejected(self):
+        main = 'Payload/ApartmentFinder.app/'
+        for public, conflicting in ((True, ('catalog.json', 'locations.geojson', 'paths.geojson')),
+                                    (False, ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson'))):
+            entries = self.resource_ipa_entries(public=public)
+            for extra in conflicting:
+                with self.subTest(public=public, extra=extra):
+                    with self.assertRaisesRegex(ValueError, 'resource families'):
+                        self.inspect_resource_ipa(dict(entries, **{main + extra: b'conflicting-resource'}))
+            with self.subTest(public=public, extra='complete other family'):
+                mixed = dict(entries, **{main + name: b'conflicting-resource' for name in conflicting})
+                with self.assertRaisesRegex(ValueError, 'resource families'):
+                    self.inspect_resource_ipa(mixed)
+
+    def test_public_share_requires_byte_identical_known_addresses(self):
+        main = 'Payload/ApartmentFinder.app/'
+        share = main + 'PlugIns/ApartmentFinderShare.appex/'
+        entries = self.resource_ipa_entries(share=True)
+        result = self.inspect_resource_ipa(entries)
+        self.assertEqual(result['resources_sha256']['known-addresses.json'],
+                         hashlib.sha256(entries[main + 'known-addresses.json']).hexdigest())
+        changed = dict(entries, **{share + 'known-addresses.json': b'different-address-index'})
+        with self.assertRaisesRegex(ValueError, 'known-address index differs'):
+            self.inspect_resource_ipa(changed)
+        del changed[share + 'known-addresses.json']
+        with self.assertRaises((ValueError, KeyError)):
+            self.inspect_resource_ipa(changed)
+
+    def test_public_share_rejects_any_catalog_or_geojson_family_resource(self):
+        share = 'Payload/ApartmentFinder.app/PlugIns/ApartmentFinderShare.appex/'
+        entries = self.resource_ipa_entries(share=True)
+        for extra in ('catalog.json', 'locations.geojson', 'paths.geojson',
+                      'public-catalog.json', 'public-locations.geojson', 'public-paths.geojson'):
+            with self.subTest(extra=extra):
+                with self.assertRaisesRegex(ValueError, 'Share extension.*resource'):
+                    self.inspect_resource_ipa(dict(entries, **{share + extra: b'stale-resource'}))
+
+    def test_legacy_share_rejects_public_resource_family_members(self):
+        share = 'Payload/ApartmentFinder.app/PlugIns/ApartmentFinderShare.appex/'
+        entries = self.resource_ipa_entries(public=False, share=True)
+        self.inspect_resource_ipa(entries)
+        for extra in ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson'):
+            with self.subTest(extra=extra):
+                with self.assertRaisesRegex(ValueError, 'Share extension.*resource'):
+                    self.inspect_resource_ipa(dict(entries, **{share + extra: b'conflicting-resource'}))
+
+    def test_public_family_keeps_app_and_share_security_checks(self):
+        main = 'Payload/ApartmentFinder.app/'
+        share = main + 'PlugIns/ApartmentFinderShare.appex/'
+        entries = self.resource_ipa_entries(share=True)
+        self.inspect_resource_ipa(entries)
+        for prefix in (main, share):
+            with self.subTest(prefix=prefix, field='profile'):
+                with self.assertRaises(ValueError):
+                    self.inspect_resource_ipa(dict(entries, **{prefix + 'embedded.mobileprovision': b'wrong-profile'}))
+            info = plistlib.loads(entries[prefix + 'Info.plist'])
+            for field, value in [('CFBundleIdentifier', 'other.app'), ('CFBundleVersion', '3.0'),
+                                 ('CFBundleShortVersionString', '1.0'), ('UIDeviceFamily', [1, 2]),
+                                 ('GoogleNavigationAPIKey', 'synthetic-enabled'),
+                                 ('GoogleAllowedBundleID', 'synthetic-enabled'),
+                                 ('GoogleQuotasVerifiedUntil', '2027-01-01'),
+                                 ('GeocodingProxyURL', 'https://example.com')]:
+                with self.subTest(prefix=prefix, field=field):
+                    with self.assertRaises(ValueError):
+                        self.inspect_resource_ipa(dict(entries, **{
+                            prefix + 'Info.plist': plistlib.dumps(dict(info, **{field: value}))}))
+        for unexpected in ('Payload/Other.app/Info.plist', main + 'PlugIns/Other.appex/Info.plist'):
+            with self.subTest(unexpected=unexpected):
+                with self.assertRaises(ValueError):
+                    self.inspect_resource_ipa(dict(entries, **{unexpected: b'other'}))
+        with self.assertRaises(ValueError):
+            self.inspect_resource_ipa({name: value for name, value in entries.items()
+                                       if not name.startswith(share)})
+
     def test_cleanup_removes_files_even_when_keychain_restore_fails(self):
         with tempfile.TemporaryDirectory() as temp:
             runner_temp = pathlib.Path(temp)

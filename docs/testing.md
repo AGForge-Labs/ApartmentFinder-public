@@ -8,8 +8,8 @@ It uses one standard `macos-15-intel` job, manual dispatch only, with an exact r
 
 The exact source-checked allowlist in `scripts/public-synthetic-tests.json` selects:
 
-- 88 synthetic core tests: parsing, duplicate deliveries, navigation, GPS freshness, initial framing, manual camera state, completion and rollback
-- 60 synthetic native tests: personal storage, pack migration/failure, Finder independence, selection races, append, completion/undo, location and actual arrow rendering
+- 108 selected core and public-resource tests: parsing, duplicate deliveries, navigation, GPS freshness, initial framing, manual camera state, completion and rollback
+- 71 selected native compatibility tests: personal storage, pack migration/failure, Finder independence, selection races, append, completion/undo, location and actual arrow rendering
 - Two fictional OnTrac UI tests: ZIP preview/cancel/empty day, map display, pin-review cancellation, persistence and relaunch
 
 ### Focused, text-only activation diagnosis
@@ -30,7 +30,9 @@ Explicit test screenshot and unrestricted accessibility attachments are disabled
 
 Diagnostic work has an 85-minute hung-work deadline measured from the first guard step, reserving approximately five minutes inside the 90-minute job timeout for cleanup. Initial guard/checkout/portable steps have diagnostic-only limits of 5/5/10 minutes, and preparation, simulator boot, native work and result processing share the work cutoff. Individual diagnostic tests have a 600-second execution allowance rather than the previous short allowance. Command termination, witness collection and simulator cleanup have bounded waits; original build failures are preserved, and cleanup failure cannot leave an otherwise successful check green. The reserve is a design budget, not an infrastructure timing guarantee. Normal regression mode also uses the practical 90-minute hung-job timeout. Jobs finish when their checks finish; these are safety limits, not target durations.
 
-All other core/native/UI tests remain present. The public check verifies exact passed test identities and rejects zero tests, failures, skips, expected failures, substitutions and missing selected methods. It cannot satisfy private acceptance or authorize release. It does not run the genuine catalog/property tests or the full private validation script.
+All other core/native/UI tests remain present. The public check verifies exact passed test identities and rejects zero tests, failures, skips, expected failures, substitutions and missing selected methods. It cannot satisfy private acceptance or authorize release. It validates the sanitized public resource schema/digests and synthetic catalog overlay behavior. It does not run the retained full original-provenance/property suites or the full private validation script.
+
+The public bundle is checked by `python3 -B scripts/public-catalog.py validate --directory data` before compilation. Original private filenames and private input directories remain forbidden in this public job. The two fictional OnTrac UI cases explicitly disable only the public bundle inside their DEBUG simulator/isolated UUID stores, preserving the original no-pack banner regression. Ordinary app launches load the public catalog.
 
 Portable preparation checks:
 
@@ -47,7 +49,7 @@ GitHub currently lists standard hosted runners as free for public repositories, 
 
 ## Private acceptance and release
 
-The current full source inventory is 75 native tests plus 40 UI tests, with 45 required screenshots. The old 68-native/108-total evidence is insufficient for this source. Source inventory, actual passed identities and result counts must agree, without skipped or substituted tests.
+The current full source inventory is 86 native tests plus 40 UI tests, with 45 required screenshots. The old 68-native/108-total evidence is insufficient for this source. Source inventory, actual passed identities and result counts must agree, without skipped or substituted tests.
 
 Real-data core and native assertions require `APARTMENTFINDER_PRIVATE_PACK_DIRECTORY`, pointing outside the public source tree to genuine `catalog.json`, `locations.geojson` and `paths.geojson`. Supporting provenance assertions also use `APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY`. Missing inputs must fail clearly. Synthetic output is not genuine catalog acceptance.
 
@@ -57,6 +59,14 @@ Remaining private-harness blockers:
 - Most real-property UI tests create a fresh `--test-store` but do not install the private pack into that store. An authorized private test environment needs an explicit isolated pack bootstrap before those cases run.
 - `scripts/validate-ios.sh` exports complete result attachments and uses private-dependent suites. It must not be activated in public Actions.
 
-Private acceptance must cover the real installed data, legacy pack and personal-store migration, extension-before-main upgrade, folder-provider access, app-group sharing/protection, search/route refresh, interrupted/cancelled imports, responsiveness, recording/editor state, personal pin corrections and real-device upgrade. Preserve the original phone installation and a verified private backup. Never distribute a blank-catalog or fictional-data build as an upgrade.
+Private acceptance must cover the real installed data, legacy pack and personal-store migration, extension-before-main upgrade, folder-provider access, app-group sharing/protection, search/route refresh, interrupted/cancelled imports, responsiveness, recording/editor state, personal pin corrections and real-device upgrade. Preserve the original phone installation and a verified private backup. Never distribute a blank-catalog or fictional-data build as an upgrade. The public data projection requires a fresh production decode and real-data property separation checks; synthetic fixture passes do not establish those results.
 
 At commit `ef7f318b1fbd1ee992de315c2ffa82dca24463f0`, the public simulator run compiled the app, Share extension and test targets, and passed 88 core plus 60 native tests. The first selected UI case failed before its chooser appeared; the second started but had no recorded outcome when the run was cancelled near the configured time limit. Those results do not establish full UI or real-device upgrade acceptance. Signed builds and TestFlight submission require their own authorization and validation.
+
+## Public catalog update verification
+
+The catalog update adds 18 selected core tests for safe supplementation and address-index merging, plus 11 native store tests. These cover source-ID/physical-street collisions, fresh fallback, installed/legacy precedence, personal coordinates and bytes, private import/reopen, incomplete public input, path identity, and completion/Undo. Their source inventory is not evidence that Swift compiled or they executed. Record the exact commit and actual identities from the next native run.
+
+The prior shell/layout run on commit `04ea9a117887f5534177780cfa5b267c43ff5c6a` tests the old 88-core/60-native/two-UI selection and cannot validate later catalog changes. The catalog run selects 108 core plus 71 native and two UI cases. Signed build inspection recognizes the complete public resource family and compares the Share extension's address index byte-for-byte; verifier unit fixtures are not signed-app acceptance.
+
+Two additional core methods decode the actual reviewed public resources and check street separation, new-area mapping gaps and the complete Share street index. One additional native method loads the actual production app bundle in an isolated store, without a private import. These are public-data compatibility checks, with execution results recorded separately.

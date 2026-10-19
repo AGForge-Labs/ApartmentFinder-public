@@ -8,7 +8,13 @@
   "wsl_swift": "/home/linuxandy/.local/share/swiftly/toolchains/6.2.3/usr/bin/swift",
   "core_focus": {},
   "native_focus": {
-    "App/DeliveryMapStyle.swift": ["ApartmentFinderUITests/MapAppearanceTests"]
+    "App/DeliveryMapStyle.swift": [
+      "ApartmentFinderUITests/MapAppearanceTests"
+    ]
   },
-  "full_acceptance": {"native": 75, "ui": 40, "original_pngs": 45}
+  "full_acceptance": {
+    "native": 86,
+    "ui": 40,
+    "original_pngs": 45
+  }
 }

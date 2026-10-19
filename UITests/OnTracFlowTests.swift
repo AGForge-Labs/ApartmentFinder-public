@@ -11,6 +11,10 @@ final class OnTracFlowTests: XCTestCase {
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString, "--reset-test-inbox"]
+        if name.contains("testSourceUnitPinAppearsOnMapAfterOnTracImport") ||
+            name.contains("testZIPPreviewCancellationEmptyDayAndApartmentNavigation") {
+            app.launchArguments.append("--without-public-catalog")
+        }
         if syntheticDiagnosticsEnabled {
             app.launchArguments += ["--synthetic-ui-diagnostics", "--synthetic-diagnostic-probe", "toolbar"]
             print("syntheticHarness=toolbar;event=beforeLaunch")
