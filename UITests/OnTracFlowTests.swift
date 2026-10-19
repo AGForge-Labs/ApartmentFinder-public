@@ -2,24 +2,33 @@ import XCTest
 
 final class OnTracFlowTests: XCTestCase {
     private var app: XCUIApplication!
+    private var syntheticDiagnosticsEnabled: Bool {
+        ProcessInfo.processInfo.environment["APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS"] == "1" &&
+            name.contains("testSourceUnitPinAppearsOnMapAfterOnTracImport")
+    }
     override func setUp() {
         super.setUp()
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString, "--reset-test-inbox"]
+        if syntheticDiagnosticsEnabled {
+            app.launchArguments += ["--synthetic-ui-diagnostics", "--synthetic-diagnostic-probe", "toolbar"]
+            print("syntheticHarness=toolbar;event=beforeLaunch")
+        }
         if name.contains("testShuffledOnTracNumbersRemainOrderedAndVisibleAfterRelaunch") {
             app.launchArguments.append("--numbered-ontrac-manifest")
         } else if name.contains("testNewManifestReplacesPreviousApartmentsAndPutsTuscanoStopOneFirst") {
             app.launchArguments.append("--replacement-manifest")
         }
         app.launch()
+        if syntheticDiagnosticsEnabled { print("syntheticHarness=toolbar;event=launchReturned") }
         XCTAssertTrue(app.buttons["apartments.import"].waitForExistence(timeout: 20))
         app.launchArguments.removeAll { $0 == "--reset-test-inbox" }
     }
     override func tearDown() {
         if let app {
             capture("Final screen")
-            if (testRun?.totalFailureCount ?? 0) > 0 {
+            if !syntheticDiagnosticsEnabled && (testRun?.totalFailureCount ?? 0) > 0 {
                 let hierarchy = XCTAttachment(string: app.debugDescription)
                 hierarchy.name = "Accessibility"; hierarchy.lifetime = .keepAlways; add(hierarchy)
             }
@@ -28,6 +37,7 @@ final class OnTracFlowTests: XCTestCase {
         super.tearDown()
     }
     private func capture(_ name: String) {
+        if syntheticDiagnosticsEnabled { return }
         let image = XCTAttachment(screenshot: app.screenshot())
         image.name = name; image.lifetime = .keepAlways; add(image)
     }
@@ -42,7 +52,9 @@ final class OnTracFlowTests: XCTestCase {
         let control = controls.firstMatch
         XCTAssertTrue(control.isEnabled, chooserDiagnostics())
         XCTAssertTrue(control.isHittable, chooserDiagnostics())
+        if syntheticDiagnosticsEnabled { print("syntheticHarness=toolbar;event=beforeTap") }
         control.tap()
+        if syntheticDiagnosticsEnabled { print("syntheticHarness=toolbar;event=tapReturned") }
     }
     private func controlDiagnostics(_ id: String, token: String) -> String {
         let controls = app.buttons.matching(identifier: id)
@@ -54,6 +66,7 @@ final class OnTracFlowTests: XCTestCase {
     }
     // Fixed-key state only: never print alert text, labels, paths or a hierarchy.
     private func chooserDiagnostics() -> String {
+        if syntheticDiagnosticsEnabled { return activationDiagnostics() }
         let fullID = "manifest.file.manifest_2026-01-02.csv"
         let emptyID = "manifest.file.manifest_2026-01-01.csv"
         let anyFull = app.descendants(matching: .any).matching(identifier: fullID)
@@ -76,7 +89,7 @@ final class OnTracFlowTests: XCTestCase {
     }
     func testSourceUnitPinAppearsOnMapAfterOnTracImport() {
         tapTestImport()
-        chooseDay()
+        guard chooseDay() else { return }
         let submit = app.buttons["manifest.import"]; reach(submit); submit.tap()
         XCTAssertTrue(app.buttons["apartment.fictional-courtyard"].waitForExistence(timeout: 10))
         app.buttons["apartment.fictional-courtyard"].tap()
@@ -144,9 +157,81 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["mini.stop.1"].label.contains("4102"))
         capture("Shared OnTrac apartment mini-route")
     }
-    private func chooseDay() {
+    // Screen points only, never GPS. A control center is not evidence of the injected tap point.
+    private func frameDiagnostics(_ frame: CGRect, token: String) -> String {
+        let values = [frame.minX, frame.minY, frame.width, frame.height]
+        guard !frame.isEmpty, values.allSatisfy({ $0.isFinite && abs($0) < 10000 }) else {
+            return "\(token)Frame=invalid"
+        }
+        return "\(token)X=\(Int(frame.minX.rounded()));\(token)Y=\(Int(frame.minY.rounded()));\(token)W=\(Int(frame.width.rounded()));\(token)H=\(Int(frame.height.rounded()))"
+    }
+    private func activationDiagnostics() -> String {
+        let toolbar = app.buttons.matching(identifier: "test.import")
+        let rawStatus = toolbar.count == 1 ? (toolbar.firstMatch.value as? String ?? "") : ""
+        let pattern = "^mixedAttempts=[0-9]{1,3};importAttempts=[0-9]{1,3};shareAttempts=[0-9]{1,3};lastAction=(none|mixed|manifestImport|share|productionImport);fixtureReady=(true|false);loading=(true|false);documents=[0-9]{1,3};errorPresent=(true|false)$"
+        let status = rawStatus.range(of: pattern, options: .regularExpression) != nil ? rawStatus : "toolbarAX=unavailable"
+        let production = app.buttons.matching(identifier: "apartments.import")
+        let rawProduction = production.count == 1 ? (production.firstMatch.value as? String ?? "") : ""
+        let productionPattern = "^mixedAttempts=[0-9]{1,3};importAttempts=[0-9]{1,3};shareAttempts=[0-9]{1,3};productionAttempts=[0-9]{1,3};lastAction=(none|mixed|manifestImport|share|productionImport)$"
+        let productionAX = rawProduction.range(of: productionPattern, options: .regularExpression) != nil
+            ? "productionAX." + rawProduction.replacingOccurrences(of: ";", with: ";productionAX.") : "productionAX=unavailable"
+        var frames = [frameDiagnostics(app.frame, token: "window")]
+        for (query, token) in [(toolbar, "toolbar"),
+                               (production, "production"),
+                               (app.navigationBars.matching(identifier: "Apartments"), "navigation"),
+                               (app.buttons.matching(identifier: "Import private map pack"), "noPackControl")] {
+            if query.count == 1 { frames.append(frameDiagnostics(query.firstMatch.frame, token: token)) }
+            else { frames.append("\(token)Frame=unavailable") }
+        }
+        return "state=\(app.state.rawValue);\(status);\(productionAX);\(frames.joined(separator: ";"))"
+    }
+    private func probeProductionImport() {
+        guard syntheticDiagnosticsEnabled,
+              let storeIndex = app.launchArguments.firstIndex(of: "--test-store"),
+              storeIndex + 1 < app.launchArguments.count,
+              let probeIndex = app.launchArguments.firstIndex(of: "--synthetic-diagnostic-probe"),
+              probeIndex + 1 < app.launchArguments.count else {
+            print("syntheticHarness=production;event=invalidArguments"); return
+        }
+        let deadline = Date().addingTimeInterval(60)
+        func remaining() -> TimeInterval { min(6, max(0, deadline.timeIntervalSinceNow)) }
+        app.terminate()
+        app.launchArguments[storeIndex + 1] = UUID().uuidString
+        app.launchArguments[probeIndex + 1] = "production"
+        guard remaining() > 0 else { print("syntheticHarness=production;event=probeDeadline"); return }
+        print("syntheticHarness=production;event=beforeLaunch")
+        app.launch()
+        print("syntheticHarness=production;event=launchReturned")
+        let importButton = app.buttons["apartments.import"]
+        guard remaining() > 0, importButton.waitForExistence(timeout: remaining()),
+              importButton.isEnabled, importButton.isHittable else {
+            print("syntheticHarness=production;event=controlUnavailable"); return
+        }
+        print("syntheticHarness=production;event=beforeTap")
+        importButton.tap()
+        print("syntheticHarness=production;event=tapReturned")
+        let cancel = app.buttons.matching(identifier: "Cancel").firstMatch
+        let cancelObserved = remaining() > 0 && cancel.waitForExistence(timeout: remaining())
+        print("syntheticHarness=production;event=waitEnded;pickerCancelObserved=\(cancelObserved)")
+        guard cancelObserved, remaining() > 0, cancel.isHittable else { return }
+        cancel.tap()
+        let gone = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: cancel)
+        let dismissed = remaining() > 0 && XCTWaiter.wait(for: [gone], timeout: remaining()) == .completed
+        let returned = dismissed && importButton.exists && importButton.isHittable
+        print("syntheticHarness=production;event=dismissed;pickerGone=\(dismissed);listReturned=\(returned)")
+    }
+    @discardableResult
+    private func chooseDay() -> Bool {
         let day = app.buttons["manifest.file.manifest_2026-01-02.csv"]
-        XCTAssertTrue(day.waitForExistence(timeout: 10), chooserDiagnostics()); day.tap()
+        let originalChooserFound = day.waitForExistence(timeout: 10)
+        if originalChooserFound { day.tap(); return true }
+        let originalDiagnostics = chooserDiagnostics()
+        if !originalChooserFound && syntheticDiagnosticsEnabled {
+            print("syntheticHarness=toolbar;event=chooserMissing;\(originalDiagnostics)")
+            probeProductionImport()
+        }
+        XCTAssertTrue(originalChooserFound, originalDiagnostics)
+        return false
     }
     func testShuffledOnTracNumbersRemainOrderedAndVisibleAfterRelaunch() {
         let mixed = app.buttons["test.mixed"]

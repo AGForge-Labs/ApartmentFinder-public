@@ -4,13 +4,27 @@
 
 The reviewed `.github/workflows/public-synthetic-check.yml` supports manual dispatch only. It requires an explicit approval input and the exact reviewed commit; source pushes do not start it.
 
-It proposes one standard `macos-15-intel` job, manual dispatch only, with an exact reviewed commit, read-only repository permission, no saved credentials, no matrix, no cache or artifact upload, and a 35-minute ceiling. It explicitly checks Intel x86_64, selects Xcode 26.2 build 17C52 and the installed iOS 26.2 runtime, and refuses an image mismatch. It uses the production project specification and builds the app, Share extension and test targets for a disposable simulator. Simulator signing is ad-hoc; it uses no Apple account, distribution credentials or provisioning profile.
+It uses one standard `macos-15-intel` job, manual dispatch only, with an exact reviewed commit, read-only repository permission, no saved credentials, no matrix, no cache or artifact upload, and a 90-minute hung-job timeout. It explicitly checks Intel x86_64, selects Xcode 26.2 build 17C52 and the installed iOS 26.2 runtime, and refuses an image mismatch. It uses the production project specification and builds the app, Share extension and test targets for a disposable simulator. Simulator signing is ad-hoc; it uses no Apple account, distribution credentials or provisioning profile.
 
 The exact source-checked allowlist in `scripts/public-synthetic-tests.json` selects:
 
 - 88 synthetic core tests: parsing, duplicate deliveries, navigation, GPS freshness, initial framing, manual camera state, completion and rollback
 - 60 synthetic native tests: personal storage, pack migration/failure, Finder independence, selection races, append, completion/undo, location and actual arrow rendering
 - Two fictional OnTrac UI tests: ZIP preview/cancel/empty day, map display, pin-review cancellation, persistence and relaunch
+
+### Focused, text-only activation diagnosis
+
+The manual `scope` input defaults to `regression`, preserving the selection above. The separate `activation-diagnostics` scope runs portable checks and exactly two existing test identities: `OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS` and `OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport`. It does not freshly validate the other core/native/UI cases or satisfy full acceptance.
+
+Only that scope forwards `TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1` to XCTest; the focused UI test then explicitly enables app diagnostics with a valid isolated UUID store. This uses Apple's [documented test-runner environment forwarding](https://developer.apple.com/documentation/Xcode-Release-Notes/xcode-13-release-notes). App instrumentation is additionally restricted to DEBUG simulator execution.
+
+If the original chooser is absent, the test saves and logs that original failure state, then tries the real production Import Manifest list button in a fresh UUID store with the same toolbar and no-pack inset. It observes picker-request/Cancel/dismissal state without selecting a file. The original saved failure is still asserted and the caller returns; probe success cannot make the original test pass. The embedded ZIP remains in app tmp, so this probe does not claim Files-provider selection or import coverage.
+
+The app writes two small, fixed-schema scalar witnesses, one per launch. The collector reads only those exact files inside the disposable simulator app container, rejects unexpected keys/types/enums, symlinks and files over 8 KiB, and emits only approved values. No customer data, catalog contents, error text, filenames, paths, UUIDs or GPS coordinates are emitted. Missing/invalid evidence is distinct from a valid zero count. An early zero snapshot is not conclusive proof that no later action ran: if every later write failed, its in-memory write-failure count could not reach disk. The independent toolbar/list AX comparison and recorded phases must be considered together. Logged screen rectangles describe UI geometry, not the actual injected tap coordinate.
+
+Explicit test screenshot and unrestricted accessibility attachments are disabled in this scope. Xcode may still create internal ephemeral result attachments; none are exported or uploaded. There is no image/artifact upload path.
+
+Diagnostic work has an 85-minute hung-work deadline measured from the first guard step, reserving approximately five minutes inside the 90-minute job timeout for cleanup. Initial guard/checkout/portable steps have diagnostic-only limits of 5/5/10 minutes, and preparation, simulator boot, native work and result processing share the work cutoff. Individual diagnostic tests have a 600-second execution allowance rather than the previous short allowance. Command termination, witness collection and simulator cleanup have bounded waits; original build failures are preserved, and cleanup failure cannot leave an otherwise successful check green. The reserve is a design budget, not an infrastructure timing guarantee. Normal regression mode also uses the practical 90-minute hung-job timeout. Jobs finish when their checks finish; these are safety limits, not target durations.
 
 All other core/native/UI tests remain present. The public check verifies exact passed test identities and rejects zero tests, failures, skips, expected failures, substitutions and missing selected methods. It cannot satisfy private acceptance or authorize release. It does not run the genuine catalog/property tests or the full private validation script.
 
@@ -41,4 +55,4 @@ Remaining private-harness blockers:
 
 Private acceptance must cover the real installed data, legacy pack and personal-store migration, extension-before-main upgrade, folder-provider access, app-group sharing/protection, search/route refresh, interrupted/cancelled imports, responsiveness, recording/editor state, personal pin corrections and real-device upgrade. Preserve the original phone installation and a verified private backup. Never distribute a blank-catalog or fictional-data build as an upgrade.
 
-Swift compilation, simulator behavior and real-device upgrade have not been established by portable checks or source publication. Signed builds and TestFlight submission require their own authorization and validation.
+At commit `ef7f318b1fbd1ee992de315c2ffa82dca24463f0`, the public simulator run compiled the app, Share extension and test targets, and passed 88 core plus 60 native tests. The first selected UI case failed before its chooser appeared; the second started but had no recorded outcome when the run was cancelled near the configured time limit. Those results do not establish full UI or real-device upgrade acceptance. Signed builds and TestFlight submission require their own authorization and validation.

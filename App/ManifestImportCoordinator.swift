@@ -14,18 +14,25 @@ final class ManifestImportCoordinator: ObservableObject {
     @Published var error: String?
     @Published var loading = false
     #if DEBUG
-    enum UITestAction: String { case mixed, manifestImport, share }
+    enum UITestAction: String { case mixed, manifestImport, share, productionImport }
     @Published private(set) var uiTestMixedAttempts = 0
     @Published private(set) var uiTestImportAttempts = 0
     @Published private(set) var uiTestShareAttempts = 0
+    @Published private(set) var uiTestProductionAttempts = 0
     @Published private(set) var uiTestLastAction: UITestAction?
+    let uiTestDiagnosticInstance = SyntheticUIDiagnostics.nextCoordinatorInstance()
+    var uiTestActionStatus: String {
+        "mixedAttempts=\(uiTestMixedAttempts);importAttempts=\(uiTestImportAttempts);shareAttempts=\(uiTestShareAttempts);productionAttempts=\(uiTestProductionAttempts);lastAction=\(uiTestLastAction?.rawValue ?? "none")"
+    }
     func recordUITestAction(_ action: UITestAction) {
         uiTestLastAction = action
         switch action {
         case .mixed: uiTestMixedAttempts += 1
         case .manifestImport: uiTestImportAttempts += 1
         case .share: uiTestShareAttempts += 1
+        case .productionImport: uiTestProductionAttempts += 1
         }
+        SyntheticUIDiagnostics.actionEntered(action, imports: self)
     }
     #endif
     private var reading = false
@@ -39,8 +46,16 @@ final class ManifestImportCoordinator: ObservableObject {
     func open(_ url: URL, addresses: [String]) {
         guard !loading, request == nil else { error = "Finish the current import before opening another file."; return }
         loading = true
+        #if DEBUG
+        SyntheticUIDiagnostics.openStarted(self)
+        #endif
         Task {
-            defer { loading = false }
+            defer {
+                loading = false
+                #if DEBUG
+                SyntheticUIDiagnostics.loadingEnded(self)
+                #endif
+            }
             do {
                 let data = try SharedManifestContainer.data(url)
                 let name = url.lastPathComponent
@@ -48,7 +63,15 @@ final class ManifestImportCoordinator: ObservableObject {
                     try ManifestReader.read(data, filename: name, knownAddresses: addresses)
                 }.value
                 request = ManifestImportRequest(documents: documents)
-            } catch { self.error = error.localizedDescription }
+                #if DEBUG
+                SyntheticUIDiagnostics.requestPublished(self)
+                #endif
+            } catch {
+                self.error = error.localizedDescription
+                #if DEBUG
+                SyntheticUIDiagnostics.readFailed(self)
+                #endif
+            }
         }
     }
     func refresh(store: AppStore, includeDeferred: Bool = false) {

@@ -59,8 +59,16 @@ struct ApartmentRoutesView: View {
                     }
                 }
                 Section {
-                    Button("Import Manifest", systemImage: "square.and.arrow.down") { importing = true }
+                    Button("Import Manifest", systemImage: "square.and.arrow.down") {
+                        #if DEBUG
+                        if SyntheticUIDiagnostics.enabled { imports.recordUITestAction(.productionImport) }
+                        #endif
+                        importing = true
+                    }
                         .disabled(imports.loading).accessibilityIdentifier("apartments.import")
+                        #if DEBUG
+                        .modifier(SyntheticDiagnosticStatus(imports: imports))
+                        #endif
                     if imports.loading { ProgressView("Reading manifest…") }
                     if imports.pendingCount > 0 {
                         Button("Review shared manifest") { imports.refresh(store: store, includeDeferred: true) }
@@ -132,6 +140,10 @@ struct ApartmentRoutesView: View {
                 do { imports.open(try result.get(), addresses: store.knownApartmentAddresses) }
                 catch { imports.error = error.localizedDescription }
             }
+            #if DEBUG
+            .onChange(of: importing) { _, requested in SyntheticUIDiagnostics.manifestPickerChanged(requested) }
+            .onChange(of: settings) { _, presented in SyntheticUIDiagnostics.settingsChanged(presented) }
+            #endif
         }
         // Keep the controller alive while the import sheet dismisses; only reset its pushed views.
         .onChange(of: store.personal.activeManifest?.id) { _, _ in path = [] }

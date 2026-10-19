@@ -12,6 +12,14 @@ on:
         description: Exact reviewed 40-character commit to test
         required: true
         type: string
+      scope:
+        description: Regression acceptance subset or focused text-only activation diagnosis
+        required: true
+        type: choice
+        options:
+          - regression
+          - activation-diagnostics
+        default: regression
 permissions:
   contents: read
 concurrency:
@@ -21,25 +29,33 @@ jobs:
   synthetic:
     if: ${{ inputs.approve_runner && github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.event.repository.private == false }}
     runs-on: macos-15-intel
-    timeout-minutes: 35
+    timeout-minutes: 90
     env:
       EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+      PUBLIC_SYNTHETIC_SCOPE: ${{ inputs.scope }}
       HOMEBREW_NO_AUTO_UPDATE: '1'
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
     steps:
       - name: Require the exact reviewed source
+        timeout-minutes: ${{ inputs.scope == 'activation-diagnostics' && 5 || 90 }}
         shell: bash
         run: |
           set -euo pipefail
+          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
+            echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
+          fi
           [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
           [[ "$GITHUB_SHA" == "$EXPECTED_COMMIT" ]]
           [[ "$(uname -m)" == x86_64 ]]
           test -d "$DEVELOPER_DIR"
           [[ "$(xcodebuild -version)" == $'Xcode 26.2\nBuild version 17C52' ]]
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        timeout-minutes: ${{ inputs.scope == 'activation-diagnostics' && 5 || 90 }}
         with:
           persist-credentials: false
       - name: Portable synthetic fixture and validator checks
+        timeout-minutes: ${{ inputs.scope == 'activation-diagnostics' && 10 || 90 }}
         shell: bash
         run: |
           set -euo pipefail
@@ -53,6 +69,7 @@ jobs:
           python3 -B -m unittest discover -s Tests/iteration -v
           node --test --test-reporter=tap services/geocoding/worker.test.mjs
       - name: Selected synthetic core tests with exact identity verification
+        if: ${{ inputs.scope == 'regression' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -70,40 +87,111 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          command -v xcodegen >/dev/null || brew install xcodegen
-          xcodebuild -version
-          xcodegen generate --spec project.yml
+          WORK=()
+          RUN=()
+          TEST_LIMITS=()
+          DIAGNOSTICS_COLLECTED=0
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
+            WORK=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --)
+            export TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1
+            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
+          fi
+          "${WORK[@]}" bash -c 'command -v xcodegen >/dev/null || brew install xcodegen'
+          "${WORK[@]}" xcodebuild -version
+          "${WORK[@]}" xcodegen generate --spec project.yml
           LOCK=ApartmentFinder.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
           mkdir -p "$(dirname "$LOCK")"
           cp Config/Iteration-Package.resolved "$LOCK"
           RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-26-2
-          xcrun simctl list runtimes --json | python3 -c 'import json,sys; assert any(x["identifier"]==sys.argv[1] and x.get("isAvailable") for x in json.load(sys.stdin)["runtimes"]),"Required iOS 26.2 runtime is unavailable"' "$RUNTIME"
-          DEVICE=$(xcrun simctl create "ApartmentFinder synthetic ${GITHUB_RUN_ID}" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro "$RUNTIME")
+          "${WORK[@]}" xcrun simctl list runtimes --json > "$RUNNER_TEMP/runtimes.json"
+          "${WORK[@]}" python3 -c 'import json,sys; assert any(x["identifier"]==sys.argv[1] and x.get("isAvailable") for x in json.load(open(sys.argv[2]))["runtimes"]),"Required iOS 26.2 runtime is unavailable"' "$RUNTIME" "$RUNNER_TEMP/runtimes.json"
+          DEVICE=$("${WORK[@]}" xcrun simctl create "ApartmentFinder synthetic ${GITHUB_RUN_ID}" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro "$RUNTIME")
           [[ "$DEVICE" =~ ^[0-9A-Fa-f-]{36}$ ]]
-          trap 'xcrun simctl shutdown "$DEVICE" >/dev/null 2>&1 || true; xcrun simctl delete "$DEVICE" >/dev/null 2>&1 || true' EXIT
-          xcrun simctl boot "$DEVICE"
-          xcrun simctl bootstatus "$DEVICE" -b
+          cleanup() {
+            local original_status=$?
+            local cleanup_status=0
+            trap - EXIT
+            if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
+              if [[ "$DIAGNOSTICS_COLLECTED" == 0 ]]; then
+                python3 -B scripts/public-synthetic-diagnostics.py collect --device "$DEVICE" || true
+              fi
+              python3 -B - "$DEVICE" <<'PY' || cleanup_status=$?
+          import os,signal,subprocess,sys
+          cleanup_failed=0
+          for operation in ('shutdown','delete'):
+              try:
+                  process=subprocess.Popen(['xcrun','simctl',operation,sys.argv[1]],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+                  try:
+                      status=process.wait(timeout=10)
+                  except subprocess.TimeoutExpired:
+                      try: os.killpg(process.pid,signal.SIGKILL)
+                      except ProcessLookupError: pass
+                      try: process.wait(timeout=2)
+                      except subprocess.TimeoutExpired: pass
+                      status=124
+                  print('syntheticCleanup='+operation+';status='+('complete' if status==0 else 'incomplete'))
+                  if status!=0: cleanup_failed=1
+              except Exception:
+                  print('syntheticCleanup='+operation+';status=incomplete')
+                  cleanup_failed=1
+          sys.exit(cleanup_failed)
+          PY
+            else
+              xcrun simctl shutdown "$DEVICE" >/dev/null 2>&1 || true
+              xcrun simctl delete "$DEVICE" >/dev/null 2>&1 || true
+            fi
+            if [[ "$original_status" == 0 && "$cleanup_status" != 0 ]]; then original_status=$cleanup_status; fi
+            exit "$original_status"
+          }
+          trap cleanup EXIT
+          "${WORK[@]}" xcrun simctl boot "$DEVICE"
+          "${WORK[@]}" xcrun simctl bootstatus "$DEVICE" -b
+          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<'PY'
+          import json,os,sys
+          selection=json.load(open('scripts/public-synthetic-tests.json'))
+          if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
+              focused={'native':['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS'],
+                       'ui':['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
+              for kind,identities in focused.items():
+                  assert set(identities)<=set(selection[kind])
+              selection=focused
+          with open(sys.argv[1],'w') as output: json.dump(selection,output)
+          PY
+          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" > "$RUNNER_TEMP/selected-identities.txt" <<'PY'
+          import json,os,re,sys
+          selection=json.load(open(sys.argv[1]))
+          identities=selection['native']+selection['ui']
+          expected=2 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 62
+          assert len(identities)==len(set(identities))==expected
+          assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
+          print('\n'.join(identities))
+          PY
           FILTERS=()
-          while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < <(
-            python3 -c 'import json; s=json.load(open("scripts/public-synthetic-tests.json")); print("\n".join(s["native"]+s["ui"]))'
-          )
-          xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
+          while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
+          EXPECTED_NATIVE_COUNT=62
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=2; fi
+          [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
+            RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)
+            DIAGNOSTICS_COLLECTED=1
+          fi
+          "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
             -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
-            "${FILTERS[@]}" test
-          xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json"
-          xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/tests.json"
-          python3 -B - "$RUNNER_TEMP" <<'PY'
-          import json,sys
+            "${FILTERS[@]}" "${TEST_LIMITS[@]}" test
+          "${WORK[@]}" xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json"
+          "${WORK[@]}" xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/tests.json"
+          "${WORK[@]}" python3 -B - "$RUNNER_TEMP" <<'PY'
+          import json,os,sys
           from pathlib import Path
           sys.path.insert(0,'scripts')
           from iterate import verify_native_ids,test_counts
-          root=Path(sys.argv[1]); selection=json.load(open('scripts/public-synthetic-tests.json'))
+          root=Path(sys.argv[1]); selection=json.load(open(root/'selected-tests.json'))
           expected=selection['native']+selection['ui']
           assert len(verify_native_ids(json.loads((root/'tests.json').read_text()),expected)) == test_counts('native',(root/'summary.json').read_text())['passed']
-          print(json.dumps(dict(scope='public-synthetic-only',passed=len(expected),full_acceptance=False,release_eligible=False)))
+          print(json.dumps(dict(scope='public-synthetic-'+os.environ['PUBLIC_SYNTHETIC_SCOPE'],passed=len(expected),full_acceptance=False,release_eligible=False)))
           PY
-          python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/checkout-validation"
+          "${WORK[@]}" python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/checkout-validation"

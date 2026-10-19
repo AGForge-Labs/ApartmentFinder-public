@@ -44,10 +44,18 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in if phase == .active { imports.refresh(store: store) } }
         .onChange(of: store.packRevision) { _, _ in finderNavigation.clearPreview(); location.endNavigation() }
         .onChange(of: imports.error) { _, message in if let message { store.errorMessage = message; imports.error = nil } }
+        #if DEBUG
+        .onAppear { SyntheticUIDiagnostics.rootAppeared(store: store, imports: imports, phase: scenePhase) }
+        .onChange(of: scenePhase) { _, phase in SyntheticUIDiagnostics.sceneChanged(phase, store: store, imports: imports) }
+        .onChange(of: importingPack) { _, requested in SyntheticUIDiagnostics.packPickerChanged(requested) }
+        #endif
         .sheet(item: $imports.request) { request in
             ManifestImportView(documents: request.documents, sharing: false, communities: store.communities, rules: store.personal.apartmentRules, save: { document in
                 try imports.commit(document, store: store)
             }, cancel: { imports.cancel() }, discard: request.shared == nil ? nil : { imports.discardPending() })
+            #if DEBUG
+            .onAppear { SyntheticUIDiagnostics.manifestSheetAppeared() }
+            #endif
         }
         .alert("ApartmentFinder",isPresented: Binding(get: { store.errorMessage != nil },set: { if !$0 { store.errorMessage = nil } })) {
             Button("OK") { store.errorMessage = nil }

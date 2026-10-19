@@ -27,7 +27,14 @@ enum UITestSupport {
             throw CoreError("Fictional UI fixtures require an isolated test store.")
         }
         guard store.pack?.catalog.packVersion != "fictional-ontrac-v1" else { return }
-        try store.importPrivatePack(fictionalManifestPayload())
+        SyntheticUIDiagnostics.fixture(.installing, store: store)
+        do {
+            try store.importPrivatePack(fictionalManifestPayload())
+            SyntheticUIDiagnostics.fixture(.ready, store: store)
+        } catch {
+            SyntheticUIDiagnostics.fixture(.failed, store: store)
+            throw error
+        }
     }
     static func fictionalManifestPayload() throws -> DataPackPayload {
         let catalog = #"{"schemaVersion":1,"packVersion":"fictional-ontrac-v1","generatedAt":"2026-01-01","scopeZIPs":["89113","89148"],"sources":[{"id":"fictional-source","title":"Invented regression fixture","url":"https://example.invalid/fictional-map","retrievedAt":"2026-01-01"}],"communities":[{"id":"fictional-courtyard","name":"Fictional Courtyard","address":"1200 Fictional Courtyard Way","zip":"89113","aliases":[],"sourceIDs":["fictional-source"],"researchStatus":"fictional","gapNotes":["Entirely invented parser and storage test fixture."]}],"coverage":{"inventoryComplete":false,"notes":["Fictional test data only."]}}"#
@@ -127,5 +134,183 @@ private struct UITestShareSheet: UIViewControllerRepresentable {
         UIActivityViewController(activityItems: [url], applicationActivities: nil)
     }
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+
+/// Fixed scalars only. Nothing is recorded outside an explicitly isolated simulator probe.
+@MainActor
+enum SyntheticUIDiagnostics {
+    enum Probe: String { case toolbar, production }
+    enum FixturePhase: String { case idle, installing, ready, failed }
+    private enum Event: String {
+        case rootAppeared, sceneChanged, actionEntered, fixtureStarted, fixtureReady, fixtureFailed
+        case openStarted, requestPublished, readFailed, loadingEnded, manifestSheetAppeared
+        case manifestPickerChanged, settingsChanged, packPickerChanged
+    }
+    private struct Snapshot: Encodable {
+        let schemaVersion = 1
+        var probe = "toolbar"
+        var sequence = 0
+        var lastEvent = "rootAppeared"
+        var scenePhase = "unknown"
+        var rootAppearances = 0
+        var coordinatorInstance = 0
+        var actionCount = 0
+        var lastAction = "none"
+        var fixturePhase = "idle"
+        var coordinatorPhase = "idle"
+        var requiresPrivatePack = true
+        var privatePackImportPending = false
+        var loading = false
+        var requestPresent = false
+        var documentCount = 0 // Three means more than the two expected documents.
+        var manifestSheetAppeared = false
+        var manifestPickerRequested = false
+        var settingsPresented = false
+        var packPickerRequested = false
+        var errorPresent = false
+        var writeFailures = 0
+    }
+    private static var snapshot = Snapshot()
+    private static var coordinatorCount = 0
+    private static var probe: Probe? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "--synthetic-diagnostic-probe"),
+              index + 1 < arguments.count else { return nil }
+        return Probe(rawValue: arguments[index + 1])
+    }
+    static var enabled: Bool {
+        #if targetEnvironment(simulator)
+        return UITestSupport.enabled && UITestSupport.storeURL() != nil && probe != nil &&
+            ProcessInfo.processInfo.arguments.contains("--synthetic-ui-diagnostics")
+        #else
+        return false
+        #endif
+    }
+    static func nextCoordinatorInstance() -> Int {
+        guard enabled else { return 0 }
+        coordinatorCount = min(64, coordinatorCount + 1)
+        return coordinatorCount
+    }
+    private static func capture(_ store: AppStore, imports: ManifestImportCoordinator) {
+        snapshot.requiresPrivatePack = store.requiresPrivatePack
+        snapshot.privatePackImportPending = store.privatePackImportPending
+        snapshot.errorPresent = store.errorMessage != nil || imports.error != nil
+        capture(imports)
+    }
+    private static func capture(_ imports: ManifestImportCoordinator) {
+        snapshot.coordinatorInstance = imports.uiTestDiagnosticInstance
+        snapshot.loading = imports.loading
+        snapshot.requestPresent = imports.request != nil
+        snapshot.documentCount = min(3, imports.request?.documents.count ?? 0)
+        snapshot.errorPresent = snapshot.errorPresent || imports.error != nil
+    }
+    static func rootAppeared(store: AppStore, imports: ManifestImportCoordinator, phase: ScenePhase) {
+        guard enabled else { return }
+        snapshot.rootAppearances = min(64, snapshot.rootAppearances + 1)
+        capture(store, imports: imports)
+        setScene(phase)
+        write(.rootAppeared)
+    }
+    static func sceneChanged(_ phase: ScenePhase, store: AppStore, imports: ManifestImportCoordinator) {
+        guard enabled else { return }
+        capture(store, imports: imports)
+        setScene(phase)
+        write(.sceneChanged)
+    }
+    private static func setScene(_ phase: ScenePhase) {
+        switch phase {
+        case .active: snapshot.scenePhase = "active"
+        case .inactive: snapshot.scenePhase = "inactive"
+        case .background: snapshot.scenePhase = "background"
+        @unknown default: snapshot.scenePhase = "unknown"
+        }
+    }
+    static func actionEntered(_ action: ManifestImportCoordinator.UITestAction, imports: ManifestImportCoordinator) {
+        guard enabled else { return }
+        snapshot.actionCount = min(64, snapshot.actionCount + 1)
+        snapshot.lastAction = action.rawValue
+        capture(imports)
+        write(.actionEntered)
+    }
+    static func fixture(_ phase: FixturePhase, store: AppStore) {
+        guard enabled else { return }
+        snapshot.fixturePhase = phase.rawValue
+        snapshot.requiresPrivatePack = store.requiresPrivatePack
+        snapshot.privatePackImportPending = store.privatePackImportPending
+        snapshot.errorPresent = snapshot.errorPresent || phase == .failed
+        switch phase {
+        case .installing: write(.fixtureStarted)
+        case .ready: write(.fixtureReady)
+        case .failed: write(.fixtureFailed)
+        case .idle: break
+        }
+    }
+    static func openStarted(_ imports: ManifestImportCoordinator) {
+        guard enabled else { return }
+        capture(imports)
+        snapshot.coordinatorPhase = "reading"
+        write(.openStarted)
+    }
+    static func requestPublished(_ imports: ManifestImportCoordinator) {
+        guard enabled else { return }
+        capture(imports)
+        snapshot.coordinatorPhase = "published"
+        write(.requestPublished)
+    }
+    static func readFailed(_ imports: ManifestImportCoordinator) {
+        guard enabled else { return }
+        capture(imports)
+        snapshot.coordinatorPhase = "failed"
+        write(.readFailed)
+    }
+    static func loadingEnded(_ imports: ManifestImportCoordinator) {
+        guard enabled else { return }
+        capture(imports)
+        write(.loadingEnded)
+    }
+    static func manifestSheetAppeared() {
+        guard enabled else { return }
+        snapshot.manifestSheetAppeared = true
+        write(.manifestSheetAppeared)
+    }
+    static func manifestPickerChanged(_ requested: Bool) {
+        guard enabled else { return }
+        snapshot.manifestPickerRequested = requested
+        write(.manifestPickerChanged)
+    }
+    static func settingsChanged(_ presented: Bool) {
+        guard enabled else { return }
+        snapshot.settingsPresented = presented
+        write(.settingsChanged)
+    }
+    static func packPickerChanged(_ requested: Bool) {
+        guard enabled else { return }
+        snapshot.packPickerRequested = requested
+        write(.packPickerChanged)
+    }
+    private static func write(_ event: Event) {
+        guard enabled, let probe, snapshot.sequence < 4096 else { return }
+        snapshot.probe = probe.rawValue
+        snapshot.sequence += 1
+        snapshot.lastEvent = event.rawValue
+        do {
+            let directory = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+                .appendingPathComponent("Library/Caches/SyntheticUIDiagnostics", isDirectory: true)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let data = try JSONEncoder().encode(snapshot)
+            guard data.count <= 8192 else { snapshot.writeFailures = min(64, snapshot.writeFailures + 1); return }
+            try data.write(to: directory.appendingPathComponent(probe.rawValue + ".json"), options: .atomic)
+        } catch { snapshot.writeFailures = min(64, snapshot.writeFailures + 1) }
+    }
+}
+
+@MainActor
+struct SyntheticDiagnosticStatus: ViewModifier {
+    @ObservedObject var imports: ManifestImportCoordinator
+    @ViewBuilder func body(content: Content) -> some View {
+        if SyntheticUIDiagnostics.enabled {
+            content.accessibilityValue(Text(verbatim: imports.uiTestActionStatus))
+        } else { content }
+    }
 }
 #endif

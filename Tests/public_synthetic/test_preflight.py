@@ -2,8 +2,13 @@
 import importlib.util
 import base64
 import json
+import os
 from pathlib import Path
 import re
+import subprocess
+import sys
+import tempfile
+import textwrap
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,6 +22,124 @@ def module(name, path):
 
 
 class PublicPreflightTests(unittest.TestCase):
+    def test_diagnostic_witness_is_opt_in_simulator_only_and_data_minimized(self):
+        support = (ROOT / 'App/UITestSupport.swift').read_text()
+        self.assertIn('enum SyntheticUIDiagnostics', support)
+        witness = support.split('enum SyntheticUIDiagnostics', 1)[1]
+        for gate in ('targetEnvironment(simulator)', '--synthetic-ui-diagnostics',
+                     '--synthetic-diagnostic-probe', 'UITestSupport.storeURL() != nil'):
+            self.assertIn(gate, witness)
+        self.assertIn('SyntheticUIDiagnostics', witness)
+        self.assertIn('Library/Caches/SyntheticUIDiagnostics', witness)
+        self.assertIn('options: .atomic', witness)
+        for forbidden in ('localizedDescription', 'lastPathComponent', 'debugDescription',
+                          'store.personal', 'print(', 'NSLog('):
+            self.assertNotIn(forbidden, witness)
+        root = (ROOT / 'App/RootView.swift').read_text()
+        self.assertIn('SyntheticUIDiagnostics.rootAppeared(', root)
+        self.assertIn('SyntheticUIDiagnostics.sceneChanged(', root)
+        self.assertIn('SyntheticUIDiagnostics.manifestSheetAppeared()', root)
+        coordinator = (ROOT / 'App/ManifestImportCoordinator.swift').read_text()
+        for event in ('actionEntered', 'openStarted', 'requestPublished', 'readFailed', 'loadingEnded'):
+            self.assertIn('SyntheticUIDiagnostics.' + event, coordinator)
+
+    def test_swift_writer_and_host_reader_use_the_same_fixed_schema(self):
+        support = (ROOT / 'App/UITestSupport.swift').read_text()
+        snapshot = support.split('private struct Snapshot: Encodable {', 1)[1].split('\n    }', 1)[0]
+        fields = re.findall(r'^\s*(?:let|var) (\w+) = ("[^"\n]*"|true|false|[0-9]+)', snapshot, re.M)
+        value = {key: json.loads(literal) for key, literal in fields}
+        diagnostics = module('public_preflight_diagnostics', ROOT / 'scripts/public-synthetic-diagnostics.py')
+        self.assertEqual(set(value), set(diagnostics.SCHEMA_FIELDS))
+        value.update(sequence=1, rootAppearances=1, coordinatorInstance=1)
+        with tempfile.TemporaryDirectory() as temporary:
+            container = Path(temporary).resolve()
+            directory = container / 'Library/Caches/SyntheticUIDiagnostics'
+            directory.mkdir(parents=True)
+            (directory / 'toolbar.json').write_text(json.dumps(value))
+            status, decoded = diagnostics.read_witness(container, 'toolbar')
+        self.assertEqual(status, 'valid')
+        self.assertEqual(decoded, value)
+
+    def test_failure_only_probe_cannot_turn_the_original_chooser_failure_green(self):
+        source = (ROOT / 'UITests/OnTracFlowTests.swift').read_text()
+        self.assertIn('APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS', source)
+        self.assertIn('let originalChooserFound = day.waitForExistence(timeout: 10)', source)
+        self.assertIn('let originalDiagnostics = chooserDiagnostics()', source)
+        self.assertIn('if !originalChooserFound && syntheticDiagnosticsEnabled', source)
+        self.assertIn('probeProductionImport()', source)
+        self.assertIn('XCTAssertTrue(originalChooserFound, originalDiagnostics)', source)
+        helper = source.split('private func probeProductionImport()', 1)[1].split('\n    private func chooseDay()', 1)[0]
+        self.assertNotIn('XCTAssert', helper)
+        self.assertIn('app.launchArguments[storeIndex + 1] = UUID().uuidString', helper)
+        self.assertIn('app.buttons["apartments.import"]', helper)
+        self.assertIn('importButton.tap()', helper)
+        self.assertNotIn('withNormalizedOffset', helper)
+        self.assertNotIn('fixture', helper.lower())
+        routes = (ROOT / 'App/ApartmentRoutesView.swift').read_text()
+        self.assertIn('imports.recordUITestAction(.productionImport)', routes)
+        self.assertIn('.fileImporter(isPresented: $importing', routes)
+        self.assertNotIn('--hide-test-toolbar', routes)
+        capture = source.split('private func capture(_ name: String) {', 1)[1].split('\n    }', 1)[0]
+        self.assertIn('if syntheticDiagnosticsEnabled { return }', capture)
+        self.assertIn('if !syntheticDiagnosticsEnabled &&', source)
+
+    def test_diagnostic_scope_keeps_selection_and_allows_practical_hung_job_cleanup(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        self.assertIn('activation-diagnostics', workflow)
+        self.assertIn('default: regression', workflow)
+        self.assertIn('timeout-minutes: 90', workflow)
+        self.assertIn('85 * 60', workflow)
+        self.assertIn("inputs.scope == 'activation-diagnostics' && 5 || 90", workflow)
+        self.assertIn("inputs.scope == 'activation-diagnostics' && 10 || 90", workflow)
+        self.assertIn('-default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600', workflow)
+        self.assertNotIn('timeout-minutes: 35', workflow)
+        self.assertNotIn('32 * 60', workflow)
+        self.assertIn('TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1', workflow)
+        self.assertIn('public-synthetic-diagnostics.py run', workflow)
+        self.assertIn('PUBLIC_SYNTHETIC_SCOPE', workflow)
+        self.assertNotIn('done < <(', workflow)
+        self.assertIn('"${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT"', workflow)
+        self.assertIn('sys.exit(cleanup_failed)', workflow)
+        self.assertIn('local original_status=$?', workflow)
+        self.assertNotIn('upload-artifact', workflow)
+        self.assertIn('testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS', workflow)
+        self.assertIn('testSourceUnitPinAppearsOnMapAfterOnTracImport', workflow)
+
+    def test_workflow_identity_producer_rejects_empty_duplicate_and_invalid_selections(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        header = '"${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" > "$RUNNER_TEMP/selected-identities.txt" <<\'PY\''
+        code = textwrap.dedent(workflow.split(header + '\n', 1)[1].split('\n          PY', 1)[0])
+        expected = {'native': ['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS'],
+                    'ui': ['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
+        invalid = ({'native': [], 'ui': []}, {'native': expected['native'] * 2, 'ui': []},
+                   {'native': ['unsafe;extra'], 'ui': expected['ui']})
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / 'selection.json'
+            for selection in (expected, *invalid):
+                source.write_text(json.dumps(selection))
+                result = subprocess.run([sys.executable, '-B', '-', str(source)], input=code,
+                    text=True, capture_output=True, timeout=2,
+                    env={**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': 'activation-diagnostics'})
+                if selection == expected:
+                    self.assertEqual(result.returncode, 0)
+                    self.assertEqual(result.stdout.splitlines(), expected['native'] + expected['ui'])
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertEqual(result.stdout, '')
+
+    def test_workflow_cleanup_cannot_hide_a_failure_or_ignore_incomplete_cleanup(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        body = workflow.split('          cleanup() {\n', 1)[1].split('\n          trap cleanup EXIT', 1)[0]
+        cleanup = textwrap.dedent('          cleanup() {\n' + body)
+        for original, cleanup_result, expected in ((0, 0, 0), (0, 1, 1), (65, 1, 65), (124, 1, 124)):
+            with self.subTest(original=original, cleanup=cleanup_result):
+                script = ('set -euo pipefail\nPUBLIC_SYNTHETIC_SCOPE=activation-diagnostics\n'
+                          'DIAGNOSTICS_COLLECTED=1\nDEVICE=synthetic-only\n'
+                          f'python3() {{ return {cleanup_result}; }}\n' + cleanup +
+                          f'\ntrap cleanup EXIT\nexit {original}\n')
+                result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=2)
+                self.assertEqual(result.returncode, expected, result.stderr)
+
     def test_debug_manifest_buttons_are_individual_native_toolbar_controls(self):
         support = (ROOT / 'App/UITestSupport.swift').read_text()
         controls = support.split('struct UITestManifestControls:', 1)[1].split('private struct UITestShareSheet:', 1)[0]
