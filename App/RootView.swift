@@ -14,18 +14,8 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     private enum RootTab: Hashable { case apartments, finder }
     var body: some View {
-        // Keep both children in stable slots so each retains its own navigation stack and map state.
-        TabView(selection: $selectedTab) {
-            ApartmentRoutesView(store: store, imports: imports, location: location)
-                .tabItem { Label("Apartments", systemImage: "building.2") }
-                .tag(RootTab.apartments)
-            FinderView(store: store, location: location, navigation: finderNavigation,
-                       offline: $offline)
-                .tabItem { Label("Finder", systemImage: "magnifyingglass") }
-                .tag(RootTab.finder)
-        }
-        .disabled(store.privatePackImportPending)
-        .safeAreaInset(edge: .top) {
+        // Allocate banner space outside navigation bars, keeping their controls reachable.
+        VStack(spacing: 0) {
             if store.requiresPrivatePack {
                 VStack(spacing: 6) {
                     Text("Private map data is not installed.").font(.subheadline)
@@ -38,6 +28,17 @@ struct RootView: View {
                 .modifier(SyntheticBannerHitTestProbe())
                 #endif
             }
+            // Stable slots retain both navigation stacks and maps when the banner disappears.
+            TabView(selection: $selectedTab) {
+                ApartmentRoutesView(store: store, imports: imports, location: location)
+                    .tabItem { Label("Apartments", systemImage: "building.2") }
+                    .tag(RootTab.apartments)
+                FinderView(store: store, location: location, navigation: finderNavigation,
+                           offline: $offline)
+                    .tabItem { Label("Finder", systemImage: "magnifyingglass") }
+                    .tag(RootTab.finder)
+            }
+            .disabled(store.privatePackImportPending)
         }
         .fileImporter(isPresented: $importingPack, allowedContentTypes: [.folder]) { result in
             importSelectedPrivatePack(result, into: store, location: location)

@@ -88,6 +88,11 @@ final class OnTracFlowTests: XCTestCase {
         return "state=\(app.state.rawValue);appAlert=\(app.alerts["ApartmentFinder"].exists);importAlert=\(app.alerts["Could not import"].exists);settings=\(app.navigationBars["Settings"].exists);preview=\(app.navigationBars["Preview manifest"].exists);fullButtons=\(app.buttons.matching(identifier: fullID).count);emptyButtons=\(app.buttons.matching(identifier: emptyID).count);fullAny=\(anyFull.count);fullType=\(type);submit=\(submit.exists);submitEnabled=\(submit.exists && submit.isEnabled);overlap=\(overlap);equalFrames=\(equalFrames);\(geometry);\(status)"
     }
     func testSourceUnitPinAppearsOnMapAfterOnTracImport() {
+        let packImport = app.buttons["Import private map pack"]
+        XCTAssertTrue(packImport.waitForExistence(timeout: 5))
+        XCTAssertTrue(packImport.isEnabled)
+        XCTAssertTrue(packImport.isHittable)
+        XCTAssertFalse(packImport.frame.intersects(app.navigationBars["Apartments"].frame))
         tapTestImport()
         guard chooseDay() else { return }
         let submit = app.buttons["manifest.import"]; reach(submit); submit.tap()

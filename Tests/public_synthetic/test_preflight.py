@@ -109,6 +109,30 @@ class PublicPreflightTests(unittest.TestCase):
         self.assertLess(chooser.index('probeToolbarHitRegion("toolbarRecheck")'), chooser.index('XCTAssertTrue(originalChooserFound, originalDiagnostics)'))
         self.assertIn('return false', chooser)
 
+    def test_no_pack_banner_has_its_own_layout_slot_and_preserves_pack_import(self):
+        source = (ROOT / 'App/RootView.swift').read_text()
+        layout = source.split('    var body: some View {', 1)[1].split('        .fileImporter(', 1)[0]
+        self.assertIn('VStack(spacing: 0)', layout)
+        self.assertEqual(layout.count('TabView(selection: $selectedTab)'), 1)
+        self.assertNotIn('.safeAreaInset(', layout)
+        self.assertLess(layout.index('if store.requiresPrivatePack'), layout.index('TabView(selection: $selectedTab)'))
+        self.assertIn('Button("Import private map pack", systemImage: "folder") { importingPack = true }', layout)
+        self.assertIn('.disabled(store.privatePackImportPending || location.recordingNeedsFinish)', layout)
+        self.assertRegex(layout, r'TabView\(selection: \$selectedTab\) \{[\s\S]*\}\s+\.disabled\(store.privatePackImportPending\)\s+\}')
+        for boundary in ('.fileImporter(isPresented: $importingPack, allowedContentTypes: [.folder])',
+                         'importSelectedPrivatePack(result, into: store, location: location)',
+                         '.onOpenURL { url in imports.open(', '.task { imports.refresh(store: store) }',
+                         '.sheet(item: $imports.request)', '.alert("ApartmentFinder"'):
+            self.assertIn(boundary, source)
+        self.assertNotIn('.id(', layout)
+        self.assertNotIn('.ignoresSafeArea(', layout)
+        ui = (ROOT / 'UITests/OnTracFlowTests.swift').read_text()
+        flow = ui.split('func testSourceUnitPinAppearsOnMapAfterOnTracImport() {', 1)[1].split('\n    func test', 1)[0]
+        self.assertLess(flow.index('let packImport = app.buttons["Import private map pack"]'), flow.index('tapTestImport()'))
+        for check in ('XCTAssertTrue(packImport.isEnabled)', 'XCTAssertTrue(packImport.isHittable)',
+                      'XCTAssertFalse(packImport.frame.intersects(app.navigationBars["Apartments"].frame))'):
+            self.assertIn(check, flow)
+
     def test_picker_witness_is_bounded_positive_only_and_never_loads_views(self):
         support = (ROOT / 'App/UITestSupport.swift').read_text()
         sampler = support.split('private static func observeDocumentPicker()', 1)[1].split('private static func write(', 1)[0]
