@@ -87,8 +87,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          WORK=()
-          RUN=()
+          WORK=(env)
+          RUN=(env)
           TEST_LIMITS=()
           DIAGNOSTICS_COLLECTED=0
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
@@ -181,7 +181,7 @@ jobs:
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
-            "${FILTERS[@]}" "${TEST_LIMITS[@]}" test
+            "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test
           "${WORK[@]}" xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json"
           "${WORK[@]}" xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/tests.json"
           "${WORK[@]}" python3 -B - "$RUNNER_TEMP" <<'PY'

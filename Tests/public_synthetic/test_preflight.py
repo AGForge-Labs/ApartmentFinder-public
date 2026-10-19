@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -169,6 +170,43 @@ class PublicPreflightTests(unittest.TestCase):
         self.assertNotIn('upload-artifact', workflow)
         self.assertIn('testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS', workflow)
         self.assertIn('testSourceUnitPinAppearsOnMapAfterOnTracImport', workflow)
+
+    def test_workflow_command_prefixes_are_nonempty_for_macos_nounset_in_both_scopes(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        preamble = '          WORK=' + workflow.split('          WORK=', 1)[1].split('          "${WORK[@]}" bash', 1)[0]
+        run_selection = re.search(r'^          if \[\[ "\$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics \]\]; then\n            RUN=.*?^          fi', workflow, re.M | re.S).group()
+        capture = shlex.quote(sys.executable) + ' -c ' + shlex.quote('import json,sys; print(json.dumps(sys.argv[1:]))')
+        for scope in ('regression', 'activation-diagnostics'):
+            with self.subTest(scope=scope):
+                script = ('set -euo pipefail\nPUBLIC_SYNTHETIC_SCOPE=' + scope +
+                          '\nDIAGNOSTIC_WORK_DEADLINE=12345\nDEVICE=synthetic-device\n' +
+                          textwrap.dedent(preamble) + textwrap.dedent(run_selection) + '\n' +
+                          capture + ' "${WORK[@]}"\n' + capture + ' "${RUN[@]}"\n')
+                result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=2)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                work, run = map(json.loads, result.stdout.splitlines())
+                if scope == 'regression':
+                    self.assertEqual(work, ['env'])
+                    self.assertEqual(run, ['env'])
+                else:
+                    self.assertEqual(work, ['python3', '-B', 'scripts/public-synthetic-diagnostics.py',
+                        'work', '--deadline-epoch', '12345', '--'])
+                    self.assertEqual(run, ['python3', '-B', 'scripts/public-synthetic-diagnostics.py',
+                        'run', '--deadline-epoch', '12345', '--device', 'synthetic-device', '--'])
+
+    def test_workflow_optional_test_flags_are_nounset_safe_and_preserve_argument_boundaries(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        expansion = '${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"}'
+        self.assertIn('"${FILTERS[@]}" ' + expansion + ' test', workflow)
+        self.assertNotIn('"${FILTERS[@]}" "${TEST_LIMITS[@]}" test', workflow)
+        capture = shlex.quote(sys.executable) + ' -c ' + shlex.quote('import json,sys; print(json.dumps(sys.argv[1:]))')
+        for assignment, expected in (('()', ['before', 'after']),
+                ('("-flag" "value with spaces" "literal*")', ['before', '-flag', 'value with spaces', 'literal*', 'after'])):
+            with self.subTest(assignment=assignment):
+                script = 'set -euo pipefail\nTEST_LIMITS=' + assignment + '\n' + capture + ' before ' + expansion + ' after\n'
+                result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=2)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout), expected)
 
     def test_workflow_identity_producer_rejects_empty_duplicate_and_invalid_selections(self):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
