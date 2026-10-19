@@ -20,7 +20,7 @@ PROFILE={'schema_version':1,'scheme':'ApartmentFinder','project':'ApartmentFinde
  'core_focus':{'Sources/ApartmentCore/MiniRouteCameraFraming.swift':['MiniRouteCameraFramingTests']},
  'native_focus':{'App/DeliveryMapStyle.swift':['ApartmentFinderUITests/MapAppearanceTests'],
  'Sources/ApartmentCore/MiniRouteCameraFraming.swift':['ApartmentFinderUITests/AutomaticLocationTests','ApartmentFinderUITests/HeadingUpNavigationTests','ApartmentFinderUITests/ApartmentMiniRouteTests']},
- 'full_acceptance':{'native':68,'ui':40,'original_pngs':45}}
+ 'full_acceptance':{'native':74,'ui':40,'original_pngs':45}}
 
 class IterationTests(unittest.TestCase):
     @classmethod
@@ -198,7 +198,8 @@ class IterationTests(unittest.TestCase):
         def fake(argv,cwd,log,timeout,expected,env=None):
             self.write(root,'App/DeliveryMapStyle.swift','changed while testing');Path(log).write_text('Executed 8 tests, with 0 failures (0 unexpected)')
             return {'exit_code':0,'elapsed_seconds':.01,'log':str(log),'argv':argv}
-        with patch.object(m,'run_command',side_effect=fake):receipt=m.execute(root,plan)
+        with patch.object(m,'run_command',side_effect=fake), patch.object(m,'local_binding',return_value=None):
+            receipt=m.execute(root,plan)
         self.assertEqual(receipt['status'],'obsolete-source-changed');self.assertFalse(receipt['full_acceptance'])
     def test_plan_is_read_only_and_all_receipts_are_outside_release_evidence(self):
         m=self.module();root=self.fixture();self.write(root,'App/DeliveryMapStyle.swift','new');before=m.source_snapshot(root)
@@ -347,7 +348,8 @@ class IterationTests(unittest.TestCase):
             body='TAP version 13\n# Subtest: proxy\nok 1 - proxy\n# tests 1\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n' if '--test' in argv else 'Ran 1 test in 0.01s\n\nOK\n'
             Path(log).write_text(body)
             return {'exit_code':0,'elapsed_seconds':.01,'log':str(log),'argv':argv}
-        with patch.object(m,'run_command',side_effect=fake):
+        with patch.object(m,'run_command',side_effect=fake), patch.dict(os.environ, {key:'' for key in
+          ('NODE_OPTIONS','NODE_PATH','PYTHONPATH','PYTHONHOME','SWIFT_EXEC','SDKROOT','XCODE_XCCONFIG_FILE')}):
             first=m.execute(root,m.make_plan(root,'local',portable_only=True))
             second=m.execute(root,m.make_plan(root,'local',portable_only=True))
             node=lambda receipt:next(c for c in receipt['commands'] if c['kind']=='node')

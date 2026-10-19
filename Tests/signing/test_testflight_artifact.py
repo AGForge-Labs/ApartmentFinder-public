@@ -2,11 +2,13 @@ import hashlib
 import importlib.util
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,24 +23,32 @@ class PreservedArtifactTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name)
+        # Verifier unit tests inspect synthetic resource digests, never the owner's
+        # private catalog. This directory is not native or release acceptance.
+        self.fixture_root = self.directory / 'synthetic-checkout'
+        for folder in ('Config', 'NativeTests', 'UITests'):
+            shutil.copytree(ROOT / folder, self.fixture_root / folder)
+        (self.fixture_root / 'data').mkdir()
+        for name in ('catalog.json', 'locations.geojson', 'paths.geojson'):
+            (self.fixture_root / 'data' / name).write_text(json.dumps({'synthetic-verifier-resource': name}))
         signed = self.directory / 'testflight'
         signed.mkdir()
         ipa = signed / 'ApartmentFinder-TestFlight.ipa'
         ipa.write_bytes(b'fixture-signed-ipa')
         self.commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-        config = json.loads((ROOT / 'Config/TestFlight.json').read_text(encoding='utf-8'))
+        config = json.loads((self.fixture_root / 'Config/TestFlight.json').read_text(encoding='utf-8'))
         self.actual = {
             'bundle_id': config['bundle_id'], 'team_id': config['team_id'],
             'version': config['marketing_version'], 'build_number': '12.1',
             'ipa_sha256': hashlib.sha256(ipa.read_bytes()).hexdigest(),
             'resources_sha256': {
-                name: hashlib.sha256((ROOT / 'data' / name).read_bytes()).hexdigest()
+                name: hashlib.sha256((self.fixture_root / 'data' / name).read_bytes()).hexdigest()
                 for name in ('catalog.json', 'locations.geojson', 'paths.geojson')
             },
         }
         self.write_manifest()
         (signed / 'SHA256.txt').write_text(self.actual['ipa_sha256'] + '  ApartmentFinder-TestFlight.ipa\n')
-        self.summary = {'result': 'Passed', 'passedTests': 108, 'totalTestCount': 108,
+        self.summary = {'result': 'Passed', 'passedTests': 114, 'totalTestCount': 114,
                         'failedTests': 0, 'skippedTests': 0, 'expectedFailures': 0}
         self.write_summary()
         attachments = self.directory / 'test-attachments'
@@ -61,19 +71,23 @@ class PreservedArtifactTests(unittest.TestCase):
         (self.directory / 'test-summary.json').write_text(json.dumps(self.summary))
 
     def verify(self, digest=None):
-        return artifact.verify(self.directory, '12.1', digest or self.actual['ipa_sha256'],
-                               root=ROOT, commit=self.commit,
-                               inspect=lambda _ipa, _config, _version: self.actual)
+        # Git provenance is independent of resource hashing in this isolated unit
+        # fixture; command-line tests below still exercise the real checkout HEAD.
+        checkout_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True)
+        with patch.object(artifact.subprocess, 'check_output', return_value=checkout_commit):
+            return artifact.verify(self.directory, '12.1', digest or self.actual['ipa_sha256'],
+                                   root=self.fixture_root, commit=self.commit,
+                                   inspect=lambda _ipa, _config, _version: self.actual)
 
     def test_exact_signed_build_and_reviewed_screenshots_pass(self):
         result = self.verify()
-        self.assertEqual(result['native_tests'], 108)
+        self.assertEqual(result['native_tests'], 114)
         self.assertEqual(result['required_screenshots'], 45)
 
     def test_native_evidence_can_be_checked_without_signing_or_an_ipa(self):
         (self.directory / 'testflight' / 'ApartmentFinder-TestFlight.ipa').unlink()
         result = artifact.verify_native_evidence(self.directory, root=ROOT)
-        self.assertEqual(result, {'native_tests': 108, 'required_screenshots': 45})
+        self.assertEqual(result, {'native_tests': 114, 'required_screenshots': 45})
 
     def test_native_only_command_checks_evidence_without_entering_signing(self):
         (self.directory / 'testflight' / 'ApartmentFinder-TestFlight.ipa').unlink()
@@ -82,7 +96,7 @@ class PreservedArtifactTests(unittest.TestCase):
                                 env=dict(os.environ, GITHUB_SHA=self.commit))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout),
-                         {'commit': self.commit, 'native_tests': 108, 'required_screenshots': 45})
+                         {'commit': self.commit, 'native_tests': 114, 'required_screenshots': 45})
         result = subprocess.run(command + ['--write-outputs'], cwd=ROOT, text=True,
                                 capture_output=True, env=dict(os.environ, GITHUB_SHA=self.commit))
         self.assertNotEqual(result.returncode, 0)
@@ -115,6 +129,7 @@ class PreservedArtifactTests(unittest.TestCase):
                         {'passedTests': 97, 'totalTestCount': 97},
                         {'passedTests': 98, 'totalTestCount': 98},
                         {'passedTests': 105, 'totalTestCount': 105},
+                        {'passedTests': 108, 'totalTestCount': 108},
                         {'passedTests': 60}, {'result': 'Failed'},
                         {'failedTests': 1}, {'skippedTests': 1}, {'expectedFailures': 1}):
             with self.subTest(changes=changes):

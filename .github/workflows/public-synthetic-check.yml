@@ -1,0 +1,109 @@
+# Manual synthetic check only; this does not satisfy private release acceptance.
+name: Public synthetic iOS regression check
+on:
+  workflow_dispatch:
+    inputs:
+      approve_runner:
+        description: Run one standard public macOS synthetic-only check
+        required: true
+        type: boolean
+        default: false
+      expected_commit:
+        description: Exact reviewed 40-character commit to test
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: apartmentfinder-public-synthetic
+  cancel-in-progress: false
+jobs:
+  synthetic:
+    if: ${{ inputs.approve_runner && github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.event.repository.private == false }}
+    runs-on: macos-15-intel
+    timeout-minutes: 35
+    env:
+      EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - name: Require the exact reviewed source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$GITHUB_SHA" == "$EXPECTED_COMMIT" ]]
+          [[ "$(uname -m)" == x86_64 ]]
+          test -d "$DEVELOPER_DIR"
+          [[ "$(xcodebuild -version)" == $'Xcode 26.2\nBuild version 17C52' ]]
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Portable synthetic fixture and validator checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "${APARTMENTFINDER_PRIVATE_PACK_DIRECTORY:-}${APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY:-}"
+          for input in data/catalog.json data/locations.geojson data/paths.geojson private-data private-baselines; do
+            test ! -e "$input"
+          done
+          test -z "$(git status --porcelain --untracked-files=all)"
+          python3 -B -m unittest discover -s Tests/public_synthetic -v
+          python3 -B -m unittest discover -s Tests/signing -v
+          python3 -B -m unittest discover -s Tests/iteration -v
+          node --test --test-reporter=tap services/geocoding/worker.test.mjs
+      - name: Selected synthetic core tests with exact identity verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILTER=$(python3 -c 'import json,re; print("|".join(re.escape(x)+"$" for x in json.load(open("scripts/public-synthetic-tests.json"))["core"]))')
+          swift test --jobs 1 --disable-automatic-resolution --skip-update --filter "$FILTER" 2>&1 | tee "$RUNNER_TEMP/core.log"
+          python3 -B - "$RUNNER_TEMP/core.log" <<'PY'
+          import json,sys
+          sys.path.insert(0,'scripts')
+          from iterate import verify_core_ids,test_counts
+          body=open(sys.argv[1]).read()
+          expected=json.load(open('scripts/public-synthetic-tests.json'))['core']
+          assert len(verify_core_ids(body,expected)) == test_counts('core',body)['passed']
+          PY
+      - name: Compile production targets and run only synthetic native and UI tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodebuild -version
+          xcodegen generate --spec project.yml
+          LOCK=ApartmentFinder.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          mkdir -p "$(dirname "$LOCK")"
+          cp Config/Iteration-Package.resolved "$LOCK"
+          RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-26-2
+          xcrun simctl list runtimes --json | python3 -c 'import json,sys; assert any(x["identifier"]==sys.argv[1] and x.get("isAvailable") for x in json.load(sys.stdin)["runtimes"]),"Required iOS 26.2 runtime is unavailable"' "$RUNTIME"
+          DEVICE=$(xcrun simctl create "ApartmentFinder synthetic ${GITHUB_RUN_ID}" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro "$RUNTIME")
+          [[ "$DEVICE" =~ ^[0-9A-Fa-f-]{36}$ ]]
+          trap 'xcrun simctl shutdown "$DEVICE" >/dev/null 2>&1 || true; xcrun simctl delete "$DEVICE" >/dev/null 2>&1 || true' EXIT
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          FILTERS=()
+          while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < <(
+            python3 -c 'import json; s=json.load(open("scripts/public-synthetic-tests.json")); print("\n".join(s["native"]+s["ui"]))'
+          )
+          xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
+            -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
+            "${FILTERS[@]}" test
+          xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json"
+          xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/tests.json"
+          python3 -B - "$RUNNER_TEMP" <<'PY'
+          import json,sys
+          from pathlib import Path
+          sys.path.insert(0,'scripts')
+          from iterate import verify_native_ids,test_counts
+          root=Path(sys.argv[1]); selection=json.load(open('scripts/public-synthetic-tests.json'))
+          expected=selection['native']+selection['ui']
+          assert len(verify_native_ids(json.loads((root/'tests.json').read_text()),expected)) == test_counts('native',(root/'summary.json').read_text())['passed']
+          print(json.dumps(dict(scope='public-synthetic-only',passed=len(expected),full_acceptance=False,release_eligible=False)))
+          PY
+          python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/checkout-validation"

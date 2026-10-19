@@ -10,5 +10,5 @@
   "native_focus": {
     "App/DeliveryMapStyle.swift": ["ApartmentFinderUITests/MapAppearanceTests"]
   },
-  "full_acceptance": {"native": 68, "ui": 40, "original_pngs": 45}
+  "full_acceptance": {"native": 74, "ui": 40, "original_pngs": 45}
 }
