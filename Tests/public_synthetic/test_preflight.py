@@ -384,5 +384,144 @@ class PublicPreflightTests(unittest.TestCase):
         self.assertIn('full_acceptance=False', workflow)
 
 
+class WorkflowResultProcessingTests(unittest.TestCase):
+    """Execute the workflow's result block with synthetic command fixtures."""
+    identities = [
+        'ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
+        'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
+    ]
+
+    def run_result_block(self, build_status=0, result_exists=True,
+                         summary_status=0, tests_status=0, summary=None, tree=None):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        block = workflow.split('            DIAGNOSTICS_COLLECTED=1\n          fi\n', 1)[1]
+        summary = summary if summary is not None else {
+            'totalTestCount': 2, 'passedTests': 2, 'failedTests': 0,
+            'skippedTests': 0, 'expectedFailures': 0,
+        }
+        tree = tree if tree is not None else {'testNodes': [
+            {'nodeType': 'Test Case', 'nodeIdentifier': identity + '()', 'result': 'Passed'}
+            for identity in self.identities
+        ]}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'summary-source.json').write_text(json.dumps(summary))
+            (root / 'tests-source.json').write_text(json.dumps(tree))
+            (root / 'selected-tests.json').write_text(json.dumps({
+                'native': self.identities[:1], 'ui': self.identities[1:],
+            }))
+            script = r'''set -euo pipefail
+WORK=(bounded_work)
+RUN=(run_build)
+FILTERS=("-only-testing:synthetic")
+TEST_LIMITS=()
+DEVICE=synthetic-only
+bounded_work() {
+  printf 'work:%s\n' "$*" >> "$CALLS"
+  "$@"
+}
+run_build() { "$@"; }
+xcodebuild() {
+  printf 'build\n' >> "$CALLS"
+  if [[ "$RESULT_EXISTS" == 1 ]]; then mkdir -p "$RUNNER_TEMP/synthetic.xcresult"; fi
+  return "$BUILD_STATUS"
+}
+xcrun() {
+  [[ "$#" == 6 && "$1 $2 $3" == 'xcresulttool get test-results' && "$5" == --path ]] || return 99
+  [[ "$6" == "$RUNNER_TEMP/synthetic.xcresult" ]] || return 99
+  if [[ "$4" == summary ]]; then
+    cat "$RUNNER_TEMP/summary-source.json"
+    return "$SUMMARY_STATUS"
+  fi
+  [[ "$4" == tests ]] || return 99
+  cat "$RUNNER_TEMP/tests-source.json"
+  return "$TESTS_STATUS"
+}
+python3() {
+  if [[ "$*" == '-B scripts/validate-checkout.py '* ]]; then
+    printf 'checkout-validation\n' >> "$CALLS"
+  else
+    printf 'identity-and-count-gates\n' >> "$CALLS"
+    "$REAL_PYTHON" "$@"
+  fi
+}
+'''
+            result = subprocess.run(['bash'], input=script + textwrap.dedent(block),
+                cwd=ROOT, text=True, capture_output=True, timeout=5,
+                env={**os.environ, 'RUNNER_TEMP': str(root), 'CALLS': str(root / 'calls'),
+                     'REAL_PYTHON': sys.executable, 'PUBLIC_SYNTHETIC_SCOPE': 'activation-diagnostics',
+                     'BUILD_STATUS': str(build_status), 'RESULT_EXISTS': str(int(result_exists)),
+                     'SUMMARY_STATUS': str(summary_status), 'TESTS_STATUS': str(tests_status)})
+            calls = (root / 'calls').read_text().splitlines()
+            extracted = {name: json.loads((root / (name + '.json')).read_text())
+                         for name in ('summary', 'tests') if (root / (name + '.json')).exists()}
+        return result, calls, extracted
+
+    def test_failed_xcodebuild_still_extracts_existing_results_and_keeps_original_status(self):
+        for build_status in (65, 124):
+            for summary_status, tests_status in ((0, 0), (7, 0), (0, 8), (7, 8)):
+                with self.subTest(build=build_status, summary=summary_status, tests=tests_status):
+                    result, calls, extracted = self.run_result_block(
+                        build_status=build_status, summary_status=summary_status, tests_status=tests_status)
+                    self.assertEqual(result.returncode, build_status, result.stderr)
+                    self.assertEqual(set(extracted), {'summary', 'tests'})
+                    self.assertEqual(sum('xcresulttool get test-results summary ' in item for item in calls), 1)
+                    self.assertEqual(sum('xcresulttool get test-results tests ' in item for item in calls), 1)
+                    self.assertNotIn('checkout-validation', calls)
+                    self.assertNotIn('"passed":', result.stdout)
+
+    def test_failed_result_data_cannot_replace_the_original_xcodebuild_status(self):
+        tree = {'testNodes': [{'nodeType': 'Test Case',
+            'nodeIdentifier': self.identities[0] + '()', 'result': 'Failed'}]}
+        result, calls, extracted = self.run_result_block(build_status=65, tree=tree)
+        self.assertEqual(result.returncode, 65, result.stderr)
+        self.assertEqual(set(extracted), {'summary', 'tests'})
+        self.assertNotIn('identity-and-count-gates', calls)
+        self.assertNotIn('checkout-validation', calls)
+
+    def test_missing_result_keeps_failure_and_cannot_pass_a_successful_build(self):
+        for build_status in (0, 65, 124):
+            with self.subTest(build=build_status):
+                result, calls, extracted = self.run_result_block(
+                    build_status=build_status, result_exists=False)
+                self.assertEqual(result.returncode, build_status or 1, result.stderr)
+                self.assertEqual(extracted, {})
+                self.assertFalse(any('xcresulttool' in item for item in calls))
+                self.assertNotIn('checkout-validation', calls)
+
+    def test_success_still_requires_both_extractions_and_exact_identity_count_gates(self):
+        result, calls, extracted = self.run_result_block()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(set(extracted), {'summary', 'tests'})
+        self.assertIn('identity-and-count-gates', calls)
+        self.assertIn('checkout-validation', calls)
+        self.assertEqual(json.loads(result.stdout), {
+            'scope': 'public-synthetic-activation-diagnostics', 'passed': 2,
+            'full_acceptance': False, 'release_eligible': False,
+        })
+        invalid_results = [
+            {'summary_status': 7}, {'tests_status': 8},
+            {'tree': {'testNodes': []}},
+            {'tree': {'testNodes': [
+                {'nodeType': 'Test Case', 'nodeIdentifier': self.identities[0] + '()', 'result': 'Passed'},
+                {'nodeType': 'Test Case', 'nodeIdentifier': 'ApartmentFinderUITests/OtherTests/testOther()', 'result': 'Passed'},
+            ]}},
+        ]
+        for field in ('failedTests', 'skippedTests', 'expectedFailures'):
+            summary = dict(extracted['summary'])
+            summary[field] = 1
+            if field != 'expectedFailures':
+                summary['passedTests'] = 1
+            invalid_results.append({'summary': summary})
+        summary = dict(extracted['summary'], totalTestCount=0, passedTests=0)
+        invalid_results.append({'summary': summary})
+        for changes in invalid_results:
+            with self.subTest(changes=changes):
+                result, calls, _ = self.run_result_block(**changes)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn('checkout-validation', calls)
+                self.assertNotIn('"passed":', result.stdout)
+
+
 if __name__ == '__main__':
     unittest.main()

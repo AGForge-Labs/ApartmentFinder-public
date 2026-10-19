@@ -91,6 +91,29 @@ final class OnTracFlowTests: XCTestCase {
         } }
         return "state=\(app.state.rawValue);appAlert=\(app.alerts["ApartmentFinder"].exists);importAlert=\(app.alerts["Could not import"].exists);settings=\(app.navigationBars["Settings"].exists);preview=\(app.navigationBars["Preview manifest"].exists);fullButtons=\(app.buttons.matching(identifier: fullID).count);emptyButtons=\(app.buttons.matching(identifier: emptyID).count);fullAny=\(anyFull.count);fullType=\(type);submit=\(submit.exists);submitEnabled=\(submit.exists && submit.isEnabled);overlap=\(overlap);equalFrames=\(equalFrames);\(geometry);\(status)"
     }
+    // Fixed scalars and allowlisted coverage states only; no labels or hierarchy escape.
+    private func sourcePinDiagnostics() -> String {
+        let predicate = NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.1.")
+        let buttons = app.buttons.matching(predicate)
+        let elements = app.descendants(matching: .any).matching(predicate)
+        let type = elements.firstMatch.exists ? String(elements.firstMatch.elementType.rawValue) : "none"
+        let statuses = app.staticTexts.matching(identifier: "mini.coverage")
+        let coverage: String
+        if statuses.count == 1 {
+            switch statuses.firstMatch.label {
+            case "Completed delivery locations": coverage = "completed"
+            case "1 door not mapped": coverage = "oneMissing"
+            case "2 doors not mapped": coverage = "twoMissing"
+            case "⚠ Estimated pins — check on arrival": coverage = "estimatedCandidates"
+            case "Orange pins need checking": coverage = "sourceCandidates"
+            case "Teal pins: checked doors": coverage = "checkedDoors"
+            default: coverage = "unrecognized"
+            }
+        } else {
+            coverage = "absentOrAmbiguous"
+        }
+        return "sourcePinButtons=\(min(buttons.count, 3));sourcePinAny=\(min(elements.count, 3));sourcePinType=\(type);maps=\(min(app.maps.count, 3));coverage=\(coverage)"
+    }
     func testSourceUnitPinAppearsOnMapAfterOnTracImport() {
         let packImport = app.buttons["Import private map pack"]
         XCTAssertTrue(packImport.waitForExistence(timeout: 5))
@@ -106,7 +129,8 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertTrue(app.maps.firstMatch.waitForExistence(timeout: 8))
         XCTAssertFalse(app.navigationBars["Check Door Pin"].exists)
         let pin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.1.")).firstMatch
-        XCTAssertTrue(pin.waitForExistence(timeout: 5))
+        // XCTest evaluates this assertion-message autoclosure only on failure.
+        XCTAssertTrue(pin.waitForExistence(timeout: 5), sourcePinDiagnostics())
         XCTAssertTrue(pin.label.contains("4102"))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         capture("OnTrac unit 4102 shown on mini-route map")

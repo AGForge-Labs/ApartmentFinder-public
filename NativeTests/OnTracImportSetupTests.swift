@@ -43,6 +43,30 @@ final class OnTracImportSetupTests: XCTestCase {
         XCTAssertFalse(empty.result.canImport)
         XCTAssertTrue(store.personal.stops.isEmpty, "Previewing must not commit a manifest")
         XCTAssertNil(store.personal.activeManifest)
+
+        try coordinator.commit(full, store: store)
+        XCTAssertNil(coordinator.request)
+        XCTAssertNil(coordinator.error)
+        XCTAssertNotNil(store.personal.activeManifest)
+        XCTAssertEqual(store.personal.stops.map(\.sequence), [1, 2])
+        XCTAssertEqual(store.personal.stops.map(\.unit), ["4102", "4108"])
+        XCTAssertEqual(store.apartmentPlan.groups.map(\.id), ["fictional-courtyard"])
+        let group = try XCTUnwrap(store.apartmentGroup("fictional-courtyard"))
+        XCTAssertEqual(group.stops.map(\.sequence), [1, 2])
+        XCTAssertEqual(group.stops.map(\.unit), ["4102", "4108"])
+        let expectedCoordinates = [Coordinate(latitude: 0, longitude: 0),
+                                   Coordinate(latitude: 0.001, longitude: 0.001)]
+        for (stop, expectedCoordinate) in zip(group.stops, expectedCoordinates) {
+            let match = store.doorMatch(stop, groupID: group.id)
+            XCTAssertEqual(match.candidates.map(\.id), ["fictional-position-" + stop.unit])
+            let candidate = try XCTUnwrap(match.candidates.first)
+            XCTAssertEqual(candidate.kind, .unitPosition)
+            XCTAssertEqual(candidate.verification, .sourceMapped)
+            XCTAssertEqual(candidate.coordinate, expectedCoordinate)
+            XCTAssertEqual(candidate.sourceIDs, ["fictional-source"])
+            XCTAssertNil(match.readyDoor)
+            XCTAssertEqual(match.issue, .confirmPin)
+        }
     }
 }
 #endif

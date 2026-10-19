@@ -176,15 +176,23 @@ jobs:
             RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)
             DIAGNOSTICS_COLLECTED=1
           fi
+          XCODE_STATUS=0
           "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
             -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
             -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
             -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
-            "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test
-          "${WORK[@]}" xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json"
-          "${WORK[@]}" xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/tests.json"
+            "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test || XCODE_STATUS=$?
+          RESULT_STATUS=0
+          if [[ -d "$RUNNER_TEMP/synthetic.xcresult" ]]; then
+            "${WORK[@]}" xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json" || RESULT_STATUS=$?
+            "${WORK[@]}" xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/tests.json" || RESULT_STATUS=$?
+          else
+            RESULT_STATUS=1
+          fi
+          if [[ "$XCODE_STATUS" != 0 ]]; then exit "$XCODE_STATUS"; fi
+          if [[ "$RESULT_STATUS" != 0 ]]; then exit "$RESULT_STATUS"; fi
           "${WORK[@]}" python3 -B - "$RUNNER_TEMP" <<'PY'
           import json,os,sys
           from pathlib import Path
