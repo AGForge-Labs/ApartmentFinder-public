@@ -1,0 +1,12 @@
+// Inspect only known unresolved public RentCafe widgets, recording factual metadata, not images.
+import {readFile,writeFile} from 'node:fs/promises';import {createHash} from 'node:crypto';
+const audits=JSON.parse(await readFile('research/audits/site-audit.json'));const out=[];
+const leads=audits.filter(c=>!['arca','viva-summerland'].includes(c.communityID)&&c.pages.some(p=>(p.links??[]).some(u=>u.includes('interactivepropertymap'))));
+for(const c of leads){const first=c.pages.flatMap(p=>p.links??[]).find(u=>u.includes('interactivepropertymap'));const root=first.split('?')[0];const record={communityID:c.communityID,retrievedAt:new Date().toISOString(),pages:[],conclusion:''};const queue=[root],seen=new Set();
+ while(queue.length&&seen.size<50){const url=queue.shift();if(seen.has(url))continue;seen.add(url);try{const r=await fetch(url,{headers:{'User-Agent':'ApartmentFinderPublicSourceAudit/1.0'},signal:AbortSignal.timeout(20000)});const t=await r.text();const dimensions=[...t.matchAll(/<svg[^>]*viewbox=['"]([^'"]+)/gi)].map(m=>m[1]);const images=[...t.matchAll(/<image[^>]*xlink:href=['"]([^'"]+)/gi)].map(m=>m[1]);const targets=[...new Set([...t.matchAll(/data-destination=['"](Region_\d+)['"]/g)].map(m=>m[1]))];const units=[...new Set([...t.matchAll(/data-destination=['"](Unit_\d+)['"]/g)].map(m=>m[1]))];const body=t.replace(/<script[^>]*type=['"]application\/ld\+json['"][^>]*>[\s\S]*?<\/script>/gi,'');const geoHints=[...body.matchAll(/.{0,70}(?:EPSG|georefer|latitude|longitude|latlng|latlon|geojson|mapbox|transformMatrix|controlPoint).{0,110}/gi)].map(m=>m[0]).slice(0,10);
+ record.pages.push({url,status:r.status,sha256:createHash('sha256').update(t).digest('hex'),viewBoxes:dimensions,imageURLs:images,pixelUnitIDs:units,regionTargets:targets,geographicHints:geoHints});
+ if(r.ok)for(const target of targets)if(target!=='Region_0')queue.push(root+'?handler=IPMArea&areaId='+target);
+ }catch(e){record.pages.push({url,error:e.message});}}
+ record.pixelUnitCount=new Set(record.pages.flatMap(p=>p.pixelUnitIDs??[])).size;record.conclusion='Official SVG regions use local image/pixel coordinates. No published WGS84 transform or paired independent control points established. Region images have different viewBoxes; fitting them to the parcel bounding box would be unsupported. No geographic positions imported.';
+ out.push(record);console.log(c.communityID,record.pages.length,record.pixelUnitCount);}
+await writeFile('research/audits/pixel-map-audit.json',JSON.stringify(out,null,2)+'\n');
