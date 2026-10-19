@@ -169,6 +169,7 @@ class PublicPreflightTests(unittest.TestCase):
         self.assertIn('local original_status=$?', workflow)
         self.assertNotIn('upload-artifact', workflow)
         self.assertIn('testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS', workflow)
+        self.assertIn('testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport', workflow)
         self.assertIn('testSourceUnitPinAppearsOnMapAfterOnTracImport', workflow)
 
     def test_workflow_command_prefixes_are_nonempty_for_macos_nounset_in_both_scopes(self):
@@ -208,14 +209,59 @@ class PublicPreflightTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual(json.loads(result.stdout), expected)
 
-    def test_workflow_identity_producer_rejects_empty_duplicate_and_invalid_selections(self):
+    def test_workflow_selection_producer_preserves_regression_and_exact_focused_subset(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        header = '          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<\'PY\''
+        block = header + '\n' + workflow.split(header + '\n', 1)[1].split(
+            '          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then\n            RUN=', 1)[0]
+        profile = json.loads((ROOT / 'scripts/public-synthetic-tests.json').read_text())
+        focused = {'native': [
+            'ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
+            'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport',
+        ], 'ui': ['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
+        for kind, identities in focused.items():
+            self.assertTrue(set(identities) <= set(profile[kind]))
+        missing = json.loads(json.dumps(profile))
+        missing['native'].remove(focused['native'][1])
+        substituted = json.loads(json.dumps(profile))
+        substituted['native'][substituted['native'].index(focused['native'][1])] = 'ApartmentFinderTests/OtherTests/testOther'
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'scripts').mkdir()
+            for scope, source, expected in (
+                    ('regression', profile, profile), ('activation-diagnostics', profile, focused),
+                    ('activation-diagnostics', missing, None), ('activation-diagnostics', substituted, None)):
+                with self.subTest(scope=scope, bundled_method_present=source == profile):
+                    (root / 'scripts/public-synthetic-tests.json').write_text(json.dumps(source))
+                    for name in ('selected-tests.json', 'selected-identities.txt'):
+                        (root / name).unlink(missing_ok=True)
+                    result = subprocess.run(['bash'], input='set -euo pipefail\nWORK=(env)\n' + textwrap.dedent(block),
+                        cwd=root, text=True, capture_output=True, timeout=2,
+                        env={**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': scope, 'RUNNER_TEMP': str(root)})
+                    if expected is None:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertFalse((root / 'selected-tests.json').exists())
+                        self.assertFalse((root / 'selected-identities.txt').exists())
+                    else:
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertEqual(json.loads((root / 'selected-tests.json').read_text()), expected)
+                        self.assertEqual((root / 'selected-identities.txt').read_text().splitlines(),
+                                         expected['native'] + expected['ui'])
+
+    def test_workflow_identity_producer_rejects_empty_omitted_duplicate_invalid_and_substituted_selections(self):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
         header = '"${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" > "$RUNNER_TEMP/selected-identities.txt" <<\'PY\''
         code = textwrap.dedent(workflow.split(header + '\n', 1)[1].split('\n          PY', 1)[0])
-        expected = {'native': ['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS'],
+        expected = {'native': [
+                        'ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
+                        'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport'],
                     'ui': ['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
-        invalid = ({'native': [], 'ui': []}, {'native': expected['native'] * 2, 'ui': []},
-                   {'native': ['unsafe;extra'], 'ui': expected['ui']})
+        invalid = ({'native': [], 'ui': []},
+                   {'native': expected['native'][:1], 'ui': expected['ui']},
+                   {'native': expected['native'][:1] * 2, 'ui': expected['ui']},
+                   {'native': [expected['native'][0], 'unsafe;extra'], 'ui': expected['ui']},
+                   {'native': [expected['native'][0], 'ApartmentFinderTests/OtherTests/testOther'], 'ui': expected['ui']},
+                   {'native': expected['native'][:1], 'ui': expected['ui'] + expected['native'][1:]})
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / 'selection.json'
             for selection in (expected, *invalid):
@@ -388,6 +434,7 @@ class WorkflowResultProcessingTests(unittest.TestCase):
     """Execute the workflow's result block with synthetic command fixtures."""
     identities = [
         'ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
+        'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport',
         'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
     ]
 
@@ -396,7 +443,7 @@ class WorkflowResultProcessingTests(unittest.TestCase):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
         block = workflow.split('            DIAGNOSTICS_COLLECTED=1\n          fi\n', 1)[1]
         summary = summary if summary is not None else {
-            'totalTestCount': 2, 'passedTests': 2, 'failedTests': 0,
+            'totalTestCount': 3, 'passedTests': 3, 'failedTests': 0,
             'skippedTests': 0, 'expectedFailures': 0,
         }
         tree = tree if tree is not None else {'testNodes': [
@@ -408,7 +455,7 @@ class WorkflowResultProcessingTests(unittest.TestCase):
             (root / 'summary-source.json').write_text(json.dumps(summary))
             (root / 'tests-source.json').write_text(json.dumps(tree))
             (root / 'selected-tests.json').write_text(json.dumps({
-                'native': self.identities[:1], 'ui': self.identities[1:],
+                'native': self.identities[:2], 'ui': self.identities[2:],
             }))
             script = r'''set -euo pipefail
 WORK=(bounded_work)
@@ -496,7 +543,7 @@ python3() {
         self.assertIn('identity-and-count-gates', calls)
         self.assertIn('checkout-validation', calls)
         self.assertEqual(json.loads(result.stdout), {
-            'scope': 'public-synthetic-activation-diagnostics', 'passed': 2,
+            'scope': 'public-synthetic-activation-diagnostics', 'passed': 3,
             'full_acceptance': False, 'release_eligible': False,
         })
         invalid_results = [
@@ -504,17 +551,36 @@ python3() {
             {'tree': {'testNodes': []}},
             {'tree': {'testNodes': [
                 {'nodeType': 'Test Case', 'nodeIdentifier': self.identities[0] + '()', 'result': 'Passed'},
+                {'nodeType': 'Test Case', 'nodeIdentifier': self.identities[1] + '()', 'result': 'Passed'},
                 {'nodeType': 'Test Case', 'nodeIdentifier': 'ApartmentFinderUITests/OtherTests/testOther()', 'result': 'Passed'},
             ]}},
         ]
+        nodes = extracted['tests']['testNodes']
+        for index in range(len(nodes)):
+            invalid_results.append({'tree': {'testNodes': nodes[:index] + nodes[index + 1:]}})
+        invalid_results.append({'tree': {'testNodes': [nodes[0], nodes[0], nodes[2]]}})
+        invalid_results.append({'tree': {'testNodes': nodes + [nodes[1]]}})
+        for identity, status in (('unsafe;extra', 'Passed'), (self.identities[1] + '()', 'Failed'),
+                                 (self.identities[1] + '()', 'Skipped'), (self.identities[1] + '()', 'Expected Failure')):
+            invalid_results.append({'tree': {'testNodes': [nodes[0],
+                dict(nodes[1], nodeIdentifier=identity, result=status), nodes[2]]}})
         for field in ('failedTests', 'skippedTests', 'expectedFailures'):
             summary = dict(extracted['summary'])
             summary[field] = 1
             if field != 'expectedFailures':
-                summary['passedTests'] = 1
+                summary['passedTests'] = 2
             invalid_results.append({'summary': summary})
         summary = dict(extracted['summary'], totalTestCount=0, passedTests=0)
         invalid_results.append({'summary': summary})
+        for count in (2, 4):
+            invalid_results.append({'summary': dict(extracted['summary'], totalTestCount=count, passedTests=count)})
+        invalid_results.append({'summary': dict(extracted['summary'], passedTests=2)})
+        for field in extracted['summary']:
+            summary = dict(extracted['summary'])
+            del summary[field]
+            invalid_results.append({'summary': summary})
+            for value in (None, True, '3'):
+                invalid_results.append({'summary': dict(extracted['summary'], **{field: value})})
         for changes in invalid_results:
             with self.subTest(changes=changes):
                 result, calls, _ = self.run_result_block(**changes)

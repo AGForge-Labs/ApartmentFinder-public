@@ -56,6 +56,7 @@ class PinVisibilityTests(unittest.TestCase):
         self.assertLess(flow.index('let originalPinFound'), flow.index('probePinHost()'))
         self.assertLess(flow.index('let originalPinDiagnostics'), flow.index('probePinHost()'))
         self.assertIn('if !originalPinFound && syntheticDiagnosticsEnabled', flow)
+        self.assertLess(flow.index('print(\"syntheticPinOriginal=missing;'), flow.index('probePinHost()'))
         self.assertIn('XCTAssertTrue(originalPinFound, originalPinDiagnostics)', flow)
         self.assertIn('guard originalPinFound else { return }', flow)
         helper = source.split('private func probePinHost() {', 1)[1].split('\n    private func', 1)[0]
@@ -66,6 +67,9 @@ class PinVisibilityTests(unittest.TestCase):
         self.assertIn('--synthetic-pin-host-probe', helper)
         self.assertIn('guard remaining() > 0', helper)
         self.assertIn('coverageElements.count == 1', helper)
+        self.assertIn('Date().addingTimeInterval(120)', helper)
+        for stage in ('submitUnavailable', 'communityUnavailable', 'startUnavailable', 'mapUnavailable'):
+            self.assertIn('syntheticPinProbe=' + stage, helper)
         self.assertIn('range(of: pattern, options: .regularExpression)', helper)
         self.assertNotIn('debugDescription', helper)
         self.assertNotIn('screenshot(', helper)

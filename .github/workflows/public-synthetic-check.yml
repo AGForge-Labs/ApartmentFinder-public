@@ -151,7 +151,8 @@ jobs:
           import json,os,sys
           selection=json.load(open('scripts/public-synthetic-tests.json'))
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
-              focused={'native':['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS'],
+              focused={'native':['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
+                                 'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport'],
                        'ui':['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
               for kind,identities in focused.items():
                   assert set(identities)<=set(selection[kind])
@@ -162,15 +163,19 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected=2 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 73
+          expected=3 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 73
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
+          if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
+              assert selection=={'native':['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
+                                           'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport'],
+                                'ui':['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
           print('\n'.join(identities))
           PY
           FILTERS=()
           while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
           EXPECTED_NATIVE_COUNT=73
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=2; fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
           [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)

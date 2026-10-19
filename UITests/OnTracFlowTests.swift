@@ -96,7 +96,7 @@ final class OnTracFlowTests: XCTestCase {
         guard syntheticDiagnosticsEnabled,
               let storeIndex = app.launchArguments.firstIndex(of: "--test-store"),
               storeIndex + 1 < app.launchArguments.count else { return }
-        let deadline = Date().addingTimeInterval(45)
+        let deadline = Date().addingTimeInterval(120)
         func remaining() -> TimeInterval { min(6, max(0, deadline.timeIntervalSinceNow)) }
         func tap(_ id: String) -> Bool {
             let controls = app.buttons.matching(identifier: id)
@@ -117,8 +117,10 @@ final class OnTracFlowTests: XCTestCase {
             print("syntheticPinProbe=submitUnavailable"); return
         }
         for _ in 0..<5 where !submit.isHittable && remaining() > 0 { app.swipeUp() }
-        guard tap("manifest.import"), tap("apartment.fictional-courtyard"), tap("mini.start"),
-              app.maps.firstMatch.waitForExistence(timeout: remaining()) else {
+        guard tap("manifest.import") else { print("syntheticPinProbe=submitUnavailable"); return }
+        guard tap("apartment.fictional-courtyard") else { print("syntheticPinProbe=communityUnavailable"); return }
+        guard tap("mini.start") else { print("syntheticPinProbe=startUnavailable"); return }
+        guard app.maps.firstMatch.waitForExistence(timeout: remaining()) else {
             print("syntheticPinProbe=mapUnavailable"); return
         }
         let coverageElements = app.staticTexts.matching(identifier: "mini.coverage")
@@ -187,7 +189,10 @@ final class OnTracFlowTests: XCTestCase {
         // Save both normal-launch values before any diagnostic relaunch.
         let originalPinFound = pin.waitForExistence(timeout: 5)
         let originalPinDiagnostics = originalPinFound ? "" : sourcePinDiagnostics()
-        if !originalPinFound && syntheticDiagnosticsEnabled { probePinHost() }
+        if !originalPinFound && syntheticDiagnosticsEnabled {
+            print("syntheticPinOriginal=missing;\(originalPinDiagnostics)")
+            probePinHost()
+        }
         XCTAssertTrue(originalPinFound, originalPinDiagnostics)
         guard originalPinFound else { return }
         XCTAssertTrue(pin.label.contains("4102"))
