@@ -139,12 +139,12 @@ private struct UITestShareSheet: UIViewControllerRepresentable {
 /// Fixed scalars only. Nothing is recorded outside an explicitly isolated simulator probe.
 @MainActor
 enum SyntheticUIDiagnostics {
-    enum Probe: String { case toolbar, production }
+    enum Probe: String { case toolbar, production, bannerPassThrough, toolbarRecheck }
     enum FixturePhase: String { case idle, installing, ready, failed }
     private enum Event: String {
         case rootAppeared, sceneChanged, actionEntered, fixtureStarted, fixtureReady, fixtureFailed
         case openStarted, requestPublished, readFailed, loadingEnded, manifestSheetAppeared
-        case manifestPickerChanged, settingsChanged, packPickerChanged
+        case manifestPickerChanged, settingsChanged, packPickerChanged, documentPickerObserved
     }
     private struct Snapshot: Encodable {
         let schemaVersion = 1
@@ -168,6 +168,9 @@ enum SyntheticUIDiagnostics {
         var settingsPresented = false
         var packPickerRequested = false
         var errorPresent = false
+        var bannerHitTestingDisabled = false
+        var documentPickerWasPresented = false
+        var pickerObservationCompleted = false
         var writeFailures = 0
     }
     private static var snapshot = Snapshot()
@@ -185,6 +188,9 @@ enum SyntheticUIDiagnostics {
         #else
         return false
         #endif
+    }
+    static var bannerHitTestingDisabled: Bool {
+        enabled && probe == .bannerPassThrough
     }
     static func nextCoordinatorInstance() -> Int {
         guard enabled else { return 0 }
@@ -277,6 +283,7 @@ enum SyntheticUIDiagnostics {
         guard enabled else { return }
         snapshot.manifestPickerRequested = requested
         write(.manifestPickerChanged)
+        if requested { observeDocumentPicker() }
     }
     static func settingsChanged(_ presented: Bool) {
         guard enabled else { return }
@@ -288,9 +295,41 @@ enum SyntheticUIDiagnostics {
         snapshot.packPickerRequested = requested
         write(.packPickerChanged)
     }
+    // A positive public-UIKit witness only. SwiftUI does not promise this host
+    // controller, so a bounded negative observation cannot prove picker absence.
+    private static func observeDocumentPicker() {
+        guard enabled, probe == .production else { return }
+        snapshot.pickerObservationCompleted = false
+        Task { @MainActor in
+            let delays = [UInt64(0), 500_000_000, 1_000_000_000]
+            for (index, delay) in delays.enumerated() {
+                if delay > 0 { try? await Task.sleep(nanoseconds: delay) }
+                guard enabled, probe == .production else { return }
+                snapshot.documentPickerWasPresented = snapshot.documentPickerWasPresented || documentPickerInForegroundScene()
+                if index == delays.count - 1 { snapshot.pickerObservationCompleted = true }
+                write(.documentPickerObserved)
+            }
+        }
+    }
+    private static func documentPickerInForegroundScene() -> Bool {
+        var pending = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .filter { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }
+            .flatMap { $0.windows }.filter { !$0.isHidden && $0.alpha > 0 }
+            .prefix(8).compactMap { $0.rootViewController }
+        var visited = Set<ObjectIdentifier>()
+        while let controller = pending.popLast(), visited.count < 64 {
+            guard visited.insert(ObjectIdentifier(controller)).inserted else { continue }
+            if controller is UIDocumentPickerViewController,
+               controller.viewIfLoaded?.window != nil, !controller.isBeingDismissed { return true }
+            pending.append(contentsOf: controller.children.prefix(8))
+            if let presented = controller.presentedViewController { pending.append(presented) }
+        }
+        return false
+    }
     private static func write(_ event: Event) {
         guard enabled, let probe, snapshot.sequence < 4096 else { return }
         snapshot.probe = probe.rawValue
+        snapshot.bannerHitTestingDisabled = bannerHitTestingDisabled
         snapshot.sequence += 1
         snapshot.lastEvent = event.rawValue
         do {
@@ -301,6 +340,15 @@ enum SyntheticUIDiagnostics {
             guard data.count <= 8192 else { snapshot.writeFailures = min(64, snapshot.writeFailures + 1); return }
             try data.write(to: directory.appendingPathComponent(probe.rawValue + ".json"), options: .atomic)
         } catch { snapshot.writeFailures = min(64, snapshot.writeFailures + 1) }
+    }
+}
+
+@MainActor
+struct SyntheticBannerHitTestProbe: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if SyntheticUIDiagnostics.bannerHitTestingDisabled {
+            content.allowsHitTesting(false)
+        } else { content }
     }
 }
 

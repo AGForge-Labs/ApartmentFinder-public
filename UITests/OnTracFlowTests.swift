@@ -220,6 +220,37 @@ final class OnTracFlowTests: XCTestCase {
         let returned = dismissed && importButton.exists && importButton.isHittable
         print("syntheticHarness=production;event=dismissed;pickerGone=\(dismissed);listReturned=\(returned)")
     }
+    // Comparison observations never replace the original acceptance assertion.
+    // Fresh A/B/A stores keep persistent data and launch-order warmup separate.
+    private func probeToolbarHitRegion(_ probe: String) {
+        guard syntheticDiagnosticsEnabled, ["bannerPassThrough", "toolbarRecheck"].contains(probe),
+              let storeIndex = app.launchArguments.firstIndex(of: "--test-store"),
+              storeIndex + 1 < app.launchArguments.count,
+              let probeIndex = app.launchArguments.firstIndex(of: "--synthetic-diagnostic-probe"),
+              probeIndex + 1 < app.launchArguments.count else {
+            print("syntheticHarness=toolbarComparison;event=invalidArguments"); return
+        }
+        let deadline = Date().addingTimeInterval(60)
+        func remaining() -> TimeInterval { min(10, max(0, deadline.timeIntervalSinceNow)) }
+        app.terminate()
+        app.launchArguments[storeIndex + 1] = UUID().uuidString
+        app.launchArguments[probeIndex + 1] = probe
+        guard remaining() > 0 else { print("syntheticHarness=\(probe);event=probeDeadline"); return }
+        print("syntheticHarness=\(probe);event=beforeLaunch")
+        app.launch()
+        print("syntheticHarness=\(probe);event=launchReturned")
+        let controls = app.buttons.matching(identifier: "test.import"), control = controls.firstMatch
+        guard remaining() > 0, control.waitForExistence(timeout: remaining()),
+              controls.count == 1, control.isEnabled, control.isHittable else {
+            print("syntheticHarness=\(probe);event=controlUnavailable"); return
+        }
+        print("syntheticHarness=\(probe);event=beforeTap;\(controlDiagnostics("test.import", token: "import"));\(activationDiagnostics())")
+        control.tap()
+        print("syntheticHarness=\(probe);event=tapReturned")
+        let chooser = app.buttons["manifest.file.manifest_2026-01-02.csv"]
+        let chooserObserved = remaining() > 0 && chooser.waitForExistence(timeout: remaining())
+        print("syntheticHarness=\(probe);event=waitEnded;chooserObserved=\(chooserObserved);\(activationDiagnostics())")
+    }
     @discardableResult
     private func chooseDay() -> Bool {
         let day = app.buttons["manifest.file.manifest_2026-01-02.csv"]
@@ -229,6 +260,8 @@ final class OnTracFlowTests: XCTestCase {
         if !originalChooserFound && syntheticDiagnosticsEnabled {
             print("syntheticHarness=toolbar;event=chooserMissing;\(originalDiagnostics)")
             probeProductionImport()
+            probeToolbarHitRegion("bannerPassThrough")
+            probeToolbarHitRegion("toolbarRecheck")
         }
         XCTAssertTrue(originalChooserFound, originalDiagnostics)
         return false

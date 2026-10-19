@@ -33,6 +33,8 @@ def witness(probe='toolbar', **changes):
         'loading': False, 'requestPresent': False, 'manifestSheetAppeared': False,
         'manifestPickerRequested': False, 'settingsPresented': False,
         'packPickerRequested': False, 'errorPresent': False,
+        'bannerHitTestingDisabled': False, 'documentPickerWasPresented': False,
+        'pickerObservationCompleted': False,
     }
     value.update(changes)
     return value
@@ -80,6 +82,8 @@ class WitnessTests(unittest.TestCase):
             for key, value in witness().items())
         self.assertIn(expected + '\n', output)
         self.assertIn('syntheticWitness=production;status=missing\n', output)
+        self.assertIn('syntheticWitness=bannerPassThrough;status=missing\n', output)
+        self.assertIn('syntheticWitness=toolbarRecheck;status=missing\n', output)
         self.assertIn('syntheticEvidence=toolbar;status=observed\n', output)
         self.assertNotIn(str(self.container), output)
         self.assertNotIn(DEVICE, output)
@@ -88,7 +92,9 @@ class WitnessTests(unittest.TestCase):
         status, output, _ = self.collect()
         self.assertEqual(status, 1)
         self.assertEqual(output, 'syntheticWitness=toolbar;status=missing\n'
-                         'syntheticWitness=production;status=missing\n')
+                         'syntheticWitness=production;status=missing\n'
+                         'syntheticWitness=bannerPassThrough;status=missing\n'
+                         'syntheticWitness=toolbarRecheck;status=missing\n')
         self.assertNotIn('actionCount=', output)
 
     def test_unobserved_root_or_write_failure_is_explicitly_inconclusive(self):
@@ -127,6 +133,129 @@ class WitnessTests(unittest.TestCase):
         self.assertIn('syntheticWitness=production;status=valid;', output)
         self.assertIn('lastAction=productionImport;', output)
 
+    def test_causal_schema_appends_three_boolean_fields_in_the_fixed_order(self):
+        self.assertEqual(tuple(witness()), DIAGNOSTICS.SCHEMA_FIELDS)
+        self.assertEqual(DIAGNOSTICS.SCHEMA_FIELDS[-4:], (
+            'errorPresent', 'bannerHitTestingDisabled', 'documentPickerWasPresented',
+            'pickerObservationCompleted'))
+        self.assertEqual(witness()['schemaVersion'], 1)
+
+    def test_all_four_exact_probes_have_fixed_output_entries_without_enumeration(self):
+        probes = ('toolbar', 'production', 'bannerPassThrough', 'toolbarRecheck')
+        self.assertEqual(DIAGNOSTICS.PROBES, probes)
+        for probe in probes:
+            self.write(witness(probe), probe=probe)
+        with mock.patch.object(os, 'listdir', side_effect=AssertionError('no enumeration')):
+            with mock.patch.object(os, 'scandir', side_effect=AssertionError('no enumeration')):
+                with mock.patch.object(DIAGNOSTICS.os, 'open', wraps=os.open) as opened:
+                    status, output, _ = self.collect()
+        self.assertEqual(status, 0)
+        self.assertEqual([call.args[0] for call in opened.call_args_list
+                          if str(call.args[0]).endswith('.json')],
+                         [probe + '.json' for probe in probes])
+        expected = []
+        for probe in probes:
+            expected.append('syntheticWitness=' + probe + ';status=valid;' + ';'.join(
+                key + '=' + (str(value).lower() if type(value) is bool else str(value))
+                for key, value in witness(probe).items()))
+            expected.append('syntheticEvidence=' + probe + ';status=observed')
+        self.assertEqual(output.splitlines(), expected)
+
+    def test_each_exact_probe_is_valid_only_at_its_own_fixed_path(self):
+        probes = ('toolbar', 'production', 'bannerPassThrough', 'toolbarRecheck')
+        for probe in probes:
+            with self.subTest(probe=probe):
+                self.write(witness(probe), probe=probe)
+                self.assertEqual(self.read(probe), ('valid', witness(probe)))
+                for other in probes:
+                    if other != probe:
+                        self.write(witness(other), probe=probe)
+                        self.assertEqual(self.read(probe), ('invalid', None))
+
+    def test_optional_probes_log_missing_and_invalid_distinctly_without_failing_toolbar(self):
+        self.write()
+        probes = ('production', 'bannerPassThrough', 'toolbarRecheck')
+        for probe in probes:
+            with self.subTest(probe=probe):
+                status, output, _ = self.collect()
+                self.assertEqual(status, 0)
+                self.assertIn('syntheticWitness=' + probe + ';status=missing\n', output)
+                path = self.write(raw=b'{"private-address":"DO-NOT-PRINT"}', probe=probe)
+                status, output, _ = self.collect()
+                self.assertEqual(status, 0)
+                self.assertIn('syntheticWitness=' + probe + ';status=invalid\n', output)
+                self.assertNotIn('syntheticEvidence=' + probe, output)
+                self.assertNotIn('DO-NOT-PRINT', output)
+                path.unlink()
+
+    def test_valid_optional_probes_cannot_replace_the_required_toolbar_evidence(self):
+        for probe in ('production', 'bannerPassThrough', 'toolbarRecheck'):
+            self.write(witness(probe), probe=probe)
+        for changes in (None, {'rootAppearances': 0}, {'writeFailures': 1},
+                        {'privateAddress': 'DO-NOT-PRINT'}):
+            with self.subTest(changes=changes):
+                if changes is not None:
+                    self.write(witness(**changes))
+                status, output, _ = self.collect()
+                self.assertEqual(status, 1)
+                for probe in ('production', 'bannerPassThrough', 'toolbarRecheck'):
+                    self.assertIn('syntheticWitness=' + probe + ';status=valid;', output)
+                    self.assertIn('syntheticEvidence=' + probe + ';status=observed\n', output)
+                self.assertNotIn('syntheticEvidence=toolbar;status=observed', output)
+                self.assertNotIn('DO-NOT-PRINT', output)
+
+    def test_document_picker_observed_event_is_accepted_but_other_tokens_are_rejected(self):
+        self.write(witness(lastEvent='documentPickerObserved', documentPickerWasPresented=True,
+                           pickerObservationCompleted=True))
+        self.assertEqual(self.read(), ('valid', witness(lastEvent='documentPickerObserved',
+                         documentPickerWasPresented=True, pickerObservationCompleted=True)))
+        for event in ('documentPicker', 'documentPickerObservedPrivate',
+                      'DocumentPickerObserved', 'documentPickerObserved\n'):
+            with self.subTest(event=event):
+                self.write(witness(lastEvent=event))
+                self.assertEqual(self.read(), ('invalid', None))
+
+    def test_new_causal_booleans_are_required_and_require_exact_boolean_types(self):
+        for key in ('bannerHitTestingDisabled', 'documentPickerWasPresented',
+                    'pickerObservationCompleted'):
+            for value in (True, False):
+                with self.subTest(key=key, value=value):
+                    self.write(witness(**{key: value}))
+                    self.assertEqual(self.read()[0], 'valid')
+            for value in (0, 1, 1.0, 'false', 'true', None, [], {}):
+                with self.subTest(key=key, value=value):
+                    self.write(witness(**{key: value}))
+                    self.assertEqual(self.read(), ('invalid', None))
+            missing = witness()
+            del missing[key]
+            self.write(missing)
+            self.assertEqual(self.read(), ('invalid', None))
+
+    def test_probe_aliases_are_rejected_before_any_file_open(self):
+        with mock.patch.object(DIAGNOSTICS.os, 'open') as opened:
+            for probe in ('bannerpassthrough', 'BannerPassThrough', 'toolbarrecheck',
+                          'toolbarRecheck.json', 'toolbarRecheck/private', '../toolbarRecheck'):
+                with self.subTest(probe=probe):
+                    self.assertEqual(self.read(probe), ('invalid', None))
+            opened.assert_not_called()
+
+    def test_successful_causal_collection_cannot_turn_xcode_failure_green(self):
+        for probe in ('toolbar', 'production', 'bannerPassThrough', 'toolbarRecheck'):
+            self.write(witness(probe), probe=probe)
+        process = mock.Mock(returncode=0)
+        process.communicate.return_value = (str(self.container) + '\n', None)
+        for build_status in (7, 65, 124):
+            with self.subTest(build_status=build_status):
+                with mock.patch.object(DIAGNOSTICS, 'run_command', return_value=build_status):
+                    with mock.patch.object(DIAGNOSTICS.subprocess, 'Popen', return_value=process):
+                        output = io.StringIO()
+                        with contextlib.redirect_stdout(output):
+                            status = DIAGNOSTICS.main(['run', '--deadline-epoch', '123',
+                                '--device', DEVICE, '--', 'xcodebuild'])
+                self.assertEqual(status, build_status)
+                for probe in ('toolbar', 'production', 'bannerPassThrough', 'toolbarRecheck'):
+                    self.assertIn('syntheticWitness=' + probe + ';status=valid;', output.getvalue())
+
     def test_rejects_unknown_missing_and_duplicate_keys(self):
         unknown = witness(privateAddress='DO-NOT-PRINT')
         missing = witness()
@@ -154,7 +283,8 @@ class WitnessTests(unittest.TestCase):
                           'fixtureStarted', 'fixtureReady', 'fixtureFailed',
                           'openStarted', 'requestPublished', 'readFailed',
                           'loadingEnded', 'manifestSheetAppeared',
-                          'manifestPickerChanged', 'settingsChanged', 'packPickerChanged'),
+                          'manifestPickerChanged', 'settingsChanged', 'packPickerChanged',
+                          'documentPickerObserved'),
             'scenePhase': ('unknown', 'active', 'inactive', 'background'),
             'lastAction': ('none', 'mixed', 'manifestImport', 'share', 'productionImport'),
             'fixturePhase': ('idle', 'installing', 'ready', 'failed'),
@@ -182,7 +312,9 @@ class WitnessTests(unittest.TestCase):
     def test_boolean_fields_require_exact_booleans(self):
         keys = ('requiresPrivatePack', 'privatePackImportPending', 'loading',
                 'requestPresent', 'manifestSheetAppeared', 'manifestPickerRequested',
-                'settingsPresented', 'packPickerRequested', 'errorPresent')
+                'settingsPresented', 'packPickerRequested', 'errorPresent',
+                'bannerHitTestingDisabled', 'documentPickerWasPresented',
+                'pickerObservationCompleted')
         for key in keys:
             for value in (True, False):
                 self.write(witness(**{key: value}))
@@ -266,7 +398,9 @@ class WitnessTests(unittest.TestCase):
                         self.assertEqual(DIAGNOSTICS.collect(DEVICE), 1)
                 self.assertEqual(output.getvalue(), 'syntheticDiagnostics=containerUnavailable\n'
                                  'syntheticWitness=toolbar;status=missing\n'
-                                 'syntheticWitness=production;status=missing\n')
+                                 'syntheticWitness=production;status=missing\n'
+                                 'syntheticWitness=bannerPassThrough;status=missing\n'
+                                 'syntheticWitness=toolbarRecheck;status=missing\n')
 
     def test_container_timeout_kills_its_group_and_never_communicates_without_a_bound(self):
         process = mock.Mock(pid=12345)

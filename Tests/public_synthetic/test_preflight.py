@@ -83,6 +83,47 @@ class PublicPreflightTests(unittest.TestCase):
         self.assertIn('if syntheticDiagnosticsEnabled { return }', capture)
         self.assertIn('if !syntheticDiagnosticsEnabled &&', source)
 
+    def test_banner_comparison_is_gated_and_preserves_the_original_failure(self):
+        support = (ROOT / 'App/UITestSupport.swift').read_text()
+        self.assertIn('case toolbar, production, bannerPassThrough, toolbarRecheck', support)
+        self.assertIn('enabled && probe == .bannerPassThrough', support)
+        modifier = support.split('struct SyntheticBannerHitTestProbe: ViewModifier {', 1)[1]
+        self.assertIn('if SyntheticUIDiagnostics.bannerHitTestingDisabled', modifier)
+        self.assertIn('content.allowsHitTesting(false)', modifier)
+        self.assertIn('} else { content }', modifier)
+        root = (ROOT / 'App/RootView.swift').read_text()
+        self.assertRegex(root, r'background\(\.regularMaterial\)\s+#if DEBUG\s+\.modifier\(SyntheticBannerHitTestProbe\(\)\)\s+#endif')
+        source = (ROOT / 'UITests/OnTracFlowTests.swift').read_text()
+        helper = source.split('private func probeToolbarHitRegion(_ probe: String)', 1)[1].split('\n    @discardableResult', 1)[0]
+        self.assertNotIn('XCTAssert', helper)
+        self.assertNotIn('tapTestImport()', helper)
+        self.assertNotIn('withNormalizedOffset', helper)
+        self.assertIn('["bannerPassThrough", "toolbarRecheck"].contains(probe)', helper)
+        self.assertIn('app.launchArguments[storeIndex + 1] = UUID().uuidString', helper)
+        self.assertIn('app.launchArguments[probeIndex + 1] = probe', helper)
+        self.assertIn('controls.count == 1, control.isEnabled, control.isHittable', helper)
+        self.assertLess(helper.index('activationDiagnostics()'), helper.index('control.tap()'))
+        chooser = source.split('private func chooseDay() -> Bool {', 1)[1].split('\n    func test', 1)[0]
+        self.assertLess(chooser.index('probeProductionImport()'), chooser.index('probeToolbarHitRegion("bannerPassThrough")'))
+        self.assertLess(chooser.index('probeToolbarHitRegion("bannerPassThrough")'), chooser.index('probeToolbarHitRegion("toolbarRecheck")'))
+        self.assertLess(chooser.index('probeToolbarHitRegion("toolbarRecheck")'), chooser.index('XCTAssertTrue(originalChooserFound, originalDiagnostics)'))
+        self.assertIn('return false', chooser)
+
+    def test_picker_witness_is_bounded_positive_only_and_never_loads_views(self):
+        support = (ROOT / 'App/UITestSupport.swift').read_text()
+        sampler = support.split('private static func observeDocumentPicker()', 1)[1].split('private static func write(', 1)[0]
+        self.assertIn('guard enabled, probe == .production', sampler)
+        self.assertIn('[UInt64(0), 500_000_000, 1_000_000_000]', sampler)
+        self.assertIn('snapshot.documentPickerWasPresented || documentPickerInForegroundScene()', sampler)
+        self.assertIn('snapshot.pickerObservationCompleted = true', sampler)
+        self.assertIn('controller is UIDocumentPickerViewController', sampler)
+        self.assertIn('controller.viewIfLoaded?.window != nil', sampler)
+        self.assertNotRegex(sampler, r'controller\.view\b')
+        self.assertIn('visited.count < 64', sampler)
+        self.assertIn('.prefix(8)', sampler)
+        for forbidden in ('print(', 'NSLog(', '.title', '.description', '.accessibilityLabel', '.url'):
+            self.assertNotIn(forbidden, sampler)
+
     def test_diagnostic_scope_keeps_selection_and_allows_practical_hung_job_cleanup(self):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
         self.assertIn('activation-diagnostics', workflow)

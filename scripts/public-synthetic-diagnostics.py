@@ -17,7 +17,7 @@ import time
 
 
 BUNDLE = 'dev.galaxybigbird.ApartmentFinder'
-PROBES = ('toolbar', 'production')
+PROBES = ('toolbar', 'production', 'bannerPassThrough', 'toolbarRecheck')
 DEVICE_PATTERN = re.compile(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\Z')
 MAX_BYTES = 8192
 SCHEMA_FIELDS = (
@@ -27,6 +27,8 @@ SCHEMA_FIELDS = (
     'requiresPrivatePack', 'privatePackImportPending', 'loading', 'requestPresent',
     'manifestSheetAppeared', 'manifestPickerRequested', 'settingsPresented',
     'packPickerRequested', 'errorPresent',
+    'bannerHitTestingDisabled', 'documentPickerWasPresented',
+    'pickerObservationCompleted',
 )
 INTEGER_RULES = {
     'schemaVersion': (1, 1), 'sequence': (1, 4096), 'rootAppearances': (0, 64),
@@ -38,7 +40,8 @@ ENUM_RULES = {
     'lastEvent': ('rootAppeared', 'sceneChanged', 'actionEntered', 'fixtureStarted',
                   'fixtureReady', 'fixtureFailed', 'openStarted', 'requestPublished',
                   'readFailed', 'loadingEnded', 'manifestSheetAppeared',
-                  'manifestPickerChanged', 'settingsChanged', 'packPickerChanged'),
+                  'manifestPickerChanged', 'settingsChanged', 'packPickerChanged',
+                  'documentPickerObserved'),
     'scenePhase': ('unknown', 'active', 'inactive', 'background'),
     'lastAction': ('none', 'mixed', 'manifestImport', 'share', 'productionImport'),
     'fixturePhase': ('idle', 'installing', 'ready', 'failed'),
@@ -48,6 +51,8 @@ BOOLEAN_FIELDS = (
     'requiresPrivatePack', 'privatePackImportPending', 'loading', 'requestPresent',
     'manifestSheetAppeared', 'manifestPickerRequested', 'settingsPresented',
     'packPickerRequested', 'errorPresent',
+    'bannerHitTestingDisabled', 'documentPickerWasPresented',
+    'pickerObservationCompleted',
 )
 
 

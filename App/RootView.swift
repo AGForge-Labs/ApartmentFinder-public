@@ -34,6 +34,9 @@ struct RootView: View {
                     if location.recordingNeedsFinish { Text("Save the recorded path section before importing a map pack.").font(.caption) }
                     if store.privatePackImportPending { ProgressView("Importing map pack…") }
                 }.padding().frame(maxWidth: .infinity).background(.regularMaterial)
+                #if DEBUG
+                .modifier(SyntheticBannerHitTestProbe())
+                #endif
             }
         }
         .fileImporter(isPresented: $importingPack, allowedContentTypes: [.folder]) { result in
