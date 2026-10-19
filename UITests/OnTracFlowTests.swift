@@ -91,6 +91,55 @@ final class OnTracFlowTests: XCTestCase {
         } }
         return "state=\(app.state.rawValue);appAlert=\(app.alerts["ApartmentFinder"].exists);importAlert=\(app.alerts["Could not import"].exists);settings=\(app.navigationBars["Settings"].exists);preview=\(app.navigationBars["Preview manifest"].exists);fullButtons=\(app.buttons.matching(identifier: fullID).count);emptyButtons=\(app.buttons.matching(identifier: emptyID).count);fullAny=\(anyFull.count);fullType=\(type);submit=\(submit.exists);submitEnabled=\(submit.exists && submit.isEnabled);overlap=\(overlap);equalFrames=\(equalFrames);\(geometry);\(status)"
     }
+    // A separate read-only host observation cannot replace the saved normal result.
+    private func probePinHost() {
+        guard syntheticDiagnosticsEnabled,
+              let storeIndex = app.launchArguments.firstIndex(of: "--test-store"),
+              storeIndex + 1 < app.launchArguments.count else { return }
+        let deadline = Date().addingTimeInterval(45)
+        func remaining() -> TimeInterval { min(6, max(0, deadline.timeIntervalSinceNow)) }
+        func tap(_ id: String) -> Bool {
+            let controls = app.buttons.matching(identifier: id)
+            guard remaining() > 0, controls.firstMatch.waitForExistence(timeout: remaining()), controls.count == 1,
+                  controls.firstMatch.isEnabled, controls.firstMatch.isHittable, remaining() > 0 else { return false }
+            controls.firstMatch.tap(); return true
+        }
+        app.terminate()
+        app.launchArguments[storeIndex + 1] = UUID().uuidString
+        app.launchArguments.append("--synthetic-pin-host-probe")
+        app.launch()
+        guard app.buttons["apartments.import"].waitForExistence(timeout: remaining()),
+              tap("test.import"), tap("manifest.file.manifest_2026-01-02.csv") else {
+            print("syntheticPinProbe=importUnavailable"); return
+        }
+        let submit = app.buttons["manifest.import"]
+        guard submit.waitForExistence(timeout: remaining()) else {
+            print("syntheticPinProbe=submitUnavailable"); return
+        }
+        for _ in 0..<5 where !submit.isHittable && remaining() > 0 { app.swipeUp() }
+        guard tap("manifest.import"), tap("apartment.fictional-courtyard"), tap("mini.start"),
+              app.maps.firstMatch.waitForExistence(timeout: remaining()) else {
+            print("syntheticPinProbe=mapUnavailable"); return
+        }
+        let coverageElements = app.staticTexts.matching(identifier: "mini.coverage")
+        guard coverageElements.firstMatch.waitForExistence(timeout: remaining()), coverageElements.count == 1 else {
+            print("syntheticPinProbe=snapshotUnavailable"); return
+        }
+        let coverage = coverageElements.firstMatch
+        let pattern = #"\ApinHostSchema=1;sample=3;window=(true|false);host=(true|false);map=(true|false);pinBounds=(true|false);hostBounds=(true|false);mapBounds=(true|false);inMap=(true|false);hiddenAncestor=(true|false);transparentAncestor=(true|false);axHiddenAncestor=(true|false);ancestorTruncated=(true|false);hostLeaf=(true|false);hostAXHidden=(true|false);hostTitle=(true|false);nativeID=[0-3];nativeLabel=[0-3];nativeButton=[0-3];nativeTruncated=(true|false);axID=[0-3];axLabel=[0-3];axButton=[0-3];axUnavailable=(true|false);axTruncated=(true|false)\z"#
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value MATCHES %@", pattern), object: coverage)
+        _ = XCTWaiter.wait(for: [ready], timeout: min(4, remaining()))
+        guard app.state == .runningForeground, coverageElements.count == 1, coverage.exists else {
+            print("syntheticPinProbe=snapshotUnavailable"); return
+        }
+        let raw = coverage.value as? String ?? ""
+        guard raw.range(of: pattern, options: .regularExpression) != nil else {
+            print(raw == "pinHostProbe=notObserved" ? "syntheticPinProbe=notObserved" : "syntheticPinProbe=snapshotUnavailable")
+            return
+        }
+        print("syntheticPinProbe=observed;\(raw);\(sourcePinDiagnostics())")
+    }
+
     // Fixed scalars and allowlisted coverage states only; no labels or hierarchy escape.
     private func sourcePinDiagnostics() -> String {
         let predicate = NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.1.")
@@ -135,8 +184,12 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertTrue(app.maps.firstMatch.waitForExistence(timeout: 8))
         XCTAssertFalse(app.navigationBars["Check Door Pin"].exists)
         let pin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.1.")).firstMatch
-        // XCTest evaluates this assertion-message autoclosure only on failure.
-        XCTAssertTrue(pin.waitForExistence(timeout: 5), sourcePinDiagnostics())
+        // Save both normal-launch values before any diagnostic relaunch.
+        let originalPinFound = pin.waitForExistence(timeout: 5)
+        let originalPinDiagnostics = originalPinFound ? "" : sourcePinDiagnostics()
+        if !originalPinFound && syntheticDiagnosticsEnabled { probePinHost() }
+        XCTAssertTrue(originalPinFound, originalPinDiagnostics)
+        guard originalPinFound else { return }
         XCTAssertTrue(pin.label.contains("4102"))
         let laterPin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.2.")).firstMatch
         XCTAssertTrue(laterPin.waitForExistence(timeout: 5))

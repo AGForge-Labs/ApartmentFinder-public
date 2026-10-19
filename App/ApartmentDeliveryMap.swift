@@ -15,6 +15,9 @@ struct ApartmentDeliveryMap: View {
     @State private var followedHeading: Double = 0
     @State private var viewport: CGSize = .zero
     @State private var showingPropertyForDistantUser = false
+    #if DEBUG && targetEnvironment(simulator)
+    @State private var pinHostSnapshot = ""
+    #endif
     @AppStorage(DeliveryMapStyle.preferenceKey) private var mapStyle = DeliveryMapStyle.satellite
 
     private struct Pin: Identifiable {
@@ -66,7 +69,16 @@ struct ApartmentDeliveryMap: View {
             }
             ForEach(pins) { pin in
                 Annotation("Unit \(pin.stop.unit)", coordinate: pin.place.coordinate.cl, anchor: .bottom) {
+                    #if DEBUG && targetEnvironment(simulator)
+                    if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
+                        group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
+                        pinButton(pin).background {
+                            SyntheticPinHostProbe { pinHostSnapshot = $0 }
+                        }
+                    } else { pinButton(pin) }
+                    #else
                     pinButton(pin)
+                    #endif
                 }.annotationTitles(.hidden)
             }
             if pins.isEmpty, let center = group.coordinate {
@@ -83,7 +95,7 @@ struct ApartmentDeliveryMap: View {
         .mapControls { MapCompass() }
         .overlay(alignment: .topLeading) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(coverage(pins)).font(.caption.bold()).accessibilityIdentifier("mini.coverage")
+                coverageLabel(pins)
                 if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
                 if pins.isEmpty {
                     Text(group.coordinate == nil ? "Community location not mapped" : "Community area").font(.caption2)
@@ -138,6 +150,17 @@ struct ApartmentDeliveryMap: View {
         // Choosing/advancing a delivery changes its highlight, not the user's camera/follow choice.
     }
 
+    @ViewBuilder private func coverageLabel(_ pins: [Pin]) -> some View {
+        let label = Text(coverage(pins)).font(.caption.bold()).accessibilityIdentifier("mini.coverage")
+        #if DEBUG && targetEnvironment(simulator)
+        if SyntheticPinHostProbe.enabled {
+            label.accessibilityValue(Text(verbatim: pinHostSnapshot.isEmpty ? "pinHostProbe=notObserved" : pinHostSnapshot))
+        } else { label }
+        #else
+        label
+        #endif
+    }
+
     @ViewBuilder private var followingControl: some View {
         if following.isFollowing {
             Button(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? "Showing apartment pins" :
@@ -177,7 +200,6 @@ struct ApartmentDeliveryMap: View {
             DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                            color: pin.color, selected: selectedStopID == pin.stop.id, estimated: pin.place.verification == .estimated)
         }.buttonStyle(.plain)
-            .accessibilityElement(children: .combine)
             .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")
             .accessibilityIdentifier("mini.pin.\(pin.stop.sequence).\(pin.place.id)")
     }
