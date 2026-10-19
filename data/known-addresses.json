@@ -1,0 +1,372 @@
+{
+  "schemaVersion": 1,
+  "packVersion": "2026.10.14.1",
+  "entries": [
+    {
+      "address": "7960 Rafael Rivera Way",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9450 W Hacienda Ave",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9500 W Maule Ave",
+      "deliveryAddresses": [
+        "9500 W MAULE AVE"
+      ]
+    },
+    {
+      "address": "9580 W Reno Ave",
+      "deliveryAddresses": [
+        "9580 W RENO AVE"
+      ]
+    },
+    {
+      "address": "9330 W Maule Ave",
+      "deliveryAddresses": [
+        "9330 W MAULE AVE"
+      ]
+    },
+    {
+      "address": "8855 W Arby Ave",
+      "deliveryAddresses": [
+        "8855 W ARBY AVE",
+        "8855 W Arby Ave, Las Vegas, NV 89148"
+      ]
+    },
+    {
+      "address": "8030 W Maule Ave",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "7660 W Eldorado Ln",
+      "deliveryAddresses": [
+        "7660 W ELDORADO LN"
+      ]
+    },
+    {
+      "address": "7955-7975 W Badura Ave",
+      "deliveryAddresses": [
+        "7955 W BADURA AVE"
+      ]
+    },
+    {
+      "address": "6160 Rumrill St",
+      "deliveryAddresses": [
+        "6160 RUMRILL ST"
+      ]
+    },
+    {
+      "address": "8341 W Warm Springs Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8000 W Badura Ave",
+      "deliveryAddresses": [
+        "8000 W BADURA AVE"
+      ]
+    },
+    {
+      "address": "Mission Hills Dr (area reference)",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9550 W Russell Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9265 W Russell Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8150 Rafael Rivera Way",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8777 W Maule Ave",
+      "deliveryAddresses": [
+        "8777 W MAULE AVE"
+      ]
+    },
+    {
+      "address": "7227 W Windmill Ln",
+      "deliveryAddresses": [
+        "7227 W WINDMILL LN"
+      ]
+    },
+    {
+      "address": "8760 W Patrick Ln",
+      "deliveryAddresses": [
+        "8760 W PATRICK LN"
+      ]
+    },
+    {
+      "address": "6111 S Buffalo Dr",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "Harbour Towne Ave (area reference)",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "7701 W Robindale Rd",
+      "deliveryAddresses": [
+        "7701 W ROBINDALE RD"
+      ]
+    },
+    {
+      "address": "5453 S Durango Dr",
+      "deliveryAddresses": [
+        "5453 S DURANGO DR"
+      ]
+    },
+    {
+      "address": "9005 W Oquendo Rd",
+      "deliveryAddresses": [
+        "9005 W OQUENDO RD"
+      ]
+    },
+    {
+      "address": "8251 W Sunset Rd",
+      "deliveryAddresses": [
+        "8251 W SUNSET RD",
+        "8251 W Sunset Rd, Las Vegas, NV 89113"
+      ]
+    },
+    {
+      "address": "6550 Quarterhorse Ln",
+      "deliveryAddresses": [
+        "6550 S QUARTERHORSE LN"
+      ]
+    },
+    {
+      "address": "6655 S Fort Apache Rd",
+      "deliveryAddresses": [
+        "6655 S Fort Apache Rd"
+      ]
+    },
+    {
+      "address": "7880 W Maule Ave",
+      "deliveryAddresses": [
+        "7880 W Maule Ave, Las Vegas, NV 89113"
+      ]
+    },
+    {
+      "address": "8680 W Oquendo Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9170 W Oquendo Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8555 W Russell Rd",
+      "deliveryAddresses": [
+        "8555 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "8147 W Warm Springs Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9314 W Russell Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9620 W Russell Rd",
+      "deliveryAddresses": [
+        "9620 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "8025 W Russell Rd",
+      "deliveryAddresses": [
+        "8025 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "8960 W Post Rd",
+      "deliveryAddresses": [
+        "8960 W POST RD"
+      ]
+    },
+    {
+      "address": "7685 Orange Fury Ave",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8920 W Russell Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8070 W Russell Rd",
+      "deliveryAddresses": [
+        "8070 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "9925 W Russell Rd",
+      "deliveryAddresses": [
+        "9925 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "7340 W Russell Rd",
+      "deliveryAddresses": [
+        "7340 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "7380 W Russell Rd",
+      "deliveryAddresses": [
+        "7380 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "5355 S Rainbow Blvd",
+      "deliveryAddresses": [
+        "5355 S Rainbow Blvd"
+      ]
+    },
+    {
+      "address": "Emerald Springs Ln (area reference)",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "5450 S Fort Apache Rd",
+      "deliveryAddresses": [
+        "5450 S FORT APACHE RD"
+      ]
+    },
+    {
+      "address": "9700 W Sunset Rd",
+      "deliveryAddresses": [
+        "9700 W SUNSET RD"
+      ]
+    },
+    {
+      "address": "8985 S Durango Dr",
+      "deliveryAddresses": [
+        "8985 S DURANGO DR"
+      ]
+    },
+    {
+      "address": "6355 S Durango Dr",
+      "deliveryAddresses": [
+        "6355 S DURANGO DR"
+      ]
+    },
+    {
+      "address": "7413 W Russell Rd",
+      "deliveryAddresses": [
+        "7413 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "9465 W Post Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "6355 S Riley St",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8975 W Warm Springs Rd",
+      "deliveryAddresses": [
+        "8975 W Warm Springs Rd, Las Vegas, NV 89148"
+      ]
+    },
+    {
+      "address": "9235 W Russell Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9050 W Warm Springs Rd",
+      "deliveryAddresses": [
+        "9050 W WARM SPRINGS RD"
+      ]
+    },
+    {
+      "address": "Crooked Stick Way / Heather Downs Dr",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9242 W Russell Rd",
+      "deliveryAddresses": [
+        "9206 W RUSSELL RD",
+        "9212 W RUSSELL RD",
+        "9218 W RUSSELL RD",
+        "9224 W RUSSELL RD",
+        "9230 W RUSSELL RD",
+        "9236 W RUSSELL RD",
+        "9242 W RUSSELL RD",
+        "9252 W RUSSELL RD",
+        "9258 W RUSSELL RD",
+        "9264 W RUSSELL RD",
+        "9272 W RUSSELL RD",
+        "9278 W RUSSELL RD",
+        "9284 W RUSSELL RD",
+        "9290 W RUSSELL RD"
+      ]
+    },
+    {
+      "address": "9280 W Post Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "7017 S Buffalo Dr",
+      "deliveryAddresses": [
+        "7017 S BUFFALO DR"
+      ]
+    },
+    {
+      "address": "7255 W Sunset Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8475 Michael Cherry Ave",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "7181 S Durango Dr",
+      "deliveryAddresses": [
+        "7103 S DURANGO DR",
+        "7107 S DURANGO DR",
+        "7111 S DURANGO DR",
+        "7115 S DURANGO DR",
+        "7119 S DURANGO DR",
+        "7123 S DURANGO DR",
+        "7127 S DURANGO DR",
+        "7131 S DURANGO DR",
+        "7135 S DURANGO DR",
+        "7139 S DURANGO DR",
+        "7143 S DURANGO DR",
+        "7147 S DURANGO DR",
+        "7151 S DURANGO DR",
+        "7155 S DURANGO DR",
+        "7159 S DURANGO DR",
+        "7163 S DURANGO DR",
+        "7167 S DURANGO DR",
+        "7173 S DURANGO DR",
+        "7185 S DURANGO DR",
+        "7189 S DURANGO DR"
+      ]
+    },
+    {
+      "address": "5055 S Fort Apache Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "9625 W Russell Rd",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "5175 S Jerry Tarkanian Way",
+      "deliveryAddresses": [
+        "5175 S JERRY TARKANIAN WAY"
+      ]
+    }
+  ]
+}
