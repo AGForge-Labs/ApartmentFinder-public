@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "scheme": "ApartmentFinder",
+  "project": "ApartmentFinder.xcodeproj",
+  "spec": "project.yml",
+  "xcode_lock": "Config/Iteration-Package.resolved",
+  "wsl_distribution": "Ubuntu",
+  "wsl_swift": "/home/linuxandy/.local/share/swiftly/toolchains/6.2.3/usr/bin/swift",
+  "core_focus": {},
+  "native_focus": {
+    "App/DeliveryMapStyle.swift": ["ApartmentFinderUITests/MapAppearanceTests"]
+  },
+  "full_acceptance": {"native": 68, "ui": 40, "original_pngs": 45}
+}
