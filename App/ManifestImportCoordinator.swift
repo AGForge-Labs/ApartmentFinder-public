@@ -13,6 +13,21 @@ final class ManifestImportCoordinator: ObservableObject {
     @Published var unreadable: [ManifestInboxIssue] = []
     @Published var error: String?
     @Published var loading = false
+    #if DEBUG
+    enum UITestAction: String { case mixed, manifestImport, share }
+    @Published private(set) var uiTestMixedAttempts = 0
+    @Published private(set) var uiTestImportAttempts = 0
+    @Published private(set) var uiTestShareAttempts = 0
+    @Published private(set) var uiTestLastAction: UITestAction?
+    func recordUITestAction(_ action: UITestAction) {
+        uiTestLastAction = action
+        switch action {
+        case .mixed: uiTestMixedAttempts += 1
+        case .manifestImport: uiTestImportAttempts += 1
+        case .share: uiTestShareAttempts += 1
+        }
+    }
+    #endif
     private var reading = false
     private var deferredIDs = Set<String>()
     private let inboxProvider: () throws -> ManifestInbox

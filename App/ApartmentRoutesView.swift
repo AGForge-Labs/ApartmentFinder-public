@@ -114,9 +114,7 @@ struct ApartmentRoutesView: View {
                 }
                 #if DEBUG
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        if UITestSupport.enabled { UITestManifestControls(imports: imports, store: store) }
-                    }
+                    if UITestSupport.enabled { UITestManifestControls(imports: imports, store: store) }
                 }
                 #endif
             }
@@ -126,9 +124,7 @@ struct ApartmentRoutesView: View {
                         .accessibilityIdentifier("apartments.settings")
                 }
                 #if DEBUG
-                ToolbarItem(placement: .topBarTrailing) {
-                    if UITestSupport.enabled && path.isEmpty { UITestManifestControls(imports: imports, store: store) }
-                }
+                if UITestSupport.enabled && path.isEmpty { UITestManifestControls(imports: imports, store: store) }
                 #endif
             }
             .sheet(isPresented: $settings) { LibraryView(store: store, location: location, offline: $offline) }

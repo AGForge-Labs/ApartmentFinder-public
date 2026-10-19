@@ -17,6 +17,27 @@ def module(name, path):
 
 
 class PublicPreflightTests(unittest.TestCase):
+    def test_debug_manifest_buttons_are_individual_native_toolbar_controls(self):
+        support = (ROOT / 'App/UITestSupport.swift').read_text()
+        controls = support.split('struct UITestManifestControls:', 1)[1].split('private struct UITestShareSheet:', 1)[0]
+        self.assertTrue(controls.startswith(' ToolbarContent'))
+        self.assertIn('ToolbarItemGroup(placement: .topBarTrailing)', controls)
+        self.assertNotIn('HStack {', controls)
+        self.assertEqual(controls.count('.labelStyle(.iconOnly)'), 3)
+        self.assertEqual(controls.count('.sheet(item: $sharedFile)'), 1)
+        for title, action, identity in (('Mixed', 'mixed', 'test.mixed'),
+                                        ('Test import', 'manifestImport', 'test.import'),
+                                        ('Test share', 'share', 'test.share')):
+            self.assertRegex(controls, r'Button\("' + title + r'", systemImage: "[^"]+"\) \{\s+imports.recordUITestAction\(\.' + action + r'\)')
+            self.assertIn('.accessibilityIdentifier("' + identity + '")', controls)
+        coordinator = (ROOT / 'App/ManifestImportCoordinator.swift').read_text()
+        self.assertIn('func recordUITestAction(', coordinator)
+        root = (ROOT / 'App/RootView.swift').read_text()
+        self.assertIn('@StateObject private var imports = ManifestImportCoordinator()', root)
+        routes = (ROOT / 'App/ApartmentRoutesView.swift').read_text()
+        self.assertEqual(routes.count('UITestManifestControls(imports: imports, store: store)'), 2)
+        self.assertNotRegex(routes, r'ToolbarItem\(placement: \.topBarTrailing\) \{\s+if UITestSupport.enabled')
+
     def test_ontrac_ui_setup_uses_the_validated_fixture_without_bypassing_import(self):
         support = (ROOT / 'App/UITestSupport.swift').read_text()
         encoded = re.search(r'Data\(base64Encoded: "([A-Za-z0-9+/=]+)"\)', support).group(1)

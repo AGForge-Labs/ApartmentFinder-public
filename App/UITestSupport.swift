@@ -42,14 +42,19 @@ enum UITestSupport {
         return url
     }
 }
-struct UITestManifestControls: View {
+@MainActor
+struct UITestManifestControls: ToolbarContent {
     @ObservedObject var imports: ManifestImportCoordinator
     @ObservedObject var store: AppStore
     private struct SharedFile: Identifiable { let id = UUID(); let url: URL }
     @State private var sharedFile: SharedFile?
-    var body: some View {
-        HStack {
-            Button("Mixed") {
+    private var importStatus: String {
+        "mixedAttempts=\(imports.uiTestMixedAttempts);importAttempts=\(imports.uiTestImportAttempts);shareAttempts=\(imports.uiTestShareAttempts);lastAction=\(imports.uiTestLastAction?.rawValue ?? "none");fixtureReady=\(store.pack?.catalog.packVersion == "fictional-ontrac-v1");loading=\(imports.loading);documents=\(imports.request?.documents.count ?? 0);errorPresent=\(store.errorMessage != nil || imports.error != nil)"
+    }
+    var body: some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            Button("Mixed", systemImage: "list.number") {
+                imports.recordUITestAction(.mixed)
                 do {
                     let arguments = ProcessInfo.processInfo.arguments
                     let replacement = arguments.contains("--replacement-manifest")
@@ -94,24 +99,26 @@ struct UITestManifestControls: View {
                     try Data(csv.utf8).write(to: url, options: .atomic)
                     imports.open(url, addresses: store.knownApartmentAddresses)
                 } catch { store.errorMessage = error.localizedDescription }
-            }.accessibilityIdentifier("test.mixed")
-            Button("Test import") {
+            }.labelStyle(.iconOnly).accessibilityIdentifier("test.mixed")
+            Button("Test import", systemImage: "square.and.arrow.down") {
+                imports.recordUITestAction(.manifestImport)
                 do {
                     try UITestSupport.prepareFictionalManifest(in: store)
                     imports.open(try UITestSupport.manifestURL(), addresses: store.knownApartmentAddresses)
                 }
                 catch { store.errorMessage = error.localizedDescription }
-            }.accessibilityIdentifier("test.import")
-                .accessibilityValue("fixtureReady=\(store.pack?.catalog.packVersion == "fictional-ontrac-v1");loading=\(imports.loading);documents=\(imports.request?.documents.count ?? 0);errorPresent=\(store.errorMessage != nil || imports.error != nil)")
-            Button("Test share") {
+            }.labelStyle(.iconOnly).accessibilityIdentifier("test.import")
+                .accessibilityValue(Text(verbatim: importStatus))
+            Button("Test share", systemImage: "square.and.arrow.up") {
+                imports.recordUITestAction(.share)
                 do {
                     try UITestSupport.prepareFictionalManifest(in: store)
                     sharedFile = SharedFile(url: try UITestSupport.manifestURL())
                 }
                 catch { store.errorMessage = error.localizedDescription }
-            }.accessibilityIdentifier("test.share")
+            }.labelStyle(.iconOnly).accessibilityIdentifier("test.share")
+                .sheet(item: $sharedFile) { file in UITestShareSheet(url: file.url) }
         }
-        .sheet(item: $sharedFile) { file in UITestShareSheet(url: file.url) }
     }
 }
 private struct UITestShareSheet: UIViewControllerRepresentable {

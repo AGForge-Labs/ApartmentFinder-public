@@ -36,19 +36,46 @@ final class OnTracFlowTests: XCTestCase {
         for _ in 0..<5 where !element.isHittable { app.swipeUp() }
         XCTAssertTrue(element.isHittable)
     }
+    private func tapTestImport() {
+        let controls = app.buttons.matching(identifier: "test.import")
+        XCTAssertEqual(controls.count, 1, chooserDiagnostics())
+        let control = controls.firstMatch
+        XCTAssertTrue(control.isEnabled, chooserDiagnostics())
+        XCTAssertTrue(control.isHittable, chooserDiagnostics())
+        control.tap()
+    }
+    private func controlDiagnostics(_ id: String, token: String) -> String {
+        let controls = app.buttons.matching(identifier: id)
+        guard controls.count == 1 else { return "\(token)Count=\(controls.count)" }
+        let control = controls.firstMatch, frame = control.frame
+        let valid = !frame.isEmpty && [frame.minX, frame.minY, frame.width, frame.height].allSatisfy { $0.isFinite }
+        let inside = valid && app.frame.contains(CGPoint(x: frame.midX, y: frame.midY))
+        return "\(token)Count=1;\(token)Enabled=\(control.isEnabled);\(token)Hittable=\(control.isHittable);\(token)FrameValid=\(valid);\(token)CenterInside=\(inside)"
+    }
     // Fixed-key state only: never print alert text, labels, paths or a hierarchy.
     private func chooserDiagnostics() -> String {
         let fullID = "manifest.file.manifest_2026-01-02.csv"
         let emptyID = "manifest.file.manifest_2026-01-01.csv"
         let anyFull = app.descendants(matching: .any).matching(identifier: fullID)
         let type = anyFull.firstMatch.exists ? String(anyFull.firstMatch.elementType.rawValue) : "none"
-        let control = app.buttons["test.import"]
-        let status = control.exists ? (control.value as? String ?? "no-status") : "control-not-visible"
+        let controls = app.buttons.matching(identifier: "test.import")
+        let status = controls.count == 1 ? (controls.firstMatch.value as? String ?? "no-status") : "importControlCount=\(controls.count)"
         let submit = app.buttons["manifest.import"]
-        return "state=\(app.state.rawValue);appAlert=\(app.alerts["ApartmentFinder"].exists);importAlert=\(app.alerts["Could not import"].exists);preview=\(app.navigationBars["Preview manifest"].exists);fullButtons=\(app.buttons.matching(identifier: fullID).count);emptyButtons=\(app.buttons.matching(identifier: emptyID).count);fullAny=\(anyFull.count);fullType=\(type);submit=\(submit.exists);submitEnabled=\(submit.exists && submit.isEnabled);\(status)"
+        let geometry = [("test.mixed", "mixed"), ("test.import", "import"), ("test.share", "share")]
+            .map { controlDiagnostics($0.0, token: $0.1) }.joined(separator: ";")
+        let frames = ["test.mixed", "test.import", "test.share"].compactMap { id -> CGRect? in
+            let items = app.buttons.matching(identifier: id)
+            return items.count == 1 ? items.firstMatch.frame : nil
+        }
+        var overlap = false, equalFrames = false
+        for i in frames.indices { for j in frames.indices where j > i {
+            overlap = overlap || frames[i].intersects(frames[j])
+            equalFrames = equalFrames || frames[i] == frames[j]
+        } }
+        return "state=\(app.state.rawValue);appAlert=\(app.alerts["ApartmentFinder"].exists);importAlert=\(app.alerts["Could not import"].exists);settings=\(app.navigationBars["Settings"].exists);preview=\(app.navigationBars["Preview manifest"].exists);fullButtons=\(app.buttons.matching(identifier: fullID).count);emptyButtons=\(app.buttons.matching(identifier: emptyID).count);fullAny=\(anyFull.count);fullType=\(type);submit=\(submit.exists);submitEnabled=\(submit.exists && submit.isEnabled);overlap=\(overlap);equalFrames=\(equalFrames);\(geometry);\(status)"
     }
     func testSourceUnitPinAppearsOnMapAfterOnTracImport() {
-        app.buttons["test.import"].tap()
+        tapTestImport()
         chooseDay()
         let submit = app.buttons["manifest.import"]; reach(submit); submit.tap()
         XCTAssertTrue(app.buttons["apartment.fictional-courtyard"].waitForExistence(timeout: 10))
@@ -70,7 +97,7 @@ final class OnTracFlowTests: XCTestCase {
         capture("Cancelling pin review preserves the active map")
     }
     func testZIPPreviewCancellationEmptyDayAndApartmentNavigation() {
-        app.buttons["test.import"].tap()
+        tapTestImport()
         XCTAssertTrue(app.buttons["manifest.file.manifest_2026-01-02.csv"].waitForExistence(timeout: 10), chooserDiagnostics())
         XCTAssertFalse(app.buttons["manifest.import"].exists)
         chooseDay()
@@ -79,7 +106,7 @@ final class OnTracFlowTests: XCTestCase {
         capture("OnTrac manifest preview")
         app.buttons["Cancel"].tap()
         XCTAssertFalse(app.buttons["apartment.fictional-courtyard"].exists)
-        app.buttons["test.import"].tap()
+        tapTestImport()
         let empty = app.buttons["manifest.file.manifest_2026-01-01.csv"]
         XCTAssertTrue(empty.waitForExistence(timeout: 10)); empty.tap()
         XCTAssertFalse(app.buttons["manifest.import"].isEnabled)
