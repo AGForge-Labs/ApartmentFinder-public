@@ -209,9 +209,17 @@ class PublicCatalogExportTests(unittest.TestCase):
         self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(11_500)]
         self.run_export(); self.run_validate()
         path = self.output / 'public-catalog.json'
-        self.assertLessEqual(path.stat().st_size, 2_000_000)
+        self.assertLessEqual(path.stat().st_size, 2_100_000)
         value = json.loads(path.read_bytes())
         self.assertEqual(value['communities'][0]['aliases'], self.catalog['communities'][0]['aliases'])
+        self.output = self.directory / 'reviewed-public-growth'
+        self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(12_000)]
+        self.run_export(); self.run_validate()
+        path = self.output / 'public-catalog.json'
+        self.assertGreater(path.stat().st_size, 2_000_000)
+        self.assertLessEqual(path.stat().st_size, 2_100_000)
+        self.assertEqual(json.loads(path.read_bytes())['communities'][0]['aliases'],
+                         self.catalog['communities'][0]['aliases'])
         self.output = self.directory / 'oversized-catalog'
         self.catalog['communities'][0]['aliases'] *= 2
         self.run_export(valid=False)

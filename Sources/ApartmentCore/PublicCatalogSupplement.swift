@@ -3,6 +3,12 @@ import Foundation
 /// An additive, in-memory view of reviewed public bundle data. Neither private
 /// generations nor personal backups are installed, migrated or rewritten here.
 public enum PublicCatalogSupplement {
+    // Only the immutable reviewed public bundle gets this measured budget.
+    // User-selected imports and private generations keep DataPackPayload's limits.
+    static func readCatalogFile(_ url: URL) throws -> Data {
+        try DataPackPayload.boundedData(url, maximum: 2_100_000)
+    }
+
     public static func read(from bundle: Bundle) throws -> LocalDataPack? {
         let catalog = bundle.url(forResource: "public-catalog", withExtension: "json")
         let points = bundle.url(forResource: "public-locations", withExtension: "geojson")
@@ -11,7 +17,7 @@ public enum PublicCatalogSupplement {
         guard let catalog, let points, let paths else {
             throw CoreError("The bundled public catalog is incomplete.")
         }
-        return try LocalDataPack.read(catalog: DataPackPayload.readCatalogFile(catalog),
+        return try LocalDataPack.read(catalog: readCatalogFile(catalog),
                                       locations: DataPackPayload.readLocationsFile(points),
                                       paths: DataPackPayload.readPathsFile(paths))
     }

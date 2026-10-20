@@ -76,7 +76,9 @@ final class PublicCatalogBudgetTests: XCTestCase {
         XCTAssertThrowsError(try DataPackPayload.readCatalogFile(input.appendingPathComponent("catalog.json")))
         XCTAssertThrowsError(try DataPackPayload(catalog: large, locations: Data(locations.utf8), paths: Data(paths.utf8)))
         XCTAssertThrowsError(try DataPackPayload.read(directory: input))
-        XCTAssertThrowsError(try KnownAddressIndex.read(Data(repeating: 32, count: 2_000_001)))
+        let index = try KnownAddressIndex(catalog: payload().validated().catalog).data()
+        XCTAssertEqual(try KnownAddressIndex.read(index).addresses, ["100 Fictional Rd"])
+        XCTAssertThrowsError(try KnownAddressIndex.read(index + Data(repeating: 32, count: 2_000_001 - index.count)))
         let reopened = try XCTUnwrap(store.load())
         XCTAssertEqual(reopened.generationID, selected.generationID)
         XCTAssertEqual(reopened.pack.places, selected.pack.places)
@@ -114,21 +116,27 @@ final class PublicCatalogBudgetTests: XCTestCase {
 
     func testReviewedCatalogLoadingMeasurements() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        var inputs = [("candidate", root.appendingPathComponent("data"))]
+        var inputs: [(String, URL)] = []
         if let baselineRoot = ProcessInfo.processInfo.environment["PUBLIC_CATALOG_BASELINE_DIRECTORY"] {
             for revision in ["862853e261804cd9159788818f172b5571c5c677", "e634d2411c96849006d0cec633abef818f8a8245"] {
-                inputs.insert((revision, URL(fileURLWithPath: baselineRoot).appendingPathComponent(revision)), at: 0)
+                inputs.append((revision, URL(fileURLWithPath: baselineRoot).appendingPathComponent(revision)))
             }
         }
+        inputs.append(("candidate", root.appendingPathComponent("data")))
         for (label, directory) in inputs {
             let catalogURL = directory.appendingPathComponent("public-catalog.json")
             let bundle = try publicBundle(catalog: Data(contentsOf: catalogURL),
                 locations: Data(contentsOf: directory.appendingPathComponent("public-locations.geojson")),
                 paths: Data(contentsOf: directory.appendingPathComponent("public-paths.geojson")))
-            var samples: [Double] = [], associations = 0, places = 0
+            var samples: [Double] = [], readSamples: [Double] = [], applySamples: [Double] = []
+            var associations = 0, places = 0
             for _ in 0..<3 {
                 let start = Date()
-                let pack = try XCTUnwrap(PublicCatalogSupplement.read(from: bundle))
+                let decoded = try XCTUnwrap(PublicCatalogSupplement.read(from: bundle))
+                let applyStart = Date()
+                let pack = PublicCatalogSupplement.applying(decoded, to: nil)
+                readSamples.append(applyStart.timeIntervalSince(start) * 1000)
+                applySamples.append(Date().timeIntervalSince(applyStart) * 1000)
                 samples.append(Date().timeIntervalSince(start) * 1000)
                 associations = pack.catalog.unitBuildingAssociations?.count ?? 0; places = pack.places.count
             }
@@ -137,9 +145,10 @@ final class PublicCatalogBudgetTests: XCTestCase {
             var usage = rusage()
             if getrusage(RUSAGE_SELF, &usage) == 0 { peakBytes = Int64(usage.ru_maxrss) }
             #endif
-            let report: [String: Any] = ["scope":"public-catalog-read-decode-validate", "dataset":label,
+            let report: [String: Any] = ["scope":"public-catalog-read-decode-validate-supplement", "dataset":label,
                 "catalogBytes":try Data(contentsOf: catalogURL).count, "associations":associations, "places":places,
-                "medianMilliseconds":samples.sorted()[1], "processCumulativePeakRSSBytes":peakBytes]
+                "medianMilliseconds":samples.sorted()[1], "readDecodeValidateMedianMilliseconds":readSamples.sorted()[1],
+                "supplementMedianMilliseconds":applySamples.sorted()[1], "processCumulativePeakRSSBytes":peakBytes]
             let data = try JSONSerialization.data(withJSONObject: report, options: [.sortedKeys])
             print("PUBLIC_CATALOG_LOAD " + String(decoding: data, as: UTF8.self))
         }

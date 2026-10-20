@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[2]
 ADDED_COMMUNITIES = {'ensemble-ii', 'budget-suites-las-vegas-strip', 'one-las-vegas',
                      'st-james-place', 'southpark', 'paragon-lofts'}
 ADDED_SOURCES = {'p4-e1', 'p4-e2', 'p4-b1', 'p4-b2', 'p4-o1', 'p4-s1', 'p4-s2',
-                 'p4-k1', 'p4-k2', 'p4-p1', 'p4-p2', 'p4-sj', 'p4-dp'}
+                 'p4-k1', 'p4-k2', 'p4-p1', 'p4-p2', 'p4-sj', 'p4-dp', 'p4-pv', 'p4-sw'}
 
 
 def fingerprint(value):
@@ -36,9 +36,9 @@ class PublicCatalogResourceTests(unittest.TestCase):
             for qualifier in ('courtyard','physical signs','accuracy is unknown','not a unit position'):
                 self.assertIn(qualifier,p['notes'])
         self.assertEqual(len(catalog['communities']),162)
-        self.assertEqual(len(catalog['unitBuildingAssociations']),6373)
+        self.assertEqual(len(catalog['unitBuildingAssociations']),6923)
         self.assertEqual(sum(a['identifierKind']=='municipalLegal' for a in catalog['unitBuildingAssociations']),4223)
-        self.assertEqual(sum(a['identifierKind']=='operatorMap' for a in catalog['unitBuildingAssociations']),2150)
+        self.assertEqual(sum(a['identifierKind']=='operatorMap' for a in catalog['unitBuildingAssociations']),2700)
         self.assertFalse(catalog['coverage']['inventoryComplete'])
         # The published crosswalk sante->sante is wrong for the retained catalog.
         community_ids = {c['id'] for c in catalog['communities']}
@@ -106,22 +106,28 @@ class PublicCatalogResourceTests(unittest.TestCase):
     def test_recovered_associations_match_exact_reviewed_street_unit_and_building_facts(self):
         catalog, _, _ = resources()
         added = [a for a in catalog['unitBuildingAssociations'] if a['id'].startswith('p4a-')]
-        self.assertEqual(len(added), 225)
+        self.assertEqual(len(added), 775)
         facts = sorted([[a['communityID'], a['address'], a['unit'], a['building'], a['identifierKind']]
                         for a in added])
-        self.assertEqual(fingerprint(facts), '34a6d20ddab1328a97a2da5bda51081dd887d92cb51263b9c63ff1352b101a1a')
+        self.assertEqual(fingerprint(facts), '612f7c98d55aac3e6b26eb8b2a04453b2c78de996a12314c30c640e284c3c540')
         legal = [a for a in added if a['communityID'] == 'st-james-place']
-        operator = [a for a in added if a['communityID'] == 'destinations-pebble']
-        self.assertEqual((len(legal), len(operator)), (179, 46))
+        operator = [a for a in added if a['identifierKind'] == 'operatorMap']
+        self.assertEqual((len(legal), len(operator)), (179, 596))
+        expected_operator = {'destinations-pebble': ('1450 E PEBBLE RD', 'p4-dp', 46),
+                             'parkside-villas': ('8400 SOUTH MARYLAND PARKWAY', 'p4-pv', 200),
+                             'summer-winds': ('2725 W WIGWAM AVE', 'p4-sw', 350)}
         for a in legal:
             self.assertEqual((a['address'], a['identifierKind'], a['sourceIDs']),
                              ('2615 W GARY AVE', 'municipalLegal', ['p4-sj']))
             self.assertTrue(a['referencePlaceID'].startswith('st-james-place:legal:'))
         for a in operator:
+            street, source, count = expected_operator[a['communityID']]
             self.assertEqual((a['address'], a['identifierKind'], a['sourceIDs']),
-                             ('1450 E PEBBLE RD', 'operatorMap', ['p4-dp']))
+                             (street, 'operatorMap', [source]))
             self.assertNotIn('referencePlaceID', a)
-        self.assertEqual(len({a['id'] for a in added}), 225)
+        for cid, (_, _, count) in expected_operator.items():
+            self.assertEqual(sum(a['communityID'] == cid for a in operator), count)
+        self.assertEqual(len({a['id'] for a in added}), 775)
         for a in added:
             self.assertNotIn('mapFloor', a)
             self.assertFalse(set(a) & {'latitude', 'longitude', 'doorCoordinates', 'unitCoordinates'})
@@ -163,8 +169,8 @@ class PublicCatalogResourceTests(unittest.TestCase):
                          'villa-trieste-agate-gilespie', 'square-at-wigwam-ranch',
                          'paradise-spa', 'raven-point'}.isdisjoint(communities))
 
-    def test_public_resources_fit_unchanged_native_payload_limits(self):
-        limits = {'public-catalog.json':2_000_000,'public-locations.geojson':64_000_000,
+    def test_public_resources_fit_dedicated_public_catalog_and_unchanged_other_limits(self):
+        limits = {'public-catalog.json':2_100_000,'public-locations.geojson':64_000_000,
                   'public-paths.geojson':16_000_000,'known-addresses.json':2_000_000}
         for name,maximum in limits.items():
             with self.subTest(resource=name):

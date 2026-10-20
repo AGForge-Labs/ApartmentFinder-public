@@ -416,7 +416,7 @@ class PublicPreflightTests(unittest.TestCase):
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 117),
+            ('core', 'Tests/ApartmentCoreTests', '', 122),
             ('native', 'NativeTests', 'ApartmentFinderTests/', 71),
             ('ui', 'UITests', 'ApartmentFinderUITests/', 2),
         ):
@@ -424,6 +424,13 @@ class PublicPreflightTests(unittest.TestCase):
             self.assertEqual(len(values), count)
             self.assertEqual(len(values), len(set(values)))
             self.assertTrue(set(values) <= {target + item for item in iteration.test_ids(ROOT, folder)})
+        self.assertEqual({item for item in selection['core'] if item.startswith('PublicCatalogBudgetTests/')}, {
+            'PublicCatalogBudgetTests/testBundledCatalogAcceptsReviewedGrowthThroughExactPublicBoundary',
+            'PublicCatalogBudgetTests/testPublicBoundaryStillRejectsOversizeSymlinksDirectoriesAndMalformedSchema',
+            'PublicCatalogBudgetTests/testOversizedPrivateImportStillRejectsEveryEntryPointAndPreservesSelection',
+            'PublicCatalogBudgetTests/testLargerPublicSupplementPreservesImportedGenerationAndPersonalDoorPrecedence',
+            'PublicCatalogBudgetTests/testReviewedCatalogLoadingMeasurements',
+        })
         self.assertEqual(set(selection['ui']), {
             'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
             'ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation',

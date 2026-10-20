@@ -84,11 +84,11 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let store = AppStore(storeURL: url, resourceBundle: .main, packDirectory: directory)
         XCTAssertNil(store.errorMessage)
         XCTAssertFalse(store.requiresPrivatePack)
-        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.20.3-public")
-        XCTAssertEqual(store.communities.count, 156)
-        XCTAssertEqual(store.places.count, 14_749)
+        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.20.5-public-89123")
+        XCTAssertEqual(store.communities.count, 162)
+        XCTAssertEqual(store.places.count, 14_772)
         XCTAssertEqual(store.paths.count, 17)
-        XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 6_148)
+        XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 6_923)
         let legal = store.doorMatch(DeliveryStop(sequence: 1, address: "2300 E Silverado Ranch Blvd", unit: "1037"), groupID: "latigo")
         XCTAssertEqual(legal.buildingReferences.count, 1)
         XCTAssertEqual(legal.buildingReferences.first?.kind, .building)
@@ -98,6 +98,16 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(schematic.buildingAssociations.first?.identifierKind, .operatorMap)
         XCTAssertTrue(schematic.buildingReferences.isEmpty); XCTAssertTrue(schematic.candidates.isEmpty)
         XCTAssertNil(schematic.readyDoor)
+        for (communityID, street, unit, building) in [
+            ("parkside-villas", "8400 S Maryland Parkway", "1018", "5"),
+            ("summer-winds", "2725 W Wigwam Avenue", "1001", "1")] {
+            let match = store.doorMatch(DeliveryStop(sequence: 3, address: street, unit: unit), groupID: communityID)
+            XCTAssertEqual(match.buildingAssociations.first?.identifierKind, .operatorMap)
+            XCTAssertEqual(match.buildingAssociations.first?.building, building)
+            XCTAssertNil(match.buildingAssociations.first?.mapFloor)
+            XCTAssertTrue(match.buildingReferences.isEmpty); XCTAssertTrue(match.candidates.isEmpty)
+            XCTAssertNil(match.readyDoor)
+        }
         let disputed = try XCTUnwrap(store.search(address: "7380 W Russell Rd", unit: "201").first)
         XCTAssertEqual(disputed.building, "")
         XCTAssertTrue(disputed.notes.contains("Building A for 201 is not asserted"))

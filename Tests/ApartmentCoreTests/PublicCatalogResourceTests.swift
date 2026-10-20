@@ -8,13 +8,13 @@ final class PublicCatalogResourceTests: XCTestCase {
             .deletingLastPathComponent().appendingPathComponent("data", isDirectory: true)
     }
     private func pack() throws -> LocalDataPack {
-        try LocalDataPack.read(catalog: DataPackPayload.readCatalogFile(dataDirectory.appendingPathComponent("public-catalog.json")),
+        try LocalDataPack.read(catalog: PublicCatalogSupplement.readCatalogFile(dataDirectory.appendingPathComponent("public-catalog.json")),
             locations: DataPackPayload.readLocationsFile(dataDirectory.appendingPathComponent("public-locations.geojson")),
             paths: DataPackPayload.readPathsFile(dataDirectory.appendingPathComponent("public-paths.geojson")))
     }
     func testPublicPackDecodesQualifiedPositionsAndKeepsRileyAndRussellStreetsSeparate() throws {
         let data = try pack()
-        XCTAssertEqual(data.catalog.packVersion, "2026.10.20.4-public-89123")
+        XCTAssertEqual(data.catalog.packVersion, "2026.10.20.5-public-89123")
         XCTAssertEqual(data.catalog.communities.count, 162)
         XCTAssertEqual(data.places.count, 14_772)
         XCTAssertEqual(Set(data.places.map(\.id)).count, 14_772)
@@ -22,7 +22,7 @@ final class PublicCatalogResourceTests: XCTestCase {
         XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 742)
         XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 14_517)
         XCTAssertEqual(data.places.filter { $0.referenceKind == .assessorLegalBuildingPolygon && $0.kind == .building && $0.unit.isEmpty && $0.floor.isEmpty }.count, 255)
-        XCTAssertEqual(data.catalog.unitBuildingAssociations?.count, 6_373)
+        XCTAssertEqual(data.catalog.unitBuildingAssociations?.count, 6_923)
         XCTAssertEqual(data.catalog.unitBuildingAssociations?.filter { $0.referencePlaceID != nil }.count, 4_223)
         XCTAssertEqual(data.paths.count, 17)
         XCTAssertTrue(data.paths.allSatisfy { !$0.confirmed })
@@ -100,6 +100,18 @@ final class PublicCatalogResourceTests: XCTestCase {
         XCTAssertEqual(schematicMatch.buildingAssociations.count, 1)
         XCTAssertTrue(schematicMatch.buildingReferences.isEmpty)
         XCTAssertTrue(schematicMatch.candidates.isEmpty); XCTAssertNil(schematicMatch.readyDoor)
+        for (communityID, street, unit, building, count) in [
+            ("parkside-villas", "8400 S Maryland Parkway", "1018", "5", 200),
+            ("summer-winds", "2725 W Wigwam Avenue", "1001", "1", 350)] {
+            let rows = data.catalog.unitBuildingAssociations?.filter { $0.communityID == communityID } ?? []
+            XCTAssertEqual(rows.count, count)
+            XCTAssertTrue(rows.allSatisfy { $0.identifierKind == .operatorMap && $0.referencePlaceID == nil && $0.mapFloor == nil })
+            let match = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: street, unit: unit),
+                communityID: communityID, places: data.places, buildingAssociations: rows)
+            XCTAssertEqual(match.buildingAssociations.first?.building, building)
+            XCTAssertTrue(match.buildingReferences.isEmpty); XCTAssertTrue(match.candidates.isEmpty)
+            XCTAssertNil(match.readyDoor)
+        }
         let wrongStreet = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: "7450 S Eastern Avenue", unit: "1001"),
             communityID: "st-james-place", places: data.places, buildingAssociations: legal)
         XCTAssertTrue(wrongStreet.buildingAssociations.isEmpty)
