@@ -109,12 +109,14 @@ final class HeadingUpNavigationTests: XCTestCase {
         if let nonce = environment["APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] ?? environment["TEST_RUNNER_APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] {
             try compareProductionAndBareMapPinchDiagnostics(nonce: nonce)
         }
+        app.launchArguments.append("--synthetic-map-pinch-target")
         openRoute()
         expectFollowing()
         let control = app.buttons["mini.recenter"]
+        let pinchTarget = try clearMapPinchTarget()
         let initialDistance = try settledMapDistance(control)
         let initialCameraValue = String(describing: control.value)
-        app.maps.firstMatch.pinch(withScale: 1.6, velocity: 0.7)
+        pinchTarget.pinch(withScale: 1.6, velocity: 0.7)
         print("MAP-PINCH before=\(initialCameraValue), after=\(String(describing: control.value))")
         let paused = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value BEGINSWITH %@", "Paused"), object: control)
         XCTAssertEqual(XCTWaiter.wait(for: [paused], timeout: 5), .completed,
@@ -131,6 +133,44 @@ final class HeadingUpNavigationTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)
         capture("Heading-up Resume preserves the user's zoom")
         capture("Padded mini-route controls retain chosen zoom after Resume")
+    }
+
+    private func clearMapPinchTarget() throws -> XCUIElement {
+        func valid(_ frame: CGRect) -> Bool {
+            !frame.isEmpty && [frame.minX, frame.minY, frame.width, frame.height].allSatisfy { $0.isFinite }
+        }
+        let target = app.otherElements["mini.pinchTarget"]
+        XCTAssertTrue(target.waitForExistence(timeout: 8))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Native map hit-test grid 25/25"), object: target)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed,
+                       "Every sampled input point must hit the same zoom-enabled native Map")
+        let rectangle = target.frame, map = app.maps.firstMatch.frame
+        let navigation = app.navigationBars.firstMatch.frame, next = app.staticTexts["mini.next"].frame
+        XCTAssertTrue([rectangle, map, navigation, next].allSatisfy(valid))
+        let top = max(map.minY, navigation.maxY), bottom = min(map.maxY, next.minY - 24)
+        let visible = CGRect(x: map.minX, y: top, width: map.width, height: bottom - top)
+        XCTAssertTrue(visible.contains(rectangle), "The entire physical pinch must remain inside the visible map")
+        XCTAssertGreaterThan(rectangle.width, 120)
+        XCTAssertGreaterThan(rectangle.height, 160)
+        let controls = app.buttons.allElementsBoundByIndex.filter { $0.exists && $0.isHittable }
+        for control in controls {
+            let frame = control.frame
+            XCTAssertTrue(valid(frame), "Every interactive obstacle needs positive finite geometry")
+            XCTAssertFalse(rectangle.intersects(frame.insetBy(dx: -16, dy: -16)),
+                           "The whole pinch rectangle must clear every interactive control and pin: \(frame)")
+        }
+        let glyph = app.descendants(matching: .any).matching(identifier: "mini.userLocation").firstMatch
+        XCTAssertTrue(glyph.exists)
+        let coverage = app.staticTexts["mini.coverage"], location = app.staticTexts["mini.locationStatus"]
+        XCTAssertTrue(coverage.exists); XCTAssertTrue(location.exists)
+        let glyphFrame = glyph.frame, coverageFrame = coverage.frame, locationFrame = location.frame
+        XCTAssertTrue([glyphFrame, coverageFrame, locationFrame].allSatisfy(valid),
+                      "The location glyph and both HUDs need positive finite geometry")
+        XCTAssertFalse(rectangle.intersects(glyphFrame.insetBy(dx: -16, dy: -16)))
+        XCTAssertGreaterThan(rectangle.minY, coverageFrame.maxY + 40, "Clear the entire top HUD including material padding")
+        XCTAssertLessThan(rectangle.maxY, locationFrame.minY - 24, "Clear the bottom HUD and its material padding")
+        print("MAP-PINCH-CLEAR target=\(rectangle), visibleMap=\(visible), nativeGrid=25/25, interactiveControls=\(controls.count)")
+        return target
     }
 
     /// Native cache comparison asserts the bare control's actual zoom only after both phases.

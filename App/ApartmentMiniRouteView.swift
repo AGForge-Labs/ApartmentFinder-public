@@ -244,6 +244,15 @@ struct ApartmentMiniRouteView: View {
                 .background {
                     if SyntheticMapGestureProbe.enabled { SyntheticMapGestureProbe(mode: "production") }
                 }
+                .overlay {
+                    if SyntheticMapPinchTarget.enabled {
+                        GeometryReader { geometry in
+                            SyntheticMapPinchTarget()
+                                .frame(width: geometry.size.width * 0.37, height: geometry.size.height * 0.56)
+                                .position(x: geometry.size.width * 0.225, y: geometry.size.height * 0.50)
+                        }.allowsHitTesting(false)
+                    }
+                }
         }
         #else
         ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
