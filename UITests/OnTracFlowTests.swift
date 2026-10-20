@@ -253,6 +253,31 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Unit 4102"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["mini.delivered"].label.contains("4102"))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
+        let map = app.maps.firstMatch
+        let beforePan = pin.frame.midY
+        let obstacles = [pin, laterPin, app.buttons["mini.recenter"], app.buttons["mini.mapStyle"],
+                         app.buttons["Show all stops"]].filter { $0.exists }.map { $0.frame.insetBy(dx: -8, dy: -8) }
+        let mapFrame = map.frame
+        let blankX = [0.5, 0.3, 0.7].first { x in
+            let path = CGRect(x: mapFrame.minX + mapFrame.width * x - 4,
+                              y: mapFrame.minY + mapFrame.height * 0.35,
+                              width: 8, height: mapFrame.height * 0.08)
+            return !obstacles.contains { $0.intersects(path) }
+        }
+        guard let blankX else { XCTFail("No unobstructed map gesture path"); return }
+        map.coordinate(withNormalizedOffset: CGVector(dx: blankX, dy: 0.35))
+            .press(forDuration: 0.1, thenDragTo: map.coordinate(withNormalizedOffset: CGVector(dx: blankX, dy: 0.43)))
+        let paused = NSPredicate(format: "value BEGINSWITH %@", "Paused")
+        expectation(for: paused, evaluatedWith: app.buttons["mini.recenter"])
+        waitForExpectations(timeout: 5)
+        let moved = NSPredicate { _, _ in pin.exists && abs(pin.frame.midY - beforePan) > 20 }
+        expectation(for: moved, evaluatedWith: pin)
+        waitForExpectations(timeout: 5)
+        XCTAssertTrue(pin.isHittable)
+        app.buttons["Show all stops"].tap()
+        XCTAssertTrue(pin.waitForExistence(timeout: 5))
+        pin.tap()
+        XCTAssertTrue(app.buttons["mini.delivered"].label.contains("4102"))
         capture("OnTrac unit 4102 shown on mini-route map")
         app.buttons["mini.prepare"].tap()
         XCTAssertTrue(app.buttons["door.confirm"].waitForExistence(timeout: 5))

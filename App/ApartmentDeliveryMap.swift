@@ -8,12 +8,14 @@ struct ApartmentDeliveryMap: View {
     @ObservedObject var location: LocationService
     let selectedStopID: String?
     let select: (String) -> Void
+    @Namespace private var mapScope
     @State private var camera: MapCameraPosition = .automatic
     @State private var following = MiniRouteMapFollowingState()
     @State private var mapHeading: Double = 0
     @State private var mapDistance: Double = 350
     @State private var followedHeading: Double = 0
     @State private var viewport: CGSize = .zero
+    @State private var pinProjectionRevision: UInt64 = 0
     @State private var showingPropertyForDistantUser = false
     #if DEBUG && targetEnvironment(simulator)
     @State private var pinHostSnapshot = ""
@@ -65,95 +67,112 @@ struct ApartmentDeliveryMap: View {
     var body: some View {
         let pins = pins
         let guides = guides(pins)
-        Map(position: $camera) {
-            ForEach(guides) { guide in
-                MapPolyline(coordinates: guide.coordinates)
-                    .stroke(.teal.opacity(0.75), style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
-            }
-            ForEach(pins) { pin in
-                Annotation(pin.buildingReference ? "Legal building reference for unit \(pin.stop.unit)" : "Unit \(pin.stop.unit)", coordinate: pin.place.coordinate.cl, anchor: .bottom) {
-                    #if DEBUG && targetEnvironment(simulator)
-                    if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
-                        group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
-                        pinButton(pin).background {
-                            SyntheticPinHostProbe { pinHostSnapshot = $0 }
-                        }
-                    } else { pinButton(pin) }
-                    #else
-                    pinButton(pin)
-                    #endif
-                }.annotationTitles(.hidden)
-            }
-            if pins.isEmpty, let center = group.coordinate {
-                Marker("Community area", systemImage: "building.2", coordinate: center.cl).tint(.secondary)
-            }
-            if let fix = location.fix, fix.usable(at: .now) {
-                Annotation("You", coordinate: fix.coordinate.cl) {
-                    MapLocationDirection(direction: location.direction, mapHeading: mapHeading,
-                                         accessibilityID: "mini.userLocation")
+        MapReader { proxy in
+            Map(position: $camera, scope: mapScope) {
+                ForEach(guides) { guide in
+                    MapPolyline(coordinates: guide.coordinates)
+                        .stroke(.teal.opacity(0.75), style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
                 }
-            }
-        }
-        .mapStyle(mapStyle.mapStyle)
-        .mapControls { MapCompass() }
-        .overlay(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 4) {
-                coverageLabel(pins)
-                if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
-                if pins.isEmpty {
-                    Text(group.coordinate == nil ? "Community location not mapped" : "Community area").font(.caption2)
+                if pins.isEmpty, let center = group.coordinate {
+                    Marker("Community area", systemImage: "building.2", coordinate: center.cl).tint(.secondary)
                 }
-                if showingPropertyForDistantUser {
-                    Text("You’re far from this mini-route · showing apartment pins").font(.caption2)
-                        .accessibilityIdentifier("mini.distantLocation")
-                }
-            }.padding(10).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                .padding(12).padding(.trailing, 50)
-        }
-        .overlay(alignment: .bottomTrailing) {
-            VStack(spacing: 12) {
-                DeliveryMapStyleControl(selection: $mapStyle, accessibilityID: "mini.mapStyle")
-                Button("Show all stops", systemImage: "arrow.up.left.and.arrow.down.right") {
-                    following.showOverview(); fitAll(pins, includeLocation: true)
-                }
-                followingControl
-            }.labelStyle(.iconOnly).buttonStyle(.bordered).buttonBorderShape(.circle)
-                .tint(.primary).padding(12).background(.regularMaterial, in: Capsule()).padding(12)
-        }
-        .overlay(alignment: .bottomLeading) {
-            Text(location.status).font(.caption).padding(10)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                .padding(12).padding(.trailing, 75).accessibilityIdentifier("mini.locationStatus")
-        }
-        .automaticMapLocation(location)
-        .background {
-            GeometryReader { geometry in
-                Color.clear.onAppear { viewport = geometry.size; followLocation() }
-                    .onChange(of: geometry.size) { _, size in
-                        viewport = size; following.viewportChanged(); followLocation()
+                if let fix = location.fix, fix.usable(at: .now) {
+                    Annotation("You", coordinate: fix.coordinate.cl) {
+                        MapLocationDirection(direction: location.direction, mapHeading: mapHeading,
+                                             accessibilityID: "mini.userLocation")
                     }
+                }
             }
-        }
-        .onAppear { followLocation() }
-        .onMapCameraChange(frequency: .continuous) { context in
-            mapHeading = context.camera.heading
-            mapDistance = context.camera.distance
-            if camera.positionedByUser { following.userMoved(distance: context.camera.distance) }
-            #if DEBUG && targetEnvironment(simulator)
-            if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
-            #endif
-        }
-        .onChange(of: location.fix?.timestamp) { _, _ in
-            followLocation()
-        }
-        .onChange(of: location.direction?.degrees) { _, _ in followLocation() }
-        .onChange(of: pins.map { "\($0.id)|\($0.place.coordinate.latitude)|\($0.place.coordinate.longitude)" }) { _, _ in
-            if following.isFollowing {
+            .mapStyle(mapStyle.mapStyle)
+            .mapControls { }
+            .overlay {
+                projectedPins(pins, proxy: proxy, revision: pinProjectionRevision)
+            }
+            .overlay(alignment: .topTrailing) {
+                MapCompass(scope: mapScope).padding(12)
+            }
+            .overlay(alignment: .topLeading) {
+                VStack(alignment: .leading, spacing: 4) {
+                    coverageLabel(pins)
+                    if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
+                    if pins.isEmpty {
+                        Text(group.coordinate == nil ? "Community location not mapped" : "Community area").font(.caption2)
+                    }
+                    if showingPropertyForDistantUser {
+                        Text("You’re far from this mini-route · showing apartment pins").font(.caption2)
+                            .accessibilityIdentifier("mini.distantLocation")
+                    }
+                }.padding(10).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .padding(12).padding(.trailing, 50)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                VStack(spacing: 12) {
+                    DeliveryMapStyleControl(selection: $mapStyle, accessibilityID: "mini.mapStyle")
+                    Button("Show all stops", systemImage: "arrow.up.left.and.arrow.down.right") {
+                        following.showOverview(); fitAll(pins, includeLocation: true)
+                    }
+                    followingControl
+                }.labelStyle(.iconOnly).buttonStyle(.bordered).buttonBorderShape(.circle)
+                    .tint(.primary).padding(12).background(.regularMaterial, in: Capsule()).padding(12)
+            }
+            .overlay(alignment: .bottomLeading) {
+                Text(location.status).font(.caption).padding(10)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .padding(12).padding(.trailing, 75).accessibilityIdentifier("mini.locationStatus")
+            }
+            .automaticMapLocation(location)
+            .background {
+                GeometryReader { geometry in
+                    Color.clear.onAppear { viewport = geometry.size; followLocation() }
+                        .onChange(of: geometry.size) { _, size in
+                            viewport = size; following.viewportChanged(); followLocation()
+                        }
+                }
+            }
+            .onAppear { followLocation() }
+            .onMapCameraChange(frequency: .continuous) { context in
+                mapHeading = context.camera.heading
+                mapDistance = context.camera.distance
+                // A pan can change projection without changing heading or distance.
+                pinProjectionRevision &+= 1
+                if camera.positionedByUser { following.userMoved(distance: context.camera.distance) }
+                #if DEBUG && targetEnvironment(simulator)
+                if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
+                #endif
+            }
+            .onChange(of: location.fix?.timestamp) { _, _ in
                 followLocation()
             }
-            else if following.mode == .overview { fitAll(pins, includeLocation: true) }
+            .onChange(of: location.direction?.degrees) { _, _ in followLocation() }
+            .onChange(of: pins.map { "\($0.id)|\($0.place.coordinate.latitude)|\($0.place.coordinate.longitude)" }) { _, _ in
+                if following.isFollowing {
+                    followLocation()
+                }
+                else if following.mode == .overview { fitAll(pins, includeLocation: true) }
+            }
+            // Choosing/advancing a delivery changes its highlight, not the user's camera/follow choice.
         }
-        // Choosing/advancing a delivery changes its highlight, not the user's camera/follow choice.
+    }
+
+    private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
+        GeometryReader { geometry in
+            ForEach(pins) { pin in
+                if let point = proxy.convert(pin.place.coordinate.cl, to: .local),
+                   point.x.isFinite, point.y.isFinite,
+                   CGRect(origin: .zero, size: geometry.size).contains(point) {
+                    ProjectedDeliveryPinLayout(point: point, cameraRevision: revision) {
+                        #if DEBUG && targetEnvironment(simulator)
+                        if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
+                            group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
+                            pinButton(pin).background { SyntheticPinHostProbe { pinHostSnapshot = $0 } }
+                        } else { pinButton(pin) }
+                        #else
+                        pinButton(pin)
+                        #endif
+                    }
+                }
+            }
+        }.clipped().contentShape(Rectangle())
     }
 
     @ViewBuilder private func coverageLabel(_ pins: [Pin]) -> some View {
@@ -227,5 +246,23 @@ struct ApartmentDeliveryMap: View {
         }
         let padding = 75 * MKMapPointsPerMeterAtLatitude(first.latitude)
         camera = .rect(rect.insetBy(dx: -padding, dy: -padding))
+    }
+}
+
+/// Place the actual visible button's tip at its map coordinate. Keeping the
+/// control in the map overlay avoids MapKit's custom-annotation hosting path.
+private struct ProjectedDeliveryPinLayout: Layout {
+    let point: CGPoint
+    let cameraRevision: UInt64
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for subview in subviews {
+            subview.place(at: CGPoint(x: bounds.minX + point.x, y: bounds.minY + point.y),
+                          anchor: .bottom, proposal: .unspecified)
+        }
     }
 }

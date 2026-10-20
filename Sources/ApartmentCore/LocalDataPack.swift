@@ -98,16 +98,16 @@ public struct LocalDataPack: Sendable {
         }
         var associationKeys = Set<String>()
         let communitiesByID = Dictionary(uniqueKeysWithValues: catalog.communities.map { ($0.id, $0) })
+        let addressesByCommunity = communitiesByID.mapValues { Set($0.matchingAddresses.map { LocalSearch.addressKey($0) }) }
         let placesByID = Dictionary(uniqueKeysWithValues: places.map { ($0.id, $0) })
         for a in associations {
             try validate(a.communityID, a.sourceIDs)
-            let key = [a.communityID, LocalSearch.addressKey(a.address), LocalSearch.normalized(a.unit), a.identifierKind.rawValue].joined(separator: "|")
+            let addressKey = LocalSearch.addressKey(a.address)
+            let key = [a.communityID, addressKey, LocalSearch.normalized(a.unit), a.identifierKind.rawValue].joined(separator: "|")
             guard !a.id.isEmpty, !a.unit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   !a.building.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                   associationKeys.insert(key).inserted,
-                  communitiesByID[a.communityID]?.matchingAddresses.contains(where: {
-                      LocalSearch.addressKey($0) == LocalSearch.addressKey(a.address)
-                  }) == true else { throw CoreError("A building association has an ambiguous unit or street.") }
+                  addressesByCommunity[a.communityID]?.contains(addressKey) == true else { throw CoreError("A building association has an ambiguous unit or street.") }
             if let floor = a.mapFloor {
                 guard a.identifierKind == .operatorMap, !floor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                     throw CoreError("Only an explicit operator schematic can supply a map floor label.")
@@ -117,7 +117,7 @@ public struct LocalDataPack: Sendable {
                 guard a.identifierKind == .municipalLegal, let reference = placesByID[referenceID],
                       reference.referenceKind == .assessorLegalBuildingPolygon,
                       reference.communityID == a.communityID, reference.building == a.building,
-                      LocalSearch.addressKey(reference.address) == LocalSearch.addressKey(a.address) else {
+                      LocalSearch.addressKey(reference.address) == addressKey else {
                     throw CoreError("A unit association has no matching legal-building reference.")
                 }
             }
