@@ -8,6 +8,8 @@ on:
       - .github/workflows/public-testflight.yml
       - scripts/public-release*
       - scripts/testflight*
+      - scripts/public-catalog.py
+      - Tests/public_synthetic/**
       - Tests/release/**
       - Tests/signing/**
       - project-testflight.yml
@@ -39,6 +41,8 @@ jobs:
           test "$(git rev-parse HEAD)" = "$INTEGRATION_HEAD_SHA"
           bash -n scripts/public-release-validation.sh
           bash -n scripts/testflight-build.sh
+      - name: Public catalog and privacy regression checks
+        run: python3 -B -m unittest discover -s Tests/public_synthetic -v
       - name: Release gate regression checks
         run: python3 -B -m unittest discover -s Tests/release -v
       - name: Signing safeguards with synthetic fixtures

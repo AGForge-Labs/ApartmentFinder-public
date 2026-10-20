@@ -72,28 +72,29 @@ class PublicCatalogExportTests(unittest.TestCase):
         self.assertFalse(catalog['coverage']['inventoryComplete'])
 
     def test_authorized_manifest_zips_export_without_inventing_extra_positions(self):
-        for zip_code in ('89123', '89183', '89052', '89014', '89044'):
-            with self.subTest(zip=zip_code):
-                self.output = self.directory / ('zip-' + zip_code)
-                self.catalog['scopeZIPs'] = [zip_code]
-                self.catalog['communities'][0]['zip'] = zip_code
+        # These fixed ZIPs describe the public catalog coverage.
+        for public_scope_zip in ('89123', '89183', '89052', '89014', '89044'):
+            with self.subTest(zip=public_scope_zip):
+                self.output = self.directory / ('zip-' + public_scope_zip)
+                self.catalog['scopeZIPs'] = [public_scope_zip]
+                self.catalog['communities'][0]['zip'] = public_scope_zip
                 self.run_export()
                 self.run_validate()
                 catalog = json.loads((self.output / 'public-catalog.json').read_bytes())
                 positions = json.loads((self.output / 'public-locations.geojson').read_bytes())
-                self.assertEqual(catalog['scopeZIPs'], [zip_code])
+                self.assertEqual(catalog['scopeZIPs'], [public_scope_zip])
                 self.assertEqual(len(positions['features']), 1)
                 self.assertEqual(positions['features'][0]['properties']['unit'], '001')
                 self.assertEqual(positions['features'][0]['properties']['verification'], 'sourceMapped')
                 self.assertFalse(catalog['coverage']['inventoryComplete'])
 
     def test_new_zip_support_still_rejects_undeclared_and_unsupported_scope(self):
-        for index, (scope, zip_code, county) in enumerate(((['89123'], '89123', ['89014']),
+        for index, (scope, public_scope_zip, county) in enumerate(((['89123'], '89123', ['89014']),
                                                          (['99999'], '99999', []))):
-            with self.subTest(scope=scope, zip=zip_code, county=county):
+            with self.subTest(scope=scope, zip=public_scope_zip, county=county):
                 self.output = self.directory / ('rejected-' + str(index))
                 self.catalog['scopeZIPs'] = scope
-                self.catalog['communities'][0].update(zip=zip_code, countyZIPs=county)
+                self.catalog['communities'][0].update(zip=public_scope_zip, countyZIPs=county)
                 self.run_export(valid=False)
                 self.assertFalse(self.output.exists())
         # Preparation deliberately declares ZIPs of allowed appended communities.
