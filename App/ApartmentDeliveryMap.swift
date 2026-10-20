@@ -19,6 +19,7 @@ struct ApartmentDeliveryMap: View {
     @State private var showingPropertyForDistantUser = false
     #if DEBUG && targetEnvironment(simulator)
     @State private var pinHostSnapshot = ""
+    @State private var diagnosticMapCenter: CLLocationCoordinate2D?
     #endif
     @AppStorage(DeliveryMapStyle.preferenceKey) private var mapStyle = DeliveryMapStyle.satellite
 
@@ -85,10 +86,6 @@ struct ApartmentDeliveryMap: View {
             }
             .mapStyle(mapStyle.mapStyle)
             .mapControls { }
-            .simultaneousGesture(MagnifyGesture().onChanged { _ in
-                // Pause before a GPS callback can replace an in-progress pinch camera.
-                following.userMoved(distance: mapDistance)
-            })
             .overlay {
                 projectedPins(pins, proxy: proxy, revision: pinProjectionRevision)
             }
@@ -143,6 +140,7 @@ struct ApartmentDeliveryMap: View {
                     following.userMoved(distance: context.camera.distance)
                 }
                 #if DEBUG && targetEnvironment(simulator)
+                diagnosticMapCenter = context.camera.centerCoordinate
                 if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
                 #endif
             }
@@ -166,7 +164,7 @@ struct ApartmentDeliveryMap: View {
                 if let point = proxy.convert(pin.place.coordinate.cl, to: .local),
                    point.x.isFinite, point.y.isFinite,
                    CGRect(origin: .zero, size: geometry.size).contains(point) {
-                    ProjectedDeliveryPinLayout(point: point, cameraRevision: revision) {
+                    ProjectedDeliveryPinPosition(point: point, cameraRevision: revision) {
                         #if DEBUG && targetEnvironment(simulator)
                         if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
                             group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
@@ -199,16 +197,27 @@ struct ApartmentDeliveryMap: View {
                    location.direction == nil ? "Following your location" : "Following your direction",
                    systemImage: "location.north.fill") { followLocation() }
                 .tint(.teal).accessibilityIdentifier("mini.recenter")
-                .accessibilityValue(Text(verbatim: "\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? "Showing apartment pins" : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")"))
+                .accessibilityValue(Text(verbatim: "\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? "Showing apartment pins" : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")\(cameraChangeDiagnostic)"))
                 .accessibilityHint("Pan or zoom the map to pause following")
         } else {
             Button("Resume following", systemImage: "location.fill") {
                 following.resume(); followLocation()
             }.labelStyle(.titleAndIcon).font(.caption.bold()).buttonBorderShape(.capsule)
                 .accessibilityIdentifier("mini.recenter")
-                .accessibilityValue(Text(verbatim: "Paused, map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters"))
+                .accessibilityValue(Text(verbatim: "Paused, map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(cameraChangeDiagnostic)"))
                 .accessibilityHint("Center on your position and face your direction, keeping this zoom")
         }
+    }
+
+    private var cameraChangeDiagnostic: String {
+        #if DEBUG && targetEnvironment(simulator)
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains("--uitesting"), arguments.contains("--test-store") else { return "" }
+        guard let center = diagnosticMapCenter else { return ", camera revision \(pinProjectionRevision), map center unobserved" }
+        return ", map center \(center.latitude),\(center.longitude), camera revision \(pinProjectionRevision)"
+        #else
+        return ""
+        #endif
     }
 
     private func followLocation() {
@@ -275,18 +284,39 @@ private struct ProjectedDeliveryPinHitRegion: Shape {
 
 /// Place the actual visible button's tip at its map coordinate. Keeping the
 /// control in the map overlay avoids MapKit's custom-annotation hosting path.
-private struct ProjectedDeliveryPinLayout: Layout {
+private struct ProjectedDeliveryPinPosition<Content: View>: View {
     let point: CGPoint
+    // A pure pan must invalidate this view even when heading and distance stay equal.
     let cameraRevision: UInt64
+    private let content: Content
+    @State private var measuredSize: CGSize?
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        proposal.replacingUnspecifiedDimensions()
+    init(point: CGPoint, cameraRevision: UInt64, @ViewBuilder content: () -> Content) {
+        self.point = point
+        self.cameraRevision = cameraRevision
+        self.content = content()
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        for subview in subviews {
-            subview.place(at: CGPoint(x: bounds.minX + point.x, y: bounds.minY + point.y),
-                          anchor: .bottom, proposal: .unspecified)
-        }
+    var body: some View {
+        content
+            .fixedSize()
+            .background {
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { recordSize(geometry.size) }
+                        .onChange(of: geometry.size) { _, size in recordSize(size) }
+                }.allowsHitTesting(false).accessibilityHidden(true)
+            }
+            .offset(x: point.x - (measuredSize?.width ?? 0) / 2,
+                    y: point.y - (measuredSize?.height ?? 0))
+            .opacity(measuredSize == nil ? 0 : 1)
+            .allowsHitTesting(measuredSize != nil)
+            .accessibilityHidden(measuredSize == nil)
+    }
+
+    private func recordSize(_ size: CGSize) {
+        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0,
+              measuredSize != size else { return }
+        measuredSize = size
     }
 }

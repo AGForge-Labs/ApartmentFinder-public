@@ -71,7 +71,8 @@ final class MapAppearanceTests: XCTestCase {
         }
         XCTAssertGreaterThan(start.y, coverage.frame.maxY + 24, "Stay below the map's top overlay")
         XCTAssertLessThan(start.y, locationStatus.frame.minY - 24, "Stay above the map's bottom overlay")
-        print("MAP-APPEARANCE background drag map=\(mapFrame) visible=\(visibleMap) start=\(start) end=\(end)")
+        let initialCameraValue = String(describing: app.buttons["mini.recenter"].value)
+        print("MAP-APPEARANCE background drag map=\(mapFrame) visible=\(visibleMap) start=\(start) end=\(end), camera=\(initialCameraValue)")
         map.coordinate(withNormalizedOffset: startOffset)
             .press(forDuration: 0.2, thenDragTo: map.coordinate(withNormalizedOffset: endOffset),
                    withVelocity: .slow, thenHoldForDuration: 0.5)
@@ -81,7 +82,7 @@ final class MapAppearanceTests: XCTestCase {
         let originalTip = CGPoint(x: firstPin.frame.midX, y: firstPin.frame.maxY)
         let secondTip = CGPoint(x: secondPin.frame.midX, y: secondPin.frame.maxY)
         XCTAssertGreaterThan(abs(originalTip.x - initialX), 5,
-                             "Exercise a panned map before changing styles; before=\(initialFrame), after=\(firstPin.frame), camera=\(String(describing: app.buttons["mini.recenter"].value))")
+                             "Exercise a panned map before changing styles; before=\(initialFrame), after=\(firstPin.frame), initial camera=\(initialCameraValue), camera=\(String(describing: app.buttons["mini.recenter"].value))")
         capture(app, "Settled panned map before changing style")
         XCTAssertTrue(style.isHittable)
         style.tap()
