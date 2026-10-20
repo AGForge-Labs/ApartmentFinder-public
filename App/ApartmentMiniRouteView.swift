@@ -238,27 +238,42 @@ struct ApartmentMiniRouteView: View {
         #if DEBUG && targetEnvironment(simulator)
         if SyntheticMapGestureProbe.bareEnabled {
             SyntheticBareMapPinchControl()
+        } else if SyntheticMapPinchTarget.enabled {
+            if SyntheticMapGestureProbe.enabled {
+                deliveryMap(group)
+                    .background { syntheticMapGestureProbe }
+                    .overlay { syntheticMapPinchTarget }
+            } else {
+                deliveryMap(group).overlay { syntheticMapPinchTarget }
+            }
+        } else if SyntheticMapGestureProbe.enabled {
+            deliveryMap(group).background { syntheticMapGestureProbe }
         } else {
-            ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
-                                 select: { selection.select($0) })
-                .background {
-                    if SyntheticMapGestureProbe.enabled { SyntheticMapGestureProbe(mode: "production") }
-                }
-                .overlay {
-                    if SyntheticMapPinchTarget.enabled {
-                        GeometryReader { geometry in
-                            SyntheticMapPinchTarget()
-                                .frame(width: geometry.size.width * 0.37, height: geometry.size.height * 0.56)
-                                .position(x: geometry.size.width * 0.225, y: geometry.size.height * 0.50)
-                        }.allowsHitTesting(false)
-                    }
-                }
+            deliveryMap(group)
         }
         #else
-        ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
-                             select: { selection.select($0) })
+        deliveryMap(group)
         #endif
     }
+
+    private func deliveryMap(_ group: ApartmentGroup) -> ApartmentDeliveryMap {
+        ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
+                             select: { selection.select($0) })
+    }
+
+    #if DEBUG && targetEnvironment(simulator)
+    private var syntheticMapGestureProbe: some View {
+        SyntheticMapGestureProbe(mode: "production").allowsHitTesting(false)
+    }
+
+    private var syntheticMapPinchTarget: some View {
+        GeometryReader { geometry in
+            SyntheticMapPinchTarget()
+                .frame(width: geometry.size.width * 0.37, height: geometry.size.height * 0.56)
+                .position(x: geometry.size.width * 0.225, y: geometry.size.height * 0.50)
+        }.allowsHitTesting(false)
+    }
+    #endif
 
     @ViewBuilder private func completionControls(_ group: ApartmentGroup) -> some View {
         if completionPending {
