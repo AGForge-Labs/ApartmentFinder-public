@@ -105,6 +105,10 @@ final class HeadingUpNavigationTests: XCTestCase {
     }
 
     func testResumePreservesActualPinchZoomAndSelectedStop() throws {
+        let environment = ProcessInfo.processInfo.environment
+        if let nonce = environment["APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] ?? environment["TEST_RUNNER_APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] {
+            try compareProductionAndBareMapPinchDiagnostics(nonce: nonce)
+        }
         openRoute()
         expectFollowing()
         let control = app.buttons["mini.recenter"]
@@ -127,6 +131,49 @@ final class HeadingUpNavigationTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)
         capture("Heading-up Resume preserves the user's zoom")
         capture("Padded mini-route controls retain chosen zoom after Resume")
+    }
+
+    /// Native cache comparison asserts the bare control's actual zoom only after both phases.
+    /// This diagnostic never replaces testResumePreservesActualPinchZoomAndSelectedStop.
+    private func compareProductionAndBareMapPinchDiagnostics(nonce: String) throws {
+        XCTAssertNotNil(UUID(uuidString: nonce))
+        app.launchEnvironment["APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] = nonce
+        for mode in ["production", "bare"] {
+            app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
+                "--reset-test-inbox", "--tuscano-manifest", "--synthetic-map-location",
+                "--synthetic-map-direction", "--synthetic-map-gesture-diagnostics"]
+            if mode == "bare" { app.launchArguments.append("--synthetic-bare-map-pinch") }
+            openRoute()
+            if mode == "production" { expectFollowing() }
+            let map = app.maps.firstMatch
+            let bounds = map.frame
+            XCTAssertFalse(bounds.isEmpty)
+            print("MAP-PINCH-CONTROL mode=\(mode), map=\(bounds), navigation=\(app.navigationBars.firstMatch.frame), stopCard=\(app.staticTexts["mini.next"].frame)")
+            if mode == "production" {
+                for id in ["mini.pin.2.tuscano-unit-county-2187653-2066", "mini.pin.3.tuscano-unit-county-2187691-2137",
+                           "mini.mapStyle", "Show all stops", "mini.recenter"] {
+                    let element = app.buttons[id]
+                    if element.exists { print("MAP-PINCH-OBSTACLE id=\(id), frame=\(element.frame), hittable=\(element.isHittable)") }
+                }
+                for id in ["mini.coverage", "mini.locationStatus"] {
+                    let element = app.staticTexts[id]
+                    if element.exists { print("MAP-PINCH-OBSTACLE id=\(id), frame=\(element.frame)") }
+                }
+                let glyph = app.descendants(matching: .any).matching(identifier: "mini.userLocation").firstMatch
+                if glyph.exists { print("MAP-PINCH-OBSTACLE id=mini.userLocation, frame=\(glyph.frame)") }
+            }
+            map.pinch(withScale: 1.6, velocity: 0.7)
+            // Snapshot reads allow the final native camera/recognizer samples to be written.
+            print("MAP-PINCH-CONTROL mode=\(mode), afterMap=\(map.frame)")
+            _ = app.staticTexts["mini.next"].frame
+            if mode == "production" {
+                print("MAP-PINCH-CONTROL productionCamera=\(String(describing: app.buttons["mini.recenter"].value))")
+                app.terminate()
+            }
+        }
+        app.terminate()
+        app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
+            "--reset-test-inbox", "--tuscano-manifest", "--synthetic-map-location", "--synthetic-map-direction"]
     }
 
     private func mapDistance(_ control: XCUIElement) throws -> Double {

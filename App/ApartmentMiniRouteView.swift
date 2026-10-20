@@ -206,8 +206,7 @@ struct ApartmentMiniRouteView: View {
 
     private func activeRoute(_ group: ApartmentGroup) -> some View {
         let manifestID = store.personal.activeManifest?.id
-        return ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
-                             select: { selection.select($0) })
+        return activeMap(group)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -233,6 +232,23 @@ struct ApartmentMiniRouteView: View {
             .padding(16).frame(maxWidth: .infinity, alignment: .leading)
             .background(.regularMaterial)
         }
+    }
+
+    @ViewBuilder private func activeMap(_ group: ApartmentGroup) -> some View {
+        #if DEBUG && targetEnvironment(simulator)
+        if SyntheticMapGestureProbe.bareEnabled {
+            SyntheticBareMapPinchControl()
+        } else {
+            ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
+                                 select: { selection.select($0) })
+                .background {
+                    if SyntheticMapGestureProbe.enabled { SyntheticMapGestureProbe(mode: "production") }
+                }
+        }
+        #else
+        ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
+                             select: { selection.select($0) })
+        #endif
     }
 
     @ViewBuilder private func completionControls(_ group: ApartmentGroup) -> some View {

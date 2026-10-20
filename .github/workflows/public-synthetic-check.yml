@@ -19,6 +19,7 @@ on:
         options:
           - regression
           - map-interaction-regression
+          - map-pinch-diagnostics
           - activation-diagnostics
         default: regression
 permissions:
@@ -42,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
+          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
           fi
@@ -93,6 +94,11 @@ jobs:
           RUN=(env)
           TEST_LIMITS=()
           DIAGNOSTICS_COLLECTED=0
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
+            MAP_GESTURE_RUN_NONCE=$(python3 -c 'import uuid; print(uuid.uuid4())')
+            export TEST_RUNNER_APARTMENTFINDER_MAP_GESTURE_RUN_NONCE="$MAP_GESTURE_RUN_NONCE"
+            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
+          fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             WORK=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --)
             export TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1
@@ -158,6 +164,13 @@ jobs:
               for kind,identities in focused.items():
                   assert set(identities)<=set(selection[kind])
               selection=focused
+          elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-pinch-diagnostics':
+              sys.path.insert(0,'scripts')
+              from iterate import test_ids
+              focused={'native':[], 'ui':[
+                  'ApartmentFinderUITests/HeadingUpNavigationTests/testResumePreservesActualPinchZoomAndSelectedStop']}
+              assert all(item.removeprefix('ApartmentFinderUITests/') in test_ids('.', 'UITests') for item in focused['ui'])
+              selection=focused
           elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-interaction-regression':
               sys.path.insert(0,'scripts')
               from iterate import test_ids
@@ -176,7 +189,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'regression':73}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'map-pinch-diagnostics':1,'regression':73}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -190,6 +203,7 @@ jobs:
           EXPECTED_NATIVE_COUNT=73
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then EXPECTED_NATIVE_COUNT=1; fi
           [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)
@@ -203,6 +217,10 @@ jobs:
             -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
             "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test || XCODE_STATUS=$?
+          MAP_GESTURE_STATUS=0
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
+            python3 -B scripts/public-map-gesture-diagnostics.py --device "$DEVICE" --run-nonce "$MAP_GESTURE_RUN_NONCE" || MAP_GESTURE_STATUS=$?
+          fi
           RESULT_STATUS=0
           if [[ -d "$RUNNER_TEMP/synthetic.xcresult" ]]; then
             "${WORK[@]}" xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json" || RESULT_STATUS=$?
@@ -211,6 +229,7 @@ jobs:
             RESULT_STATUS=1
           fi
           if [[ "$XCODE_STATUS" != 0 ]]; then exit "$XCODE_STATUS"; fi
+          if [[ "$MAP_GESTURE_STATUS" != 0 ]]; then exit "$MAP_GESTURE_STATUS"; fi
           if [[ "$RESULT_STATUS" != 0 ]]; then exit "$RESULT_STATUS"; fi
           "${WORK[@]}" python3 -B - "$RUNNER_TEMP" <<'PY'
           import json,os,sys
