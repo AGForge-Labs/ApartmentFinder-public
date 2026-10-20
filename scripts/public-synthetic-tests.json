@@ -118,7 +118,12 @@
     "BuildingReferenceTests/testReferenceStaysOutOfLegacyFinderResultsAndPhysicalDoorConversionClearsType",
     "BuildingReferenceTests/testPersonalGroupProjectionRetainsReferenceLinkWithoutChangingStoredOwnership",
     "PublicCatalogSupplementTests/testOldPayloadWithoutAssociationOrReferenceFieldsStillDecodes",
-    "PublicCatalogSupplementTests/testAssociationSupplementPreservesExistingIdentityAndConflictingProvenanceIsExcluded"
+    "PublicCatalogSupplementTests/testAssociationSupplementPreservesExistingIdentityAndConflictingProvenanceIsExcluded",
+    "PublicCatalogBudgetTests/testBundledCatalogAcceptsReviewedGrowthThroughExactPublicBoundary",
+    "PublicCatalogBudgetTests/testPublicBoundaryStillRejectsOversizeSymlinksDirectoriesAndMalformedSchema",
+    "PublicCatalogBudgetTests/testOversizedPrivateImportStillRejectsEveryEntryPointAndPreservesSelection",
+    "PublicCatalogBudgetTests/testLargerPublicSupplementPreservesImportedGenerationAndPersonalDoorPrecedence",
+    "PublicCatalogBudgetTests/testReviewedCatalogLoadingMeasurements"
   ],
   "native": [
     "ApartmentFinderTests/ApartmentRouteFollowupTests/testAddingAfterBatchCompletionPreservesUndoThroughPersistentStoreReopen",

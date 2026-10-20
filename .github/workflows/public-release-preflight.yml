@@ -9,6 +9,11 @@ on:
       - scripts/public-release*
       - scripts/testflight*
       - scripts/public-catalog.py
+      - scripts/public-synthetic-tests.json
+      - Sources/ApartmentCore/**
+      - Tests/ApartmentCoreTests/**
+      - data/public-*
+      - data/known-addresses.json
       - Tests/public_synthetic/**
       - Tests/release/**
       - Tests/signing/**
@@ -47,6 +52,60 @@ jobs:
         run: python3 -B -m unittest discover -s Tests/release -v
       - name: Signing safeguards with synthetic fixtures
         run: python3 -B -m unittest discover -s Tests/signing -v
+      - name: Verify the checkout remains clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"
+  public-core:
+    if: >-
+      github.repository == 'AGForge-Labs/ApartmentFinder-public' &&
+      github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      INTEGRATION_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require the exact public source and prepare public-only comparison inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$INTEGRATION_HEAD_SHA"
+          test -z "${APARTMENTFINDER_PRIVATE_PACK_DIRECTORY:-}${APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY:-}"
+          for input in data/catalog.json data/locations.geojson data/paths.geojson private-data private-baselines; do
+            test ! -e "$input"
+          done
+          BASELINES="$RUNNER_TEMP/public-catalog-budget-baselines"
+          for revision in 862853e261804cd9159788818f172b5571c5c677 e634d2411c96849006d0cec633abef818f8a8245; do
+            mkdir -p "$BASELINES/$revision"
+            for resource in public-catalog.json public-locations.geojson public-paths.geojson; do
+              git show "$revision:data/$resource" > "$BASELINES/$revision/$resource"
+            done
+          done
+          echo "PUBLIC_CATALOG_BASELINE_DIRECTORY=$BASELINES" >> "$GITHUB_ENV"
+      - name: Unsigned public core compatibility, budget and preservation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILTER=$(python3 -c 'import json,re; print("|".join(re.escape(x)+"$" for x in json.load(open("scripts/public-synthetic-tests.json"))["core"]))')
+          swift test --jobs 1 --disable-automatic-resolution --skip-update --filter "$FILTER" 2>&1 | tee "$RUNNER_TEMP/public-core.log"
+          python3 -B - "$RUNNER_TEMP/public-core.log" <<'PY'
+          import json,sys
+          sys.path.insert(0,'scripts')
+          from iterate import verify_core_ids,test_counts
+          body=open(sys.argv[1]).read()
+          expected=json.load(open('scripts/public-synthetic-tests.json'))['core']
+          assert len(verify_core_ids(body,expected)) == test_counts('core',body)['passed']
+          PY
       - name: Verify the checkout remains clean
         shell: bash
         run: |
