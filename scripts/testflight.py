@@ -4,6 +4,7 @@ import argparse
 import base64
 import binascii
 import hashlib
+import importlib.util
 import json
 import os
 import pathlib
@@ -45,6 +46,15 @@ def profile_configs(config):
     if config.get('share_extension'):
         profiles.append(dict(config, **config['share_extension']))
     return profiles
+
+
+def requested_build(env):
+    if env.get('PUBLIC_RELEASE_CONTEXT') == 'true':
+        spec = importlib.util.spec_from_file_location('public_release', ROOT / 'scripts/public-release.py')
+        public = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(public)
+        return public.validate_context(env, signing=True)
+    return build_number(env.get('GITHUB_RUN_NUMBER', ''), env.get('GITHUB_RUN_ATTEMPT', ''))
 
 
 def validate_signed_entitlements(entitlements, config):
@@ -174,7 +184,7 @@ def prepare(directory, config):
     require(re.fullmatch(r'[A-Z0-9]{10}', config['api_key_id']) is not None, 'Invalid API key identifier.')
     require(str(uuid.UUID(config['issuer_id'])) == config['issuer_id'], 'Invalid Issuer ID.')
     require(str(uuid.UUID(config['profile_uuid'])) == config['profile_uuid'], 'Invalid profile UUID.')
-    version = build_number(os.environ.get('GITHUB_RUN_NUMBER', ''), os.environ.get('GITHUB_RUN_ATTEMPT', ''))
+    version = requested_build(os.environ)
     write_assets(os.environ, directory, config)
     options = None
     for item, filename in zip(profile_configs(config), ('profile.mobileprovision', 'share-profile.mobileprovision')):
@@ -194,6 +204,8 @@ def prepare(directory, config):
                                 check=True, capture_output=True).stdout
     require(hashlib.sha256(public_key).hexdigest() == config['api_public_key_sha256'],
             'Upload key differs from the key verified with Apple.')
+    if os.environ.get('PUBLIC_RELEASE_CONTEXT') == 'true':
+        options['testFlightInternalTestingOnly'] = True
     (directory / 'ExportOptions.plist').write_bytes(plistlib.dumps(options))
     values = {
         'AF_PROFILE_UUID': config['profile_uuid'],
