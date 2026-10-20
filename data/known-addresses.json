@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "packVersion": "2026.10.20.3-public",
+  "packVersion": "2026.10.20.4-public-89123",
   "entries": [
     {
       "address": "7960 Rafael Rivera Way",
@@ -822,6 +822,38 @@
     {
       "address": "1281 Galleria Drive",
       "deliveryAddresses": []
+    },
+    {
+      "address": "2775 W Agate Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8440 S Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8255 S Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2615 W Gary Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "7450 S Eastern Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2860 Blue Key Court",
+      "deliveryAddresses": [
+        "2861 Blue Key Court",
+        "2870 Blue Key Court",
+        "2871 Blue Key Court",
+        "2868 Orange Key Court",
+        "2869 Orange Key Court",
+        "2878 Orange Key Court",
+        "2879 Orange Key Court"
+      ]
     }
   ]
 }

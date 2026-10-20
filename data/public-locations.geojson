@@ -1,7 +1,7 @@
 {
   "type": "FeatureCollection",
   "schemaVersion": 1,
-  "packVersion": "2026.10.20.3-public",
+  "packVersion": "2026.10.20.4-public-89123",
   "features": [
     {
       "type": "Feature",
@@ -381717,6 +381717,581 @@
         "sourceIDs": [
           "pubv3-boca-raton-polygons-2e64ce9cfd90ab8b"
         ],
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1768446,
+          36.0151563
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "1",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:2",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1769443,
+          36.0147617
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "2",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:3",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1771973,
+          36.0151723
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "3",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:4",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1775269,
+          36.0151333
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "4",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:5",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1775126,
+          36.0147426
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "5",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:6",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1769368,
+          36.0144789
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "6",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:7",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1774912,
+          36.0142519
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "7",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:8",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1775578,
+          36.0137979
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "8",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:9",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1772554,
+          36.0138686
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "9",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:10",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.176943,
+          36.0138359
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "10",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:11",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.176936,
+          36.0142303
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "11",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:12",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1766297,
+          36.0138896
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "12",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:13",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1765902,
+          36.0143038
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "13",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:14",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.176323,
+          36.0138544
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "14",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:15",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1762449,
+          36.0142886
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "15",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:16",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1760149,
+          36.0139103
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "16",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:17",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1756662,
+          36.0138857
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "17",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:18",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1756789,
+          36.0143129
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "18",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:19",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1762534,
+          36.0145408
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "19",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:20",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1756914,
+          36.0148039
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "20",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:21",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.176257,
+          36.0147914
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "21",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:22",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.175827,
+          36.0152182
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "22",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "st-james-place:legal:894454750605:23",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1761818,
+          36.0151786
+        ]
+      },
+      "properties": {
+        "communityID": "st-james-place",
+        "address": "2615 W GARY AVE",
+        "building": "23",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "sourceIDs": [
+          "p4-sj"
+        ],
+        "referenceKind": "assessorLegalBuildingPolygon",
         "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
       }
     }
