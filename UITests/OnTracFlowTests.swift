@@ -119,18 +119,26 @@ final class OnTracFlowTests: XCTestCase {
         for _ in 0..<5 where !submit.isHittable && remaining() > 0 { app.swipeUp() }
         guard tap("manifest.import") else { print("syntheticPinProbe=submitUnavailable"); return }
         guard tap("apartment.fictional-courtyard") else { print("syntheticPinProbe=communityUnavailable"); return }
-        guard tap("mini.start") else { print("syntheticPinProbe=startUnavailable"); return }
+        guard tap("mini.stop.2") else { print("syntheticPinProbe=startUnavailable"); return }
+        print("syntheticPinProbeEntry=overviewStop2")
         guard app.maps.firstMatch.waitForExistence(timeout: remaining()) else {
             print("syntheticPinProbe=mapUnavailable"); return
+        }
+        let delivered = app.buttons["mini.delivered"]
+        let second = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND label ENDSWITH %@", ", unit 4108"), object: delivered)
+        guard XCTWaiter.wait(for: [second], timeout: remaining()) == .completed,
+              app.staticTexts["Unit 4108"].exists else {
+            print("syntheticPinTap=preconditionUnavailable"); return
         }
         let coverageElements = app.staticTexts.matching(identifier: "mini.coverage")
         guard coverageElements.firstMatch.waitForExistence(timeout: remaining()), coverageElements.count == 1 else {
             print("syntheticPinProbe=snapshotUnavailable"); return
         }
         let coverage = coverageElements.firstMatch
-        let pattern = #"\ApinHostSchema=1;sample=3;window=(true|false);host=(true|false);map=(true|false);pinBounds=(true|false);hostBounds=(true|false);mapBounds=(true|false);inMap=(true|false);hiddenAncestor=(true|false);transparentAncestor=(true|false);axHiddenAncestor=(true|false);ancestorTruncated=(true|false);hostLeaf=(true|false);hostAXHidden=(true|false);hostTitle=(true|false);nativeID=[0-3];nativeLabel=[0-3];nativeButton=[0-3];nativeTruncated=(true|false);axID=[0-3];axLabel=[0-3];axButton=[0-3];axUnavailable=(true|false);axTruncated=(true|false)\z"#
+        let pattern = #"\ApinHostSchema=2;sample=1;polls=(?:[1-9]|1[0-9]|2[0-4]);window=(true|false);host=(true|false);map=(true|false);pinBounds=(true|false);hostBounds=(true|false);mapBounds=(true|false);inMap=(true|false);sameWindow=(true|false);convertedBounds=(true|false);mapIntersectsPin=(true|false);projectedInsideMap=(true|false);pinNearProjection=(true|false);cameraObserved=(true|false);cameraStableObserved=(true|false);hiddenAncestor=(true|false);transparentAncestor=(true|false);axHiddenAncestor=(true|false);ancestorTruncated=(true|false);hostLeaf=(true|false);hostAXHidden=(true|false);hostTitle=(true|false);nativeID=[0-3];nativeLabel=[0-3];nativeButton=[0-3];nativeTruncated=(true|false);axID=[0-3];axLabel=[0-3];axButton=[0-3];axUnavailable=(true|false);axTruncated=(true|false)\z"#
         let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value MATCHES %@", pattern), object: coverage)
-        _ = XCTWaiter.wait(for: [ready], timeout: min(4, remaining()))
+        _ = XCTWaiter.wait(for: [ready], timeout: min(10, max(0, deadline.timeIntervalSinceNow)))
         guard app.state == .runningForeground, coverageElements.count == 1, coverage.exists else {
             print("syntheticPinProbe=snapshotUnavailable"); return
         }
@@ -140,6 +148,41 @@ final class OnTracFlowTests: XCTestCase {
             return
         }
         print("syntheticPinProbe=observed;\(raw);\(sourcePinDiagnostics())")
+        guard raw.contains(";cameraStableObserved=true;") else {
+            print("syntheticPinTap=skipped;reason=cameraNotObservedStable"); return
+        }
+        let map = app.maps.firstMatch
+        let titles = map.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Unit 4102"))
+        guard titles.count == 1 else { print("syntheticPinTap=titleUnavailable"); return }
+        let title = titles.firstMatch, titleFrame = title.frame, mapFrame = map.frame
+        let point = CGPoint(x: titleFrame.midX, y: titleFrame.midY)
+        let finite = !titleFrame.isEmpty && [titleFrame.minX, titleFrame.minY, titleFrame.width, titleFrame.height]
+            .allSatisfy { $0.isFinite && abs($0) < 10000 }
+        let inside = finite && mapFrame.contains(point) && app.frame.contains(point)
+        print("syntheticPinTap=geometry;titleHittable=\(title.isHittable);centerInside=\(inside);\(frameDiagnostics(titleFrame, token: "title"));\(frameDiagnostics(mapFrame, token: "map"))")
+        guard inside, remaining() > 0 else { print("syntheticPinTap=pointUnavailable"); return }
+        // Reject a point that could activate a stop picker, completion or navigation control.
+        let buttons = app.buttons
+        guard buttons.count <= 64 else { print("syntheticPinTap=controlCheckUnavailable"); return }
+        for control in buttons.allElementsBoundByIndex {
+            guard remaining() > 0 else { print("syntheticPinTap=controlCheckUnavailable"); return }
+            if control.identifier == "mini.pin.1.fictional-position-4102" { continue }
+            if control.frame.contains(point) && control.isHittable {
+                print("syntheticPinTap=blockedByControl"); return
+            }
+        }
+        guard remaining() > 0, title.exists, map.exists,
+              title.frame == titleFrame, map.frame == mapFrame, app.frame.contains(point) else {
+            print("syntheticPinTap=geometryChanged"); return
+        }
+        // Physical tap at the actual AX title host center; no direct action/selection injection.
+        map.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: point.x - mapFrame.minX, dy: point.y - mapFrame.minY)).tap()
+        let first = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == true AND label ENDSWITH %@", ", unit 4102"), object: delivered)
+        let changed = XCTWaiter.wait(for: [first], timeout: remaining()) == .completed &&
+            app.staticTexts["Unit 4102"].exists
+        print("syntheticPinTap=result;selected4108Before=true;selected4102After=\(changed);\(sourcePinDiagnostics())")
     }
 
     // Fixed scalars and allowlisted coverage states only; no labels or hierarchy escape.

@@ -136,6 +136,9 @@ struct ApartmentDeliveryMap: View {
             mapHeading = context.camera.heading
             mapDistance = context.camera.distance
             if camera.positionedByUser { following.userMoved(distance: context.camera.distance) }
+            #if DEBUG && targetEnvironment(simulator)
+            if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
+            #endif
         }
         .onChange(of: location.fix?.timestamp) { _, _ in
             followLocation()
