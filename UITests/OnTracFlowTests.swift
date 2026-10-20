@@ -254,26 +254,45 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["mini.delivered"].label.contains("4102"))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         let map = app.maps.firstMatch
-        let beforePan = pin.frame.midY
+        let beforePanFrame = pin.frame
+        let beforePan = beforePanFrame.midY
+        let mapFrame = map.frame
+        guard mapFrame.width > 0, mapFrame.height > 0 else { XCTFail("Map has no gesture bounds"); return }
+        let next = app.staticTexts["mini.next"]
+        XCTAssertTrue(next.exists)
+        let navigation = app.navigationBars.firstMatch
+        XCTAssertTrue(navigation.exists)
+        let nextFrame = next.frame, navigationFrame = navigation.frame
+        guard [mapFrame, beforePanFrame, nextFrame, navigationFrame].allSatisfy({ frame in
+            !frame.isEmpty && [frame.minX, frame.minY, frame.maxX, frame.maxY].allSatisfy { $0.isFinite }
+        }) else { XCTFail("Map, pin, navigation and stop-card frames must be finite and nonempty"); return }
+        let top = max(mapFrame.minY, navigationFrame.maxY)
+        let bottom = min(mapFrame.maxY, nextFrame.minY - 24)
+        let gestureBounds = CGRect(x: mapFrame.minX, y: top, width: mapFrame.width, height: bottom - top)
+        guard gestureBounds.height > 0 else { XCTFail("No visible map above the stop card"); return }
+        let panDistance = min(80, gestureBounds.height * 0.25)
+        let direction: CGFloat = beforePanFrame.maxY < gestureBounds.midY ? 1 : -1
+        let startY = (gestureBounds.midY - direction * panDistance / 2 - mapFrame.minY) / mapFrame.height
+        let endY = (gestureBounds.midY + direction * panDistance / 2 - mapFrame.minY) / mapFrame.height
         let obstacles = (app.buttons.allElementsBoundByIndex + [app.staticTexts["mini.coverage"],
                          app.staticTexts["mini.locationStatus"]]).filter { $0.exists && $0.isHittable }
             .map { $0.frame.insetBy(dx: -12, dy: -12) }
-        let mapFrame = map.frame
         let blankX = [0.5, 0.3, 0.7].first { x in
             let path = CGRect(x: mapFrame.minX + mapFrame.width * x - 4,
-                              y: mapFrame.minY + mapFrame.height * 0.35,
-                              width: 8, height: mapFrame.height * 0.08)
-            return !obstacles.contains { $0.intersects(path) }
+                              y: gestureBounds.midY - panDistance / 2, width: 8, height: panDistance)
+            return gestureBounds.contains(path) && !obstacles.contains { $0.intersects(path) }
         }
         guard let blankX else { XCTFail("No unobstructed map gesture path"); return }
-        map.coordinate(withNormalizedOffset: CGVector(dx: blankX, dy: 0.35))
-            .press(forDuration: 0.1, thenDragTo: map.coordinate(withNormalizedOffset: CGVector(dx: blankX, dy: 0.43)))
+        let start = CGVector(dx: blankX, dy: startY), end = CGVector(dx: blankX, dy: endY)
+        map.coordinate(withNormalizedOffset: start)
+            .press(forDuration: 0.1, thenDragTo: map.coordinate(withNormalizedOffset: end))
         let paused = NSPredicate(format: "value BEGINSWITH %@", "Paused")
         expectation(for: paused, evaluatedWith: app.buttons["mini.recenter"])
         waitForExpectations(timeout: 5)
         let moved = NSPredicate { _, _ in pin.exists && abs(pin.frame.midY - beforePan) > 20 }
-        expectation(for: moved, evaluatedWith: pin)
-        waitForExpectations(timeout: 5)
+        let movement = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: moved, object: pin)], timeout: 5)
+        XCTAssertEqual(movement, .completed,
+                       "Pin pan map=\(mapFrame) visible=\(gestureBounds) start=\(start) end=\(end) before=\(beforePanFrame) exists=\(pin.exists) after=\(pin.exists ? String(describing: pin.frame) : "absent")")
         XCTAssertTrue(pin.isHittable)
         app.buttons["Show all stops"].tap()
         XCTAssertTrue(pin.waitForExistence(timeout: 5))

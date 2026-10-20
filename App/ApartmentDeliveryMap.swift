@@ -193,14 +193,14 @@ struct ApartmentDeliveryMap: View {
                    location.direction == nil ? "Following your location" : "Following your direction",
                    systemImage: "location.north.fill") { followLocation() }
                 .tint(.teal).accessibilityIdentifier("mini.recenter")
-                .accessibilityValue("\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? "Showing apartment pins" : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")")
+                .accessibilityValue(Text(verbatim: "\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? "Showing apartment pins" : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")"))
                 .accessibilityHint("Pan or zoom the map to pause following")
         } else {
             Button("Resume following", systemImage: "location.fill") {
                 following.resume(); followLocation()
             }.labelStyle(.titleAndIcon).font(.caption.bold()).buttonBorderShape(.capsule)
                 .accessibilityIdentifier("mini.recenter")
-                .accessibilityValue("Paused, map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters")
+                .accessibilityValue(Text(verbatim: "Paused, map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters"))
                 .accessibilityHint("Center on your position and face your direction, keeping this zoom")
         }
     }

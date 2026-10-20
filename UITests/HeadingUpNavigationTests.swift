@@ -130,7 +130,8 @@ final class HeadingUpNavigationTests: XCTestCase {
         let value = try XCTUnwrap(control.value as? String)
         let expression = try NSRegularExpression(pattern: #"map distance ([0-9]+) meters"#)
         let range = NSRange(value.startIndex..<value.endIndex, in: value)
-        let match = try XCTUnwrap(expression.firstMatch(in: value, range: range))
+        let match = try XCTUnwrap(expression.firstMatch(in: value, range: range),
+                                 "Unexpected camera accessibility value: \(value.debugDescription)")
         let numberRange = try XCTUnwrap(Range(match.range(at: 1), in: value))
         return try XCTUnwrap(Double(value[numberRange]))
     }
