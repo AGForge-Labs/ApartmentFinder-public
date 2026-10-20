@@ -35,7 +35,7 @@ public enum FinderSearch {
         let directory = Dictionary(grouping: communities.flatMap { community in
             community.matchingAddresses.map { (LocalSearch.addressKey($0), community) }
         }, by: { $0.0 }).mapValues { $0.map { $0.1 } }
-        let byAddress = Dictionary(grouping: places, by: { LocalSearch.addressKey($0.address) })
+        let byAddress = Dictionary(grouping: places.filter { $0.referenceKind == nil }, by: { LocalSearch.addressKey($0.address) })
         let priority: [Verification: Int] = [.fieldVerified: 0, .sourceMapped: 1, .estimated: 2]
         return byAddress.flatMap { key, records -> [Place] in
             let related = directory[key] ?? []

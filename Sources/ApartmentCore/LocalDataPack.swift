@@ -16,7 +16,7 @@ public struct LocalDataPack: Sendable {
         }
         let communityIDs = Set(catalog.communities.map(\.id)), sourceIDs = Set(catalog.sources.map(\.id))
         let scopeZIPs = Set(catalog.scopeZIPs)
-        let supportedZIPs: Set<String> = ["89113", "89148", "89123", "89183"]
+        let supportedZIPs: Set<String> = ["89113", "89148", "89123", "89183", "89052", "89014", "89044"]
         guard communityIDs.count == catalog.communities.count, sourceIDs.count == catalog.sources.count,
               Set(points.features.map(\.id)).count == points.features.count,
               Set(lines.features.map(\.id)).count == lines.features.count,
@@ -71,10 +71,16 @@ public struct LocalDataPack: Sendable {
             let p = feature.properties
             guard feature.type == "Feature", feature.geometry.type == "Point", !feature.id.isEmpty else { throw CoreError("Invalid point feature.") }
             try validate(p.communityID, p.sourceIDs)
+            if p.referenceKind != nil {
+                guard p.kind == .building, p.verification == .sourceMapped, p.unit.isEmpty, p.floor.isEmpty,
+                      !p.building.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw CoreError("A legal-building reference cannot represent a unit, entrance or door.")
+                }
+            }
             return Place(id: feature.id, communityID: p.communityID, address: p.address, building: p.building,
                          unit: p.unit, floor: p.floor, kind: p.kind, verification: p.verification,
                          coordinate: try coordinate(feature.geometry.coordinates), sourceIDs: p.sourceIDs,
-                         notes: p.notes, approachID: p.approachID, graphNodeID: p.graphNodeID, identityUncertain: p.identityUncertain)
+                         notes: p.notes, approachID: p.approachID, graphNodeID: p.graphNodeID, identityUncertain: p.identityUncertain, referenceKind: p.referenceKind)
         }
         let segments: [PathSegment] = try lines.features.map { feature in
             let p = feature.properties
@@ -85,6 +91,36 @@ public struct LocalDataPack: Sendable {
                                coordinates: try feature.geometry.coordinates.map(coordinate), mode: p.mode,
                                oneWay: p.oneWay, blocked: p.blocked, stairs: p.stairs, confirmed: p.confirmed,
                                sourceIDs: p.sourceIDs, notes: p.notes)
+        }
+        let associations = catalog.unitBuildingAssociations ?? []
+        guard associations.count <= 50_000, Set(associations.map(\.id)).count == associations.count else {
+            throw CoreError("Invalid or duplicate building associations.")
+        }
+        var associationKeys = Set<String>()
+        let communitiesByID = Dictionary(uniqueKeysWithValues: catalog.communities.map { ($0.id, $0) })
+        let placesByID = Dictionary(uniqueKeysWithValues: places.map { ($0.id, $0) })
+        for a in associations {
+            try validate(a.communityID, a.sourceIDs)
+            let key = [a.communityID, LocalSearch.addressKey(a.address), LocalSearch.normalized(a.unit), a.identifierKind.rawValue].joined(separator: "|")
+            guard !a.id.isEmpty, !a.unit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !a.building.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  associationKeys.insert(key).inserted,
+                  communitiesByID[a.communityID]?.matchingAddresses.contains(where: {
+                      LocalSearch.addressKey($0) == LocalSearch.addressKey(a.address)
+                  }) == true else { throw CoreError("A building association has an ambiguous unit or street.") }
+            if let floor = a.mapFloor {
+                guard a.identifierKind == .operatorMap, !floor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw CoreError("Only an explicit operator schematic can supply a map floor label.")
+                }
+            }
+            if let referenceID = a.referencePlaceID {
+                guard a.identifierKind == .municipalLegal, let reference = placesByID[referenceID],
+                      reference.referenceKind == .assessorLegalBuildingPolygon,
+                      reference.communityID == a.communityID, reference.building == a.building,
+                      LocalSearch.addressKey(reference.address) == LocalSearch.addressKey(a.address) else {
+                    throw CoreError("A unit association has no matching legal-building reference.")
+                }
+            }
         }
         try RileyPropertySeparation.apply(to: &catalog, places: &places)
         return LocalDataPack(catalog: catalog, places: places, paths: segments)
@@ -103,6 +139,7 @@ private struct PointProperties: Decodable {
     var kind: LocationKind; var verification: Verification; var sourceIDs: [String]; var notes: String
     var approachID: String?; var graphNodeID: String?
     var identityUncertain: Bool?
+    var referenceKind: BuildingReferenceKind?
 }
 private struct LineFeature: Decodable {
     var type: String; var id: String; var geometry: LineGeometry; var properties: LineProperties

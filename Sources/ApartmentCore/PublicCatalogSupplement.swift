@@ -26,6 +26,7 @@ public enum PublicCatalogSupplement {
         if base == nil {
             result.catalog.communities = []; result.catalog.sources = []
             result.catalog.deliveryAreaExceptions = nil
+            result.catalog.unitBuildingAssociations = nil
             result.places = []; result.paths = []
         }
         let baseCommunities = Dictionary(result.catalog.communities.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -75,6 +76,23 @@ public enum PublicCatalogSupplement {
             pointIDs.insert(point.id)
             neededSources.formUnion(point.sourceIDs)
         }
+        var associations = result.catalog.unitBuildingAssociations ?? []
+        var associationIDs = Set(associations.map(\.id))
+        var associationKeys = Set(associations.map(associationKey))
+        for a in supplement.catalog.unitBuildingAssociations ?? [] {
+            guard let community = admitted[a.communityID], usableSources(a.sourceIDs),
+                  !associationIDs.contains(a.id), !associationKeys.contains(associationKey(a)),
+                  community.matchingAddresses.contains(where: { LocalSearch.addressKey($0) == LocalSearch.addressKey(a.address) }) else { continue }
+            if let referenceID = a.referencePlaceID {
+                guard let reference = result.places.first(where: { $0.id == referenceID }),
+                      reference.referenceKind == .assessorLegalBuildingPolygon, reference.kind == .building,
+                      reference.communityID == a.communityID, reference.building == a.building,
+                      LocalSearch.addressKey(reference.address) == LocalSearch.addressKey(a.address) else { continue }
+            }
+            associations.append(a); associationIDs.insert(a.id); associationKeys.insert(associationKey(a))
+            neededSources.formUnion(a.sourceIDs)
+        }
+        if !associations.isEmpty { result.catalog.unitBuildingAssociations = associations }
         var pathIDs = Set(result.paths.map(\.id))
         for path in supplement.paths {
             guard admitted[path.communityID] != nil, !path.confirmed, !pathIDs.contains(path.id), usableSources(path.sourceIDs) else { continue }
@@ -85,6 +103,10 @@ public enum PublicCatalogSupplement {
             result.catalog.sources.append(source)
         }
         return result
+    }
+
+    private static func associationKey(_ a: UnitBuildingAssociation) -> String {
+        [a.communityID, LocalSearch.addressKey(a.address), LocalSearch.normalized(a.unit), a.identifierKind.rawValue].joined(separator: "|")
     }
 
     private struct PinIdentity: Hashable {

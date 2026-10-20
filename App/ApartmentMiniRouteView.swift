@@ -299,6 +299,17 @@ struct ApartmentMiniRouteView: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
+            ForEach(match.buildingAssociations) { association in
+                Text("\(association.identifierKind.label) \(association.building)\(association.mapFloor.map { " · Map floor \($0)" } ?? "") · signs unverified")
+                    .font(.subheadline).accessibilityIdentifier("mini.buildingAssociation.\(association.id)")
+            }
+            if !match.buildingReferences.isEmpty {
+                Text("Approximate legal-building area · may include courtyard/open space · accuracy unknown · not a unit position, entrance or door")
+                    .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.buildingReferenceWarning")
+            } else if !match.buildingAssociations.isEmpty {
+                Text("Unit/building association only · geographic location unknown")
+                    .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.associationWithoutPoint")
+            }
             if match.readyDoor == nil && match.candidates.contains(where: { $0.verification == .estimated }) {
                 Label("May be inaccurate · Check or correct this pin on arrival", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.estimateWarning")

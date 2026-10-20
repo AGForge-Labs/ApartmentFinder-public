@@ -71,6 +71,138 @@ class PublicCatalogExportTests(unittest.TestCase):
             self.assertNotIn(text, public)
         self.assertFalse(catalog['coverage']['inventoryComplete'])
 
+    def test_authorized_manifest_zips_export_without_inventing_extra_positions(self):
+        for zip_code in ('89123', '89183', '89052', '89014', '89044'):
+            with self.subTest(zip=zip_code):
+                self.output = self.directory / ('zip-' + zip_code)
+                self.catalog['scopeZIPs'] = [zip_code]
+                self.catalog['communities'][0]['zip'] = zip_code
+                self.run_export()
+                self.run_validate()
+                catalog = json.loads((self.output / 'public-catalog.json').read_bytes())
+                positions = json.loads((self.output / 'public-locations.geojson').read_bytes())
+                self.assertEqual(catalog['scopeZIPs'], [zip_code])
+                self.assertEqual(len(positions['features']), 1)
+                self.assertEqual(positions['features'][0]['properties']['unit'], '001')
+                self.assertEqual(positions['features'][0]['properties']['verification'], 'sourceMapped')
+                self.assertFalse(catalog['coverage']['inventoryComplete'])
+
+    def test_new_zip_support_still_rejects_undeclared_and_unsupported_scope(self):
+        for index, (scope, zip_code, county) in enumerate(((['89123'], '89123', ['89014']),
+                                                         (['99999'], '99999', []))):
+            with self.subTest(scope=scope, zip=zip_code, county=county):
+                self.output = self.directory / ('rejected-' + str(index))
+                self.catalog['scopeZIPs'] = scope
+                self.catalog['communities'][0].update(zip=zip_code, countyZIPs=county)
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+        # Preparation deliberately declares ZIPs of allowed appended communities.
+        self.output = self.directory / 'declared-then-mutated'
+        self.catalog['scopeZIPs'] = ['89123']
+        self.catalog['communities'][0].update(zip='89052', countyZIPs=[])
+        self.run_export()
+        path = self.output / 'public-catalog.json'
+        catalog = json.loads(path.read_bytes())
+        self.assertEqual(catalog['scopeZIPs'], ['89052', '89123'])
+        catalog['scopeZIPs'] = ['89123']
+        path.write_text(json.dumps(catalog))
+        review_path = self.output / 'public-catalog-review.json'
+        review = json.loads(review_path.read_bytes())
+        review['resourcesSHA256'][path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        review_path.write_text(json.dumps(review))
+        result = self.run_validate(valid=False)
+        self.assertIn('Community outside public ZIP scope', result.stderr)
+
+    def test_metadata_only_henderson_addition_preserves_mapped_baseline(self):
+        self.run_export()
+        baseline = {name: json.loads((self.output / name).read_bytes()) for name in
+                    ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson')}
+        self.output = self.directory / 'with-address-only-community'
+        self.additions = dict(sources=[dict(id='new-official', title='Fictional official address',
+            url='https://example.invalid/property', retrievedAt='2026-10-20T00:00:00Z')],
+            communities=[dict(id='fictional-henderson', name='Fictional Henderson Apartments',
+                address='200 Fictional Pkwy', deliveryAddresses=['210 Fictional Pkwy'], zip='89052',
+                aliases=[], sourceIDs=['new-official'], researchStatus='addressOnly', gapNotes=[])])
+        self.run_export(); self.run_validate()
+        catalog = json.loads((self.output / 'public-catalog.json').read_bytes())
+        self.assertIn('89052', catalog['scopeZIPs'])
+        new = catalog['communities'][-1]
+        self.assertNotIn('latitude', new); self.assertNotIn('longitude', new)
+        self.assertEqual(catalog['communities'][0], baseline['public-catalog.json']['communities'][0])
+        self.assertEqual(catalog['sources'][0], baseline['public-catalog.json']['sources'][0])
+        for name in ('public-locations.geojson', 'public-paths.geojson'):
+            self.assertEqual(json.loads((self.output / name).read_bytes()), baseline[name])
+        entries = json.loads((self.output / 'known-addresses.json').read_bytes())['entries']
+        self.assertIn(dict(address='200 Fictional Pkwy', deliveryAddresses=['210 Fictional Pkwy']), entries)
+        self.assertFalse(catalog['coverage']['inventoryComplete'])
+
+    def configure_building_reference(self):
+        feature = self.locations['features'][0]
+        feature['id'] = 'fictional-legal-building-A'
+        feature['properties'].update(unit='', floor='', kind='building', building='A', verification='sourceMapped',
+            referenceKind='assessorLegalBuildingPolygon', identityUncertain=False)
+        self.catalog['unitBuildingAssociations'] = [dict(id='fictional-legal-001', communityID='fictional',
+            address='100 Fictional Rd', unit='001', building='A', identifierKind='municipalLegal',
+            sourceIDs=['official-fixture'], referencePlaceID=feature['id'])]
+        return feature
+
+    def test_typed_building_references_keep_associations_separate_from_unit_positions(self):
+        self.configure_building_reference()
+        self.run_export(); self.run_validate()
+        catalog = json.loads((self.output / 'public-catalog.json').read_bytes())
+        points = json.loads((self.output / 'public-locations.geojson').read_bytes())['features']
+        self.assertEqual(catalog.get('unitBuildingAssociations'), self.catalog['unitBuildingAssociations'])
+        self.assertEqual(len(points), 1)
+        p = points[0]['properties']
+        self.assertEqual(p.get('referenceKind'), 'assessorLegalBuildingPolygon')
+        self.assertEqual((p['kind'], p['unit'], p['floor']), ('building', '', ''))
+        self.assertIn('legal-building reference', p['notes'])
+        self.assertIn('physical signs', p['notes'])
+        self.assertIn('not a unit position', p['notes'])
+
+    def test_no_point_operator_association_does_not_create_geometry(self):
+        self.configure_building_reference()
+        self.locations['features'] = []
+        a = self.catalog['unitBuildingAssociations'][0]
+        a.pop('referencePlaceID'); a['identifierKind'] = 'operatorMap'
+        self.run_export(); self.run_validate()
+        catalog = json.loads((self.output / 'public-catalog.json').read_bytes())
+        self.assertEqual(catalog.get('unitBuildingAssociations'), [a])
+        self.assertEqual(json.loads((self.output / 'public-locations.geojson').read_bytes())['features'], [])
+
+    def test_map_floor_is_a_schematic_label_and_cannot_be_inferred_for_legal_records(self):
+        self.configure_building_reference(); self.locations['features'] = []
+        a = self.catalog['unitBuildingAssociations'][0]
+        a.pop('referencePlaceID'); a.update(identifierKind='operatorMap', mapFloor='2')
+        self.run_export(); self.run_validate()
+        public = json.loads((self.output / 'public-catalog.json').read_bytes())['unitBuildingAssociations'][0]
+        self.assertEqual(public['mapFloor'], '2')
+        self.assertNotIn('referencePlaceID', public)
+        self.output = self.directory / 'false-legal-floor'
+        a['identifierKind'] = 'municipalLegal'
+        self.run_export(valid=False)
+
+    def test_building_reference_rejects_false_precision_and_bad_joins(self):
+        for index, mutation in enumerate(('unit-kind', 'unit', 'floor', 'estimated', 'unknown-kind',
+                                          'missing-reference', 'other-street', 'operator-reference', 'wrong-building', 'duplicate-unit')):
+            with self.subTest(mutation=mutation):
+                self.output = self.directory / ('bad-reference-' + str(index))
+                f = self.configure_building_reference(); a = self.catalog['unitBuildingAssociations'][0]
+                if mutation == 'unit-kind': f['properties']['kind'] = 'unitPosition'
+                if mutation == 'unit': f['properties']['unit'] = '001'
+                if mutation == 'floor': f['properties']['floor'] = '1'
+                if mutation == 'estimated': f['properties']['verification'] = 'estimated'
+                if mutation == 'unknown-kind': f['properties']['referenceKind'] = 'door'
+                if mutation == 'missing-reference': a['referencePlaceID'] = 'missing'
+                if mutation == 'other-street': a['address'] = '999 Other Rd'
+                if mutation == 'operator-reference': a['identifierKind'] = 'operatorMap'
+                if mutation == 'wrong-building': a['building'] = 'B'
+                if mutation == 'duplicate-unit':
+                    other = dict(a, id='second-association', building='B'); other.pop('referencePlaceID')
+                    self.catalog['unitBuildingAssociations'].append(other)
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+
     def test_unperformed_field_verification_is_rejected(self):
         self.locations['features'][0]['properties']['verification'] = 'fieldVerified'
         self.run_export(valid=False)
@@ -95,6 +227,13 @@ class PublicCatalogExportTests(unittest.TestCase):
             building='', unit='201', floor='', sourceIDs=sources,
             notes='ARBITRARY RAW NOTE: Building A has been verified; secret resident detail')
         return feature
+
+    def test_reserved_unit_identity_cannot_be_reclassified_as_building_reference(self):
+        f = self.configure_disputed_unit()
+        f['properties'].update(kind='building', unit='', floor='', building='A',
+            referenceKind='assessorLegalBuildingPolygon')
+        self.run_export(valid=False)
+        self.assertFalse(self.output.exists())
 
     def run_validate(self, valid=True):
         result = subprocess.run([sys.executable, '-B', str(ROOT / 'scripts/public-catalog.py'), 'validate',
@@ -500,6 +639,18 @@ class PublicCatalogExportTests(unittest.TestCase):
         self.assertEqual(community['publicEvidence']['coordinate']['kind'], 'operatorPublishedPropertyPoint')
         self.assertTrue(any('operator publishes' in note for note in community['gapNotes']))
         self.assertTrue(any('outside the focused' in note for note in community['gapNotes']))
+
+    def test_conflicting_source_city_labels_remain_qualified_without_fabricated_coordinates(self):
+        self.evidence = [dict(communityID='fictional', communityType='apartment', areaScope='nearbyOutsideFocus',
+            addressSourceIDs=['official-fixture'], addressCityDisagreement=True,
+            coordinate=dict(kind='operatorPublishedPropertyPoint', sourceIDs=['official-fixture']))]
+        self.run_export(); self.run_validate()
+        c = json.loads((self.output / 'public-catalog.json').read_bytes())['communities'][0]
+        self.assertTrue(c['publicEvidence']['addressCityDisagreement'])
+        self.assertTrue(any('disagree on the city label' in n for n in c['gapNotes']))
+        self.output = self.directory / 'invalid-city-qualification'
+        self.evidence[0]['addressCityDisagreement'] = 'private free text'
+        self.run_export(valid=False)
 
     def test_unknown_field_evidence_metadata_is_rejected(self):
         self.evidence = [dict(communityID='fictional', communityType='apartment', areaScope='core',

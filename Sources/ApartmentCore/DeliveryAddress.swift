@@ -10,10 +10,10 @@ public struct DeliveryAddress: Equatable, Sendable {
     public static func resolve(_ input: String, unit supplied: String = "", knownAddresses: [String]) -> Self {
         var street = input.trimmingCharacters(in: .whitespacesAndNewlines)
         var embedded = ""
-        let hadLocality = street.range(of: #"(?i)[,\s.]+(?:las vegas|nv|nevada)\b"#, options: .regularExpression) != nil
-        // OnTrac separates city/state with periods; other exporters use commas.
-        let withoutLocality = street.replacingOccurrences(
-            of: #"(?i)[,\s.]+(?:las vegas|nv|nevada)\b.*$"#, with: "", options: .regularExpression)
+        let locality = street.range(of: LocalSearch.localitySuffixPattern, options: .regularExpression)
+        let hadLocality = locality != nil
+        // Keep repeated units and leading zeros before a recognized export locality suffix.
+        let withoutLocality = (locality.map { String(street[..<$0.lowerBound]) } ?? street)
             .trimmingCharacters(in: CharacterSet(charactersIn: " ,.\t\r\n"))
         let pattern = #"(?i)(?:[,\s]+(?:apt|apartment|unit|suite|ste)\.?\s*|[,\s]*#\s*)([a-z0-9][a-z0-9-]*)$"#
         if let range = withoutLocality.range(of: pattern, options: .regularExpression) {

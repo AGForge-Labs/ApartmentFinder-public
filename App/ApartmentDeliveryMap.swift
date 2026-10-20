@@ -24,9 +24,11 @@ struct ApartmentDeliveryMap: View {
         let stop: DeliveryStop
         let place: Place
         let ready: Bool
+        var buildingReference: Bool { place.referenceKind != nil }
         var id: String { stop.id + "|" + place.id }
         var color: Color { stop.completed ? .gray : ready ? .teal : .orange }
         var status: String {
+            if buildingReference { return "Legal building reference; physical signs and accuracy unverified; not a door" }
             let accuracy = ready ? "Checked door" : place.verification == .estimated ? "May be inaccurate" : "Suggested location"
             return stop.completed ? "Delivered, \(accuracy)" : accuracy
         }
@@ -39,11 +41,11 @@ struct ApartmentDeliveryMap: View {
         group.stops.flatMap { stop -> [Pin] in
             let match = store.doorMatch(stop, groupID: group.id)
             let places = match.readyDoor.map { [$0] } ?? match.candidates
-            return places.map { Pin(stop: stop, place: $0, ready: match.readyDoor?.id == $0.id) }
+            return (places.isEmpty ? match.buildingReferences : places).map { Pin(stop: stop, place: $0, ready: match.readyDoor?.id == $0.id) }
         }
     }
     private func guides(_ pins: [Pin]) -> [OrderGuide] {
-        let byStop = Dictionary(grouping: pins, by: { $0.stop.id })
+        let byStop = Dictionary(grouping: pins.filter { !$0.buildingReference }, by: { $0.stop.id })
         // Only connect adjacent, unambiguous locations; never bridge a missing unit.
         return zip(group.stops, group.stops.dropFirst()).compactMap { first, second in
             guard let a = byStop[first.id], a.count == 1, let b = byStop[second.id], b.count == 1 else { return nil }
@@ -52,6 +54,7 @@ struct ApartmentDeliveryMap: View {
     }
     private func coverage(_ pins: [Pin]) -> String {
         if group.remainingCount == 0 { return "Completed delivery locations" }
+        if pins.contains(where: { $0.buildingReference && !$0.stop.completed }) { return "Building references · doors not mapped" }
         let located = Set(pins.map { $0.stop.id })
         let missing = group.stops.filter { !$0.completed && !located.contains($0.id) }.count
         if missing > 0 { return missing == 1 ? "1 door not mapped" : "\(missing) doors not mapped" }
@@ -68,7 +71,7 @@ struct ApartmentDeliveryMap: View {
                     .stroke(.teal.opacity(0.75), style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
             }
             ForEach(pins) { pin in
-                Annotation("Unit \(pin.stop.unit)", coordinate: pin.place.coordinate.cl, anchor: .bottom) {
+                Annotation(pin.buildingReference ? "Legal building reference for unit \(pin.stop.unit)" : "Unit \(pin.stop.unit)", coordinate: pin.place.coordinate.cl, anchor: .bottom) {
                     #if DEBUG && targetEnvironment(simulator)
                     if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
                         group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
@@ -201,7 +204,8 @@ struct ApartmentDeliveryMap: View {
     private func pinButton(_ pin: Pin) -> some View {
         Button { select(pin.stop.id) } label: {
             DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
-                           color: pin.color, selected: selectedStopID == pin.stop.id, estimated: pin.place.verification == .estimated)
+                           color: pin.color, selected: selectedStopID == pin.stop.id, estimated: pin.place.verification == .estimated,
+                           referenceLabel: pin.buildingReference ? "Unit \(pin.stop.unit) · Legal B\(pin.place.building) reference" : nil)
         }.buttonStyle(.plain)
             .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")
             .accessibilityIdentifier("mini.pin.\(pin.stop.sequence).\(pin.place.id)")

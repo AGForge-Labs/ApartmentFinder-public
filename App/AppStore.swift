@@ -26,6 +26,8 @@ final class AppStore: ObservableObject {
     private var mergedPlaces: [Place] = []
     private var apartmentPlacesByCommunity: [String: [Place]] = [:]
     private var scopedApartmentPlaces: [String: [Place]] = [:]
+    private var buildingAssociationsByCommunity: [String: [UnitBuildingAssociation]] = [:]
+    private var scopedBuildingAssociations: [String: [UnitBuildingAssociation]] = [:]
     private struct DoorMatchKey: Hashable { let groupID: String; let stop: DeliveryStop }
     private var cachedDoorMatches: [DoorMatchKey: ApartmentDoorMatch] = [:]
     private var context: ModelContext?
@@ -45,7 +47,7 @@ final class AppStore: ObservableObject {
         return records.values.sorted { $0.id < $1.id }
     }
     var selectedCommunity: Community? { communities.first { $0.id == selectedCommunityID } }
-    var communityPlaces: [Place] { places.filter { $0.communityID == selectedCommunityID } }
+    var communityPlaces: [Place] { places.filter { $0.communityID == selectedCommunityID && $0.referenceKind == nil } }
     var communityPaths: [PathSegment] { paths.filter { $0.communityID == selectedCommunityID } }
 
     init(storeURL: URL? = nil, resourceBundle: Bundle = .main, packDirectory: URL? = nil, loadPublicCatalog: Bool = true) {
@@ -298,7 +300,8 @@ final class AppStore: ObservableObject {
         DeliveryPerformance.measure("Rebuild pin index") {
             mergedPlaces = LocalSearch.merged(seed: pack?.places ?? [], overrides: personal.places)
             apartmentPlacesByCommunity = Dictionary(grouping: mergedPlaces, by: \.communityID)
-            scopedApartmentPlaces.removeAll()
+            buildingAssociationsByCommunity = Dictionary(grouping: pack?.catalog.unitBuildingAssociations ?? [], by: \.communityID)
+            scopedApartmentPlaces.removeAll(); scopedBuildingAssociations.removeAll()
             cachedDoorMatches.removeAll()
         }
     }
@@ -311,7 +314,7 @@ final class AppStore: ObservableObject {
             ApartmentRoutePlan.make(stops: personal.stops, communities: communities, rules: personal.apartmentRules,
                                     corrections: personal.stopCorrections, personalCommunityIDs: personalCommunityIDs)
         }
-        scopedApartmentPlaces.removeAll()
+        scopedApartmentPlaces.removeAll(); scopedBuildingAssociations.removeAll()
         cachedDoorMatches.removeAll()
     }
     private func refreshPersonal(from previous: PersonalBackup) {
@@ -348,8 +351,15 @@ final class AppStore: ObservableObject {
             scoped = apartmentGroup(groupID)?.scopedPlaces(in: apartmentPlacesByCommunity) ?? apartmentPlacesByCommunity[groupID] ?? []
             scopedApartmentPlaces[groupID] = scoped
         }
+        let associations: [UnitBuildingAssociation]
+        if let found = scopedBuildingAssociations[groupID] { associations = found }
+        else {
+            associations = apartmentGroup(groupID)?.scopedBuildingAssociations(in: buildingAssociationsByCommunity) ?? buildingAssociationsByCommunity[groupID] ?? []
+            scopedBuildingAssociations[groupID] = associations
+        }
         let match = ApartmentDoorMatch.resolve(stop: stop, communityID: groupID, places: scoped,
-            selectedPlaceID: personal.doorSelections.first { $0.stopID == stop.id }?.placeID)
+            selectedPlaceID: personal.doorSelections.first { $0.stopID == stop.id }?.placeID,
+            buildingAssociations: associations)
         cachedDoorMatches[key] = match
         return match
     }

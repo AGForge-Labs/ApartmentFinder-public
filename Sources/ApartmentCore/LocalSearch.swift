@@ -1,13 +1,15 @@
 import Foundation
 public enum LocalSearch {
+    // A locality suffix needs a delimiter or state/ZIP context; city words can be street names.
+    static let localitySuffixPattern = #"(?i)(?:[,\.\r\n]+\s*(?:las\s+vegas|henderson)(?:[,\s.]+(?:nv|nevada))?(?:[,\s.]+\d{5}(?:-\d{4})?)?|[,\s.]+(?:las\s+vegas|henderson)[,\s.]+(?:(?:nv|nevada)(?:[,\s.]+\d{5}(?:-\d{4})?)?|\d{5}(?:-\d{4})?)|[,\s.]+(?:nv|nevada)(?:[,\s.]+\d{5}(?:-\d{4})?)?)[,\s.]*$"#
     public static func normalized(_ value: String) -> String {
         value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
             .trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
     public static func addressKey(_ address: String, stripPostalCode: Bool = true) -> String {
-        let aliases = ["west":"w", "east":"e", "north":"n", "south":"s", "road":"rd", "street":"st", "avenue":"ave", "drive":"dr", "lane":"ln", "boulevard":"blvd", "court":"ct", "way":"wy"]
-        var text = normalized(address).components(separatedBy: ",")[0]
-        text = text.replacingOccurrences(of: #"\s+(las vegas|nv|nevada)\b.*$"#, with: "", options: .regularExpression)
+        let aliases = ["west":"w", "east":"e", "north":"n", "south":"s", "road":"rd", "street":"st", "avenue":"ave", "drive":"dr", "lane":"ln", "boulevard":"blvd", "court":"ct", "way":"wy", "parkway":"pkwy"]
+        var text = normalized(address).replacingOccurrences(of: localitySuffixPattern, with: "", options: .regularExpression)
+            .components(separatedBy: ",")[0]
         if stripPostalCode { text = text.replacingOccurrences(of: #"\s+\d{5}(-\d{4})?$"#, with: "", options: .regularExpression) }
         return text.components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }
             .map { aliases[$0] ?? $0 }.joined(separator: " ")
