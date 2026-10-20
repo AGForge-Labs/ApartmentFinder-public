@@ -85,6 +85,10 @@ struct ApartmentDeliveryMap: View {
             }
             .mapStyle(mapStyle.mapStyle)
             .mapControls { }
+            .simultaneousGesture(MagnifyGesture().onChanged { _ in
+                // Pause before a GPS callback can replace an in-progress pinch camera.
+                following.userMoved(distance: mapDistance)
+            })
             .overlay {
                 projectedPins(pins, proxy: proxy, revision: pinProjectionRevision)
             }
@@ -135,7 +139,9 @@ struct ApartmentDeliveryMap: View {
                 mapDistance = context.camera.distance
                 // A pan can change projection without changing heading or distance.
                 pinProjectionRevision &+= 1
-                if camera.positionedByUser { following.userMoved(distance: context.camera.distance) }
+                if camera.positionedByUser || following.mode == .manual {
+                    following.userMoved(distance: context.camera.distance)
+                }
                 #if DEBUG && targetEnvironment(simulator)
                 if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
                 #endif

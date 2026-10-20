@@ -111,7 +111,8 @@ final class HeadingUpNavigationTests: XCTestCase {
         let initialDistance = try settledMapDistance(control)
         app.maps.firstMatch.pinch(withScale: 1.6, velocity: 0.7)
         let paused = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value BEGINSWITH %@", "Paused"), object: control)
-        XCTAssertEqual(XCTWaiter.wait(for: [paused], timeout: 5), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [paused], timeout: 5), .completed,
+                       "Pinch must pause following; initial distance=\(initialDistance), camera value=\(String(describing: control.value)), map=\(app.maps.firstMatch.frame)")
         let zoomDistance = try settledMapDistance(control)
         XCTAssertGreaterThan(abs(initialDistance - zoomDistance), 20, "The gesture must actually change MapKit zoom")
         app.buttons["mini.focus.3"].tap()
