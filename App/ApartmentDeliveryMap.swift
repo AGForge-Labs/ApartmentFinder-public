@@ -164,15 +164,16 @@ struct ApartmentDeliveryMap: View {
                         #if DEBUG && targetEnvironment(simulator)
                         if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
                             group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
-                            pinButton(pin).background { SyntheticPinHostProbe { pinHostSnapshot = $0 } }
-                        } else { pinButton(pin) }
+                            pinButton(pin, point: point, viewport: geometry.size)
+                                .background { SyntheticPinHostProbe { pinHostSnapshot = $0 } }
+                        } else { pinButton(pin, point: point, viewport: geometry.size) }
                         #else
-                        pinButton(pin)
+                        pinButton(pin, point: point, viewport: geometry.size)
                         #endif
                     }
                 }
             }
-        }.clipped().contentShape(Rectangle())
+        }.clipped()
     }
 
     @ViewBuilder private func coverageLabel(_ pins: [Pin]) -> some View {
@@ -220,11 +221,12 @@ struct ApartmentDeliveryMap: View {
                                    heading: followedHeading, pitch: 0))
     }
 
-    private func pinButton(_ pin: Pin) -> some View {
+    private func pinButton(_ pin: Pin, point: CGPoint, viewport: CGSize) -> some View {
         Button { select(pin.stop.id) } label: {
             DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                            color: pin.color, selected: selectedStopID == pin.stop.id, estimated: pin.place.verification == .estimated,
                            referenceLabel: pin.buildingReference ? "Unit \(pin.stop.unit) · Legal B\(pin.place.building) reference" : nil)
+                .contentShape(ProjectedDeliveryPinHitRegion(point: point, viewport: viewport))
         }.buttonStyle(.plain)
             .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")
             .accessibilityIdentifier("mini.pin.\(pin.stop.sequence).\(pin.place.id)")
@@ -246,6 +248,22 @@ struct ApartmentDeliveryMap: View {
         }
         let padding = 75 * MKMapPointsPerMeterAtLatitude(first.latitude)
         camera = .rect(rect.insetBy(dx: -padding, dy: -padding))
+    }
+}
+
+/// Clip only each button's hit area. A viewport-wide content shape would consume
+/// gestures on clear map background before MapKit could pan or zoom.
+private struct ProjectedDeliveryPinHitRegion: Shape {
+    let point: CGPoint
+    let viewport: CGSize
+
+    func path(in bounds: CGRect) -> Path {
+        let mapInButton = CGRect(x: bounds.midX - point.x, y: bounds.maxY - point.y,
+                                 width: viewport.width, height: viewport.height)
+        let visibleButton = bounds.intersection(mapInButton)
+        return Path { path in
+            if !visibleButton.isNull && !visibleButton.isEmpty { path.addRect(visibleButton) }
+        }
     }
 }
 

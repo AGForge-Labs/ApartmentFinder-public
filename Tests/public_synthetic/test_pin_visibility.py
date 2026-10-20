@@ -142,7 +142,7 @@ class PinVisibilityTests(unittest.TestCase):
 
     def test_failed_grouping_is_removed_and_real_selection_acceptance_remains(self):
         source = (ROOT / 'App/ApartmentDeliveryMap.swift').read_text()
-        button = source.split('private func pinButton(_ pin: Pin) -> some View {', 1)[1].split('\n    private func center', 1)[0]
+        button = source.split('private func pinButton(_ pin: Pin, point: CGPoint, viewport: CGSize) -> some View {', 1)[1].split('\n    private func center', 1)[0]
         self.assertIn('Button { select(pin.stop.id) } label:', button)
         self.assertNotIn('.accessibilityElement(children: .combine)', button)
         self.assertIn('.accessibilityIdentifier("mini.pin.\\(pin.stop.sequence).\\(pin.place.id)")', button)

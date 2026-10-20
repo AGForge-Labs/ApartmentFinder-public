@@ -255,8 +255,9 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         let map = app.maps.firstMatch
         let beforePan = pin.frame.midY
-        let obstacles = [pin, laterPin, app.buttons["mini.recenter"], app.buttons["mini.mapStyle"],
-                         app.buttons["Show all stops"]].filter { $0.exists }.map { $0.frame.insetBy(dx: -8, dy: -8) }
+        let obstacles = (app.buttons.allElementsBoundByIndex + [app.staticTexts["mini.coverage"],
+                         app.staticTexts["mini.locationStatus"]]).filter { $0.exists && $0.isHittable }
+            .map { $0.frame.insetBy(dx: -12, dy: -12) }
         let mapFrame = map.frame
         let blankX = [0.5, 0.3, 0.7].first { x in
             let path = CGRect(x: mapFrame.minX + mapFrame.width * x - 4,
