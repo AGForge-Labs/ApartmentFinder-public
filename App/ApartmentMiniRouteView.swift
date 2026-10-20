@@ -206,8 +206,7 @@ struct ApartmentMiniRouteView: View {
 
     private func activeRoute(_ group: ApartmentGroup) -> some View {
         let manifestID = store.personal.activeManifest?.id
-        return ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
-                             select: { selection.select($0) })
+        return activeMap(group)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -234,6 +233,47 @@ struct ApartmentMiniRouteView: View {
             .background(.regularMaterial)
         }
     }
+
+    @ViewBuilder private func activeMap(_ group: ApartmentGroup) -> some View {
+        #if DEBUG && targetEnvironment(simulator)
+        if SyntheticMapGestureProbe.bareEnabled {
+            SyntheticBareMapPinchControl()
+        } else if SyntheticMapPinchTarget.enabled {
+            if SyntheticMapGestureProbe.enabled {
+                deliveryMap(group)
+                    .background { syntheticMapGestureProbe }
+                    .overlay { syntheticMapPinchTarget }
+            } else {
+                deliveryMap(group).overlay { syntheticMapPinchTarget }
+            }
+        } else if SyntheticMapGestureProbe.enabled {
+            deliveryMap(group).background { syntheticMapGestureProbe }
+        } else {
+            deliveryMap(group)
+        }
+        #else
+        deliveryMap(group)
+        #endif
+    }
+
+    private func deliveryMap(_ group: ApartmentGroup) -> ApartmentDeliveryMap {
+        ApartmentDeliveryMap(group: group, store: store, location: location, selectedStopID: selectedStopID,
+                             select: { selection.select($0) })
+    }
+
+    #if DEBUG && targetEnvironment(simulator)
+    private var syntheticMapGestureProbe: some View {
+        SyntheticMapGestureProbe(mode: "production").allowsHitTesting(false)
+    }
+
+    private var syntheticMapPinchTarget: some View {
+        GeometryReader { geometry in
+            SyntheticMapPinchTarget()
+                .frame(width: geometry.size.width * 0.37, height: geometry.size.height * 0.56)
+                .position(x: geometry.size.width * 0.225, y: geometry.size.height * 0.50)
+        }.allowsHitTesting(false)
+    }
+    #endif
 
     @ViewBuilder private func completionControls(_ group: ApartmentGroup) -> some View {
         if completionPending {
@@ -298,6 +338,17 @@ struct ApartmentMiniRouteView: View {
                     Text([place.building.isEmpty ? nil : "Building \(place.building)", place.floor.isEmpty ? nil : "Floor \(place.floor)"].compactMap { $0 }.joined(separator: " · "))
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
+            }
+            ForEach(match.buildingAssociations) { association in
+                Text("\(association.identifierKind.label) \(association.building)\(association.mapFloor.map { " · Map floor \($0)" } ?? "") · signs unverified")
+                    .font(.subheadline).accessibilityIdentifier("mini.buildingAssociation.\(association.id)")
+            }
+            if !match.buildingReferences.isEmpty {
+                Text("Approximate legal-building area · may include courtyard/open space · accuracy unknown · not a unit position, entrance or door")
+                    .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.buildingReferenceWarning")
+            } else if !match.buildingAssociations.isEmpty {
+                Text("Unit/building association only · geographic location unknown")
+                    .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.associationWithoutPoint")
             }
             if match.readyDoor == nil && match.candidates.contains(where: { $0.verification == .estimated }) {
                 Label("May be inaccurate · Check or correct this pin on arrival", systemImage: "exclamationmark.triangle.fill")

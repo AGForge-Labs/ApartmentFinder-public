@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "packVersion": "2026.10.19.2-public",
+  "packVersion": "2026.10.20.3-public",
   "entries": [
     {
       "address": "7960 Rafael Rivera Way",
@@ -381,7 +381,9 @@
     },
     {
       "address": "9405 Eastern Avenue",
-      "deliveryAddresses": []
+      "deliveryAddresses": [
+        "9405 S EASTERN AVE"
+      ]
     },
     {
       "address": "304 East Silverado Ranch Boulevard",
@@ -536,6 +538,290 @@
       "deliveryAddresses": [
         "6350 S Riley St"
       ]
+    },
+    {
+      "address": "11000 S. Eastern Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3370 St. Rose Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3080 St. Rose Pkwy",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3140 St Rose Pkwy",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "975 Seven Hills Dr",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "175 E. Bruner Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2030 Olympic Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "551 Eiger Way",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3675 Volunteer Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2300 Via Inspirada",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2750 West Wigwam Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "12215 Gilespie Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10250 Spencer Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "11210 South Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "375 East Starr Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "11055 Las Vegas Boulevard South",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "915 Alper Center Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2575 West Horizon Ridge Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "6151 Mountain Vista Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "430 East Cactus Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "625 Whitney Ranch Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2001 Ramrod Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3000 High View Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3001 West Warm Springs Road",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2362 North Green Valley Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "1050 Whitney Ranch Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2950 North Green Valley Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2312 North Green Valley Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "1350 Kelso Dunes Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "8680 Ensworth Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2725 West Wigwam Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2720 West Serene Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "360 North Arroyo Grande Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "325 North Gibson Road",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "831 Coronado Center Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "930 Carnegie Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2951 Siena Heights Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3610 Sunridge Heights Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3660 St. Rose Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "1130 Alper Center Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "3161 Sunridge Heights Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10701 South Eastern Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "11425 Bermuda Road",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "10200 Giles Street",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2815 West Ford Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "650 Whitney Ranch Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "2096 Ramrod Avenue",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "981 Whitney Ranch Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "985 Wigwam Parkway",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "6530 Annie Oakley Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "6551 Annie Oakley Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "310 Annabelle Lane",
+      "deliveryAddresses": [
+        "310 Annabelle Lane"
+      ]
+    },
+    {
+      "address": "2570 W Horizon Ridge Parkway",
+      "deliveryAddresses": [
+        "2570 W Horizon Ridge Parkway"
+      ]
+    },
+    {
+      "address": "845 Seven Hills Drive",
+      "deliveryAddresses": [
+        "845 Seven Hills Drive"
+      ]
+    },
+    {
+      "address": "525 Carnegie Street",
+      "deliveryAddresses": [
+        "525 Carnegie Street"
+      ]
+    },
+    {
+      "address": "11088 Amigo Street",
+      "deliveryAddresses": [
+        "11088 Amigo Street"
+      ]
+    },
+    {
+      "address": "2320 Ione Road",
+      "deliveryAddresses": [
+        "2320 Ione Road"
+      ]
+    },
+    {
+      "address": "8158 Giles Street",
+      "deliveryAddresses": [
+        "8158 Giles Street"
+      ]
+    },
+    {
+      "address": "65 E Windmill Lane",
+      "deliveryAddresses": [
+        "65 E Windmill Lane"
+      ]
+    },
+    {
+      "address": "2405 W Serene Avenue",
+      "deliveryAddresses": [
+        "2405 W SERENE AVE",
+        "2455 W SERENE AVE"
+      ]
+    },
+    {
+      "address": "2715 W Pebble Road",
+      "deliveryAddresses": [
+        "2715 W PEBBLE RD",
+        "2735 W PEBBLE RD",
+        "2755 W PEBBLE RD",
+        "2775 W PEBBLE RD",
+        "2815 W PEBBLE RD",
+        "2835 W PEBBLE RD",
+        "2855 W PEBBLE RD",
+        "2875 W PEBBLE RD"
+      ]
+    },
+    {
+      "address": "9655 South Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "11611 South Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "1281 Galleria Drive",
+      "deliveryAddresses": []
     }
   ]
 }

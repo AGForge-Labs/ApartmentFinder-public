@@ -47,9 +47,17 @@ done
 unset APPLE_CERTIFICATE_BASE64 APPLE_CERTIFICATE_PASSWORD APPLE_PROVISIONING_PROFILE_BASE64 APPLE_SHARE_PROVISIONING_PROFILE_BASE64 APP_STORE_CONNECT_KEY_BASE64 AF_KEYCHAIN_PASSWORD
 cd "$AF_ROOT"
 xcodegen generate --spec project-testflight.yml
+AF_PACKAGE_FLAGS=()
+if [[ "${PUBLIC_RELEASE_CONTEXT:-}" == true ]]; then
+  AF_LOCK=ApartmentFinder.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  mkdir -p "$(dirname "$AF_LOCK")"
+  cp Config/Iteration-Package.resolved "$AF_LOCK"
+  AF_PACKAGE_FLAGS=(-disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile)
+fi
 xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder \
   -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
   -derivedDataPath build-testflight -archivePath "$AF_SIGNING_DIR/ApartmentFinder.xcarchive" \
+  ${AF_PACKAGE_FLAGS[@]+"${AF_PACKAGE_FLAGS[@]}"} \
   CURRENT_PROJECT_VERSION="$AF_BUILD_NUMBER" \
   OTHER_CODE_SIGN_FLAGS="--keychain $AF_KEYCHAIN" archive > "$AF_OUTPUT/archive.log" 2>&1 || {
     tail -n 100 "$AF_OUTPUT/archive.log"; exit 1;

@@ -47,6 +47,25 @@ public struct Community: Codable, Identifiable, Hashable, Sendable {
         return Coordinate(latitude: latitude, longitude: longitude)
     }
 }
+/// Legal records and operator schematics use distinct identifier namespaces.
+public enum BuildingIdentifierKind: String, Codable, Hashable, Sendable {
+    case municipalLegal, operatorMap
+    public var label: String { self == .municipalLegal ? "Legal building" : "Operator map building" }
+}
+public enum BuildingReferenceKind: String, Codable, Hashable, Sendable { case assessorLegalBuildingPolygon }
+public struct UnitBuildingAssociation: Codable, Identifiable, Hashable, Sendable {
+    public var id: String
+    public var communityID: String
+    public var address: String
+    public var unit: String
+    public var building: String
+    public var identifierKind: BuildingIdentifierKind
+    public var sourceIDs: [String]
+    /// Optional legal-building reference; never a unit, entrance or door coordinate.
+    public var referencePlaceID: String?
+    public var mapFloor: String? = nil
+}
+
 public struct Catalog: Codable, Sendable {
     public var schemaVersion: Int
     public var packVersion: String
@@ -56,6 +75,7 @@ public struct Catalog: Codable, Sendable {
     public var sources: [EvidenceSource]
     public var communities: [Community]
     public var coverage: Coverage
+    public var unitBuildingAssociations: [UnitBuildingAssociation]? = nil
     public struct Coverage: Codable, Sendable { public var inventoryComplete: Bool; public var notes: [String] }
 }
 public struct DeliveryAreaException: Codable, Sendable {
@@ -84,9 +104,10 @@ public struct Place: Codable, Identifiable, Hashable, Sendable {
     public var approachID: String?
     public var graphNodeID: String?
     public var identityUncertain: Bool?
-    public init(id: String = UUID().uuidString, communityID: String, address: String, building: String = "", unit: String = "", floor: String = "", kind: LocationKind, verification: Verification, coordinate: Coordinate, sourceIDs: [String] = [], notes: String = "", approachID: String? = nil, graphNodeID: String? = nil, identityUncertain: Bool? = nil) {
+    public var referenceKind: BuildingReferenceKind?
+    public init(id: String = UUID().uuidString, communityID: String, address: String, building: String = "", unit: String = "", floor: String = "", kind: LocationKind, verification: Verification, coordinate: Coordinate, sourceIDs: [String] = [], notes: String = "", approachID: String? = nil, graphNodeID: String? = nil, identityUncertain: Bool? = nil, referenceKind: BuildingReferenceKind? = nil) {
         self.id = id; self.communityID = communityID; self.address = address; self.building = building; self.unit = unit; self.floor = floor; self.kind = kind; self.verification = verification; self.coordinate = coordinate; self.sourceIDs = sourceIDs; self.notes = notes; self.approachID = approachID; self.graphNodeID = graphNodeID
-        self.identityUncertain = identityUncertain
+        self.identityUncertain = identityUncertain; self.referenceKind = referenceKind
     }
 }
 public struct PathSegment: Codable, Identifiable, Hashable, Sendable {

@@ -105,13 +105,22 @@ final class HeadingUpNavigationTests: XCTestCase {
     }
 
     func testResumePreservesActualPinchZoomAndSelectedStop() throws {
+        let environment = ProcessInfo.processInfo.environment
+        if let nonce = environment["APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] ?? environment["TEST_RUNNER_APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] {
+            try compareProductionAndBareMapPinchDiagnostics(nonce: nonce)
+        }
+        app.launchArguments.append("--synthetic-map-pinch-target")
         openRoute()
         expectFollowing()
         let control = app.buttons["mini.recenter"]
+        let pinchTarget = try clearMapPinchTarget()
         let initialDistance = try settledMapDistance(control)
-        app.maps.firstMatch.pinch(withScale: 1.6, velocity: 0.7)
+        let initialCameraValue = String(describing: control.value)
+        pinchTarget.pinch(withScale: 1.6, velocity: 0.7)
+        print("MAP-PINCH before=\(initialCameraValue), after=\(String(describing: control.value))")
         let paused = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value BEGINSWITH %@", "Paused"), object: control)
-        XCTAssertEqual(XCTWaiter.wait(for: [paused], timeout: 5), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [paused], timeout: 5), .completed,
+                       "Pinch must pause following; initial distance=\(initialDistance), initial camera=\(initialCameraValue), camera value=\(String(describing: control.value)), map=\(app.maps.firstMatch.frame)")
         let zoomDistance = try settledMapDistance(control)
         XCTAssertGreaterThan(abs(initialDistance - zoomDistance), 20, "The gesture must actually change MapKit zoom")
         app.buttons["mini.focus.3"].tap()
@@ -126,11 +135,93 @@ final class HeadingUpNavigationTests: XCTestCase {
         capture("Padded mini-route controls retain chosen zoom after Resume")
     }
 
+    private func clearMapPinchTarget() throws -> XCUIElement {
+        func valid(_ frame: CGRect) -> Bool {
+            !frame.isEmpty && [frame.minX, frame.minY, frame.width, frame.height].allSatisfy { $0.isFinite }
+        }
+        let target = app.otherElements["mini.pinchTarget"]
+        XCTAssertTrue(target.waitForExistence(timeout: 8))
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Native map hit-test grid 25/25"), object: target)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 8), .completed,
+                       "Every sampled input point must hit the same zoom-enabled native Map")
+        let rectangle = target.frame, map = app.maps.firstMatch.frame
+        let navigation = app.navigationBars.firstMatch.frame, next = app.staticTexts["mini.next"].frame
+        XCTAssertTrue([rectangle, map, navigation, next].allSatisfy(valid))
+        let top = max(map.minY, navigation.maxY), bottom = min(map.maxY, next.minY - 24)
+        let visible = CGRect(x: map.minX, y: top, width: map.width, height: bottom - top)
+        XCTAssertTrue(visible.contains(rectangle), "The entire physical pinch must remain inside the visible map")
+        XCTAssertGreaterThan(rectangle.width, 120)
+        XCTAssertGreaterThan(rectangle.height, 160)
+        let controls = app.buttons.allElementsBoundByIndex.filter { $0.exists && $0.isHittable }
+        for control in controls {
+            let frame = control.frame
+            XCTAssertTrue(valid(frame), "Every interactive obstacle needs positive finite geometry")
+            XCTAssertFalse(rectangle.intersects(frame.insetBy(dx: -16, dy: -16)),
+                           "The whole pinch rectangle must clear every interactive control and pin: \(frame)")
+        }
+        let glyph = app.descendants(matching: .any).matching(identifier: "mini.userLocation").firstMatch
+        XCTAssertTrue(glyph.exists)
+        let coverage = app.staticTexts["mini.coverage"], location = app.staticTexts["mini.locationStatus"]
+        XCTAssertTrue(coverage.exists); XCTAssertTrue(location.exists)
+        let glyphFrame = glyph.frame, coverageFrame = coverage.frame, locationFrame = location.frame
+        XCTAssertTrue([glyphFrame, coverageFrame, locationFrame].allSatisfy(valid),
+                      "The location glyph and both HUDs need positive finite geometry")
+        XCTAssertFalse(rectangle.intersects(glyphFrame.insetBy(dx: -16, dy: -16)))
+        XCTAssertGreaterThan(rectangle.minY, coverageFrame.maxY + 40, "Clear the entire top HUD including material padding")
+        XCTAssertLessThan(rectangle.maxY, locationFrame.minY - 24, "Clear the bottom HUD and its material padding")
+        print("MAP-PINCH-CLEAR target=\(rectangle), visibleMap=\(visible), nativeGrid=25/25, interactiveControls=\(controls.count)")
+        return target
+    }
+
+    /// Native cache comparison asserts the bare control's actual zoom only after both phases.
+    /// This diagnostic never replaces testResumePreservesActualPinchZoomAndSelectedStop.
+    private func compareProductionAndBareMapPinchDiagnostics(nonce: String) throws {
+        XCTAssertNotNil(UUID(uuidString: nonce))
+        app.launchEnvironment["APARTMENTFINDER_MAP_GESTURE_RUN_NONCE"] = nonce
+        for mode in ["production", "bare"] {
+            app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
+                "--reset-test-inbox", "--tuscano-manifest", "--synthetic-map-location",
+                "--synthetic-map-direction", "--synthetic-map-gesture-diagnostics"]
+            if mode == "bare" { app.launchArguments.append("--synthetic-bare-map-pinch") }
+            openRoute()
+            if mode == "production" { expectFollowing() }
+            let map = app.maps.firstMatch
+            let bounds = map.frame
+            XCTAssertFalse(bounds.isEmpty)
+            print("MAP-PINCH-CONTROL mode=\(mode), map=\(bounds), navigation=\(app.navigationBars.firstMatch.frame), stopCard=\(app.staticTexts["mini.next"].frame)")
+            if mode == "production" {
+                for id in ["mini.pin.2.tuscano-unit-county-2187653-2066", "mini.pin.3.tuscano-unit-county-2187691-2137",
+                           "mini.mapStyle", "Show all stops", "mini.recenter"] {
+                    let element = app.buttons[id]
+                    if element.exists { print("MAP-PINCH-OBSTACLE id=\(id), frame=\(element.frame), hittable=\(element.isHittable)") }
+                }
+                for id in ["mini.coverage", "mini.locationStatus"] {
+                    let element = app.staticTexts[id]
+                    if element.exists { print("MAP-PINCH-OBSTACLE id=\(id), frame=\(element.frame)") }
+                }
+                let glyph = app.descendants(matching: .any).matching(identifier: "mini.userLocation").firstMatch
+                if glyph.exists { print("MAP-PINCH-OBSTACLE id=mini.userLocation, frame=\(glyph.frame)") }
+            }
+            map.pinch(withScale: 1.6, velocity: 0.7)
+            // Snapshot reads allow the final native camera/recognizer samples to be written.
+            print("MAP-PINCH-CONTROL mode=\(mode), afterMap=\(map.frame)")
+            _ = app.staticTexts["mini.next"].frame
+            if mode == "production" {
+                print("MAP-PINCH-CONTROL productionCamera=\(String(describing: app.buttons["mini.recenter"].value))")
+                app.terminate()
+            }
+        }
+        app.terminate()
+        app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
+            "--reset-test-inbox", "--tuscano-manifest", "--synthetic-map-location", "--synthetic-map-direction"]
+    }
+
     private func mapDistance(_ control: XCUIElement) throws -> Double {
         let value = try XCTUnwrap(control.value as? String)
         let expression = try NSRegularExpression(pattern: #"map distance ([0-9]+) meters"#)
         let range = NSRange(value.startIndex..<value.endIndex, in: value)
-        let match = try XCTUnwrap(expression.firstMatch(in: value, range: range))
+        let match = try XCTUnwrap(expression.firstMatch(in: value, range: range),
+                                 "Unexpected camera accessibility value: \(value.debugDescription)")
         let numberRange = try XCTUnwrap(Range(match.range(at: 1), in: value))
         return try XCTUnwrap(Double(value[numberRange]))
     }

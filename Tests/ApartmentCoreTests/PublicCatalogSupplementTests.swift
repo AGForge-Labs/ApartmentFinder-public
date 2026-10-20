@@ -35,7 +35,8 @@ final class PublicCatalogSupplementTests: XCTestCase {
     }
 
     func testBoundedZIPScopeAcceptsNonemptySubsetsIncludingSilverado() throws {
-        for scope in [["89113"], ["89148"], ["89123"], ["89183"], ["89113", "89148", "89123", "89183"]] {
+        for scope in [["89113"], ["89148"], ["89123"], ["89183"], ["89052"], ["89014"], ["89044"],
+                      ["89113", "89148", "89123", "89183", "89052", "89014", "89044"]] {
             let candidate = community("fictional", address: "100 Fictional Rd", zip: scope[0])
             XCTAssertEqual(try read(pack([candidate], scope: scope)).catalog.scopeZIPs, scope)
         }
@@ -177,4 +178,23 @@ final class PublicCatalogSupplementTests: XCTestCase {
         XCTAssertEqual(twice.places, once.places)
         XCTAssertEqual(twice.paths, once.paths)
     }
+    func testOldPayloadWithoutAssociationOrReferenceFieldsStillDecodes() throws {
+        let old = community("old", address: "100 Fictional Rd")
+        let decoded = try read(pack([old], places: [place("old-pin", community: old)]))
+        XCTAssertNil(decoded.catalog.unitBuildingAssociations)
+        XCTAssertNil(decoded.places.first?.referenceKind)
+    }
+    func testAssociationSupplementPreservesExistingIdentityAndConflictingProvenanceIsExcluded() {
+        let old = community("old", address: "100 Fictional Rd")
+        let existing = UnitBuildingAssociation(id: "saved-association", communityID: old.id, address: old.address,
+            unit: "001", building: "A", identifierKind: .operatorMap, sourceIDs: ["public-source"])
+        var base = pack([old]); base.catalog.unitBuildingAssociations = [existing]
+        var changed = existing; changed.id = "new-association"; changed.building = "B"
+        var supplement = pack([old]); supplement.catalog.unitBuildingAssociations = [changed]
+        XCTAssertEqual(PublicCatalogSupplement.applying(supplement, to: base).catalog.unitBuildingAssociations, [existing])
+        changed.unit = "002"; supplement.catalog.unitBuildingAssociations = [changed]
+        supplement.catalog.sources = [source(url: "https://example.invalid/conflicting-source")]
+        XCTAssertEqual(PublicCatalogSupplement.applying(supplement, to: base).catalog.unitBuildingAssociations, [existing])
+    }
+
 }

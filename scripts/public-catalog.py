@@ -17,17 +17,19 @@ import sys
 from urllib.parse import parse_qsl, urlsplit
 
 SCHEMA = 1
-ALLOWED_ZIPS = {'89113', '89148', '89123', '89183'}
+ALLOWED_ZIPS = {'89113', '89148', '89123', '89183', '89052', '89014', '89044'}
 SOURCE_FIELD_ORDER = ('retrievedAt', 'id', 'url', 'title')
 SOURCE_FIELDS = set(SOURCE_FIELD_ORDER)
 COMMUNITY_FIELDS = {'id', 'name', 'address', 'zip', 'countyZIPs', 'deliveryAddresses', 'aliases',
                     'sourceIDs', 'researchStatus', 'gapNotes', 'latitude', 'longitude', 'publicEvidence'}
 POINT_FIELDS = {'communityID', 'address', 'building', 'unit', 'floor', 'kind', 'verification',
-                'sourceIDs', 'notes', 'identityUncertain'}
+                'sourceIDs', 'notes', 'identityUncertain', 'referenceKind'}
 PATH_FIELDS = {'communityID', 'fromNode', 'toNode', 'mode', 'oneWay', 'blocked', 'stairs',
                'confirmed', 'sourceIDs', 'notes'}
 CATALOG_FIELDS = {'schemaVersion', 'packVersion', 'generatedAt', 'scopeZIPs', 'deliveryAreaExceptions',
-                  'sources', 'communities', 'coverage'}
+                  'sources', 'communities', 'coverage', 'unitBuildingAssociations'}
+ASSOCIATION_FIELDS = {'id', 'communityID', 'address', 'unit', 'building', 'identifierKind', 'sourceIDs', 'referencePlaceID', 'mapFloor'}
+BUILDING_REFERENCE_NOTE = 'Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door.'
 COLLECTION_FIELDS = {'type', 'schemaVersion', 'packVersion', 'features'}
 GAP = 'Public property identity and available source positions are incomplete. No exact door, entrance or current access condition is established.'
 REFERENCE_GAP = 'Community coordinate is a published property reference or source-map reference only; it is not a unit, entrance or delivery destination.'
@@ -40,6 +42,7 @@ COVERAGE_NOTES = [
     'New Silverado-area records may have only a verified property name and street address. Missing unit maps remain explicit research gaps.',
     'Public map geometry is unconfirmed. OpenStreetMap contributors attribution and ODbL requirements apply to retained OSM paths.',
 ]
+RESOURCE_LIMITS = {'public-catalog.json': 2_000_000, 'public-locations.geojson': 64_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
 RESOURCE_NAMES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson', 'known-addresses.json')
 
 
@@ -97,7 +100,7 @@ def position_note(feature):
         expected = dict(communityID='spanish-ridge-7380', address='7380 W RUSSELL RD',
             building='', unit='201', floor='', kind='unitPosition', verification='sourceMapped')
         sources = ['spanish-ridge-7380-county-unit-labels', 'spanish-ridge-7380-county-unit-buildings']
-        require(all(p.get(key) == value for key, value in expected.items()) and
+        require('referenceKind' not in p and all(p.get(key) == value for key, value in expected.items()) and
                 p.get('sourceIDs') in (sources, list(reversed(sources))), 'Unreviewed disputed unit source shape')
         return SOURCE_NOTE + ' Building A for 201 is not asserted. Building and floor remain unknown.'
     riley_sources = ('riley-county-6350', 'riley-county-6355')
@@ -108,7 +111,7 @@ def position_note(feature):
         moved = p.get('communityID') == 'alcove-6350'
         street = '6350' if moved else '6355'
         prefix = 'alcove-6350-unit-' if moved else 'alcove-unit-'
-        require(p.get('communityID') == ('alcove-6350' if moved else 'alcove') and
+        require('referenceKind' not in p and p.get('communityID') == ('alcove-6350' if moved else 'alcove') and
                 isinstance(feature['id'], str) and re.fullmatch(re.escape(prefix) + r'[0-9]{8}', feature['id']) and
                 p.get('address') == street + ' S Riley St' and p.get('kind') == 'unitPosition' and
                 p.get('verification') == 'sourceMapped' and isinstance(sources, list) and len(sources) == 4 and
@@ -128,6 +131,8 @@ def position_note(feature):
                 note += ' The same unit label is not confirmed by the county parcel records; check the unit/building on arrival.'
             return note
         return SOURCE_NOTE + ' This 6355 position falls in the retained 89148 county polygon, consistent with the official postal address.'
+    if 'referenceKind' in p:
+        return BUILDING_REFERENCE_NOTE
     return ESTIMATE_NOTE if p['verification'] == 'estimated' else SOURCE_NOTE
 
 
@@ -176,10 +181,18 @@ def validate_payload(catalog, locations, paths):
         refs(community['sourceIDs'])
         if 'publicEvidence' in community:
             evidence = community['publicEvidence']
-            require(set(evidence) <= {'communityType', 'areaScope', 'addressSourceIDs', 'coordinate'} and
-                    evidence['communityType'] in ('apartment', 'condominium') and
+            require(set(evidence) <= {'communityType', 'areaScope', 'addressSourceIDs', 'coordinate', 'addressCityDisagreement', 'singleResidentialBuilding'} and
+                    evidence['communityType'] in ('apartment', 'condominium', 'seniorLiving') and
                     evidence['areaScope'] in ('core', 'edge', 'nearbyOutsideFocus'), 'Unexpected public field evidence')
+            require('addressCityDisagreement' not in evidence or type(evidence['addressCityDisagreement']) is bool, 'Invalid city disagreement flag')
             refs(evidence['addressSourceIDs'])
+            if 'singleResidentialBuilding' in evidence:
+                config = evidence['singleResidentialBuilding']
+                require(isinstance(config, dict) and set(config) == {'publishedStories', 'publishedApartments', 'sourceIDs'} and
+                        type(config['publishedStories']) is int and 1 <= config['publishedStories'] <= 100 and
+                        type(config['publishedApartments']) is int and 1 <= config['publishedApartments'] <= 10_000,
+                        'Invalid published building configuration')
+                refs(config['sourceIDs'])
             if 'coordinate' in evidence:
                 proof = evidence['coordinate']
                 require('latitude' in community and set(proof) == {'kind', 'sourceIDs'} and proof['kind'] in
@@ -206,6 +219,10 @@ def validate_payload(catalog, locations, paths):
                 require(feature['geometry']['type'] == 'Point', 'Invalid public point geometry')
                 coordinate(feature['geometry']['coordinates'])
                 require(p['kind'] in ('building', 'unitPosition') and p['verification'] in ('sourceMapped', 'estimated'), 'Unsupported public precision or field verification')
+                if 'referenceKind' in p:
+                    require(p['referenceKind'] == 'assessorLegalBuildingPolygon' and p['kind'] == 'building' and
+                            p['verification'] == 'sourceMapped' and p['unit'] == '' and p['floor'] == '' and
+                            bool(p['building'].strip()), 'Unsupported building reference precision')
                 require(p['notes'] == position_note(feature), 'Unexpected public position text')
                 for key in ('address', 'building', 'unit', 'floor'):
                     text(p[key], 'position ' + key, empty=True)
@@ -218,6 +235,36 @@ def validate_payload(catalog, locations, paths):
                 for key in ('oneWay', 'blocked', 'stairs'):
                     require(type(p[key]) is bool, 'Invalid path flags')
                 text(p['fromNode'], 'path node'); text(p['toNode'], 'path node')
+    associations = catalog.get('unitBuildingAssociations', [])
+    require(isinstance(associations, list) and len(associations) <= 50_000, 'Invalid building association collection')
+    association_ids, association_keys = set(), set()
+    points_by_id = {f['id']: f for f in locations['features']}
+    def address_key(value):
+        # Only spelling/punctuation aliases; no street numbers or unit suffixes are discarded.
+        aliases = {'west':'w', 'east':'e', 'north':'n', 'south':'s', 'road':'rd', 'street':'st',
+                   'avenue':'ave', 'drive':'dr', 'lane':'ln', 'boulevard':'blvd', 'court':'ct', 'way':'wy', 'parkway':'pkwy'}
+        return ' '.join(aliases.get(x, x) for x in re.findall(r'[a-z0-9]+', value.lower()))
+    for a in associations:
+        require(isinstance(a, dict) and set(a) <= ASSOCIATION_FIELDS, 'Unexpected building association fields')
+        for key in ('id', 'communityID', 'address', 'unit', 'building', 'identifierKind'):
+            text(a[key], 'building association ' + key)
+        require(a['id'] not in association_ids and a['communityID'] in communities and
+                a['identifierKind'] in ('municipalLegal', 'operatorMap'), 'Unknown or duplicate building association identity')
+        association_ids.add(a['id']); refs(a['sourceIDs'])
+        c = communities[a['communityID']]
+        require(address_key(a['address']) in {address_key(x) for x in [c['address']] + c.get('deliveryAddresses', [])},
+                'Building association outside community streets')
+        key = (a['communityID'], address_key(a['address']), a['unit'].casefold(), a['identifierKind'])
+        require(key not in association_keys, 'Duplicate or conflicting unit-building association'); association_keys.add(key)
+        if 'mapFloor' in a:
+            text(a['mapFloor'], 'operator map floor')
+            require(a['identifierKind'] == 'operatorMap', 'Unsupported legal building floor inference')
+        if 'referencePlaceID' in a:
+            text(a['referencePlaceID'], 'building reference ID')
+            f = points_by_id.get(a['referencePlaceID']); p = f['properties'] if f else {}
+            require(a['identifierKind'] == 'municipalLegal' and p.get('referenceKind') == 'assessorLegalBuildingPolygon' and
+                    p.get('communityID') == a['communityID'] and address_key(p.get('address', '')) == address_key(a['address']) and
+                    p.get('building') == a['building'], 'Building association reference mismatch')
     return dict(communities=len(communities), positions=len(locations['features']), paths=len(paths['features']), sources=len(sources))
 
 
@@ -286,10 +333,16 @@ def gap_notes(community):
     evidence = community.get('publicEvidence', {})
     if evidence.get('communityType') == 'condominium':
         notes.append('Community type: condominium. Verified base street addresses may cover several buildings; no new unit map is supplied.')
+    if evidence.get('communityType') == 'seniorLiving':
+        notes.append('Publicly listed operating senior community; residency and care arrangements vary. No building or unit navigation is established by the address record.')
+    if config := evidence.get('singleResidentialBuilding'):
+        notes.append(f"Published sources describe one residential building with {config['publishedApartments']} apartments on {config['publishedStories']} stories. Building numbers, unit/corridor layout, entrances and doors remain unverified.")
     if evidence.get('areaScope') == 'nearbyOutsideFocus':
         notes.append('This community is nearby but outside the focused Silverado Ranch study area.')
     elif evidence.get('areaScope') == 'edge':
         notes.append('This community lies at an edge of the focused Silverado Ranch study area.')
+    if evidence.get('addressCityDisagreement') is True:
+        notes.append('Published property sources disagree on the city label. The base street and stated postal ZIP are retained; the city label remains unverified.')
     kind = evidence.get('coordinate', {}).get('kind')
     if kind == 'operatorPublishedPropertyPoint':
         notes.append('The operator publishes this property reference point. Surveyed accuracy, entrances, buildings and units are not established by it.')
@@ -312,6 +365,9 @@ def prepare(source, output, version, additions, evidence_file=None):
     catalog.update(packVersion=version, generatedAt=datetime.now(timezone.utc).isoformat(), coverage={'inventoryComplete': False, 'notes': COVERAGE_NOTES})
     catalog['sources'] = [{k: s[k] for k in SOURCE_FIELD_ORDER} for s in original['sources']]
     catalog['communities'] = [{k: copy.deepcopy(v) for k, v in c.items() if k in COMMUNITY_FIELDS} for c in original['communities']]
+    if 'unitBuildingAssociations' in catalog:
+        catalog['unitBuildingAssociations'] = [{k: copy.deepcopy(v) for k, v in a.items() if k in ASSOCIATION_FIELDS}
+                                               for a in catalog['unitBuildingAssociations']]
     for filename in additions:
         extra = read_json(filename, 2_000_000)
         catalog['sources'].extend({k: s[k] for k in SOURCE_FIELD_ORDER} for s in extra['sources'])
@@ -336,7 +392,7 @@ def prepare(source, output, version, additions, evidence_file=None):
         require(isinstance(evidence, list) and len({e['communityID'] for e in evidence}) == len(evidence), 'Duplicate public field evidence')
         communities = {c['id']: c for c in catalog['communities']}
         for entry in evidence:
-            require(set(entry) <= {'communityID', 'communityType', 'areaScope', 'addressSourceIDs', 'coordinate'} and entry['communityID'] in communities, 'Unexpected public evidence target/fields')
+            require(set(entry) <= {'communityID', 'communityType', 'areaScope', 'addressSourceIDs', 'coordinate', 'addressCityDisagreement', 'singleResidentialBuilding'} and entry['communityID'] in communities, 'Unexpected public evidence target/fields')
             communities[entry['communityID']]['publicEvidence'] = {k: copy.deepcopy(v) for k, v in entry.items() if k != 'communityID'}
     catalog['scopeZIPs'] = sorted(set(catalog['scopeZIPs']) | {c['zip'] for c in catalog['communities'] if c['zip'] in ALLOWED_ZIPS})
     collections = []
@@ -357,13 +413,19 @@ def prepare(source, output, version, additions, evidence_file=None):
         community['researchStatus'] = 'publicSourceInventory'
         community['gapNotes'] = gap_notes(community)
     refs = {i for c in catalog['communities'] for i in c['sourceIDs']}
+    refs.update(i for a in catalog.get('unitBuildingAssociations', []) for i in a['sourceIDs'])
     refs.update(i for collection in collections for f in collection['features'] for i in f['properties']['sourceIDs'])
     catalog['sources'] = [s for s in catalog['sources'] if s['id'] in refs]
     counts = validate_payload(catalog, locations, paths)
     index = dict(schemaVersion=1, packVersion=version, entries=[dict(address=c['address'], deliveryAddresses=c.get('deliveryAddresses', [])) for c in catalog['communities']])
+    encoded = {name: json_bytes(value) for name, value in zip(RESOURCE_NAMES, (catalog, locations, paths, index))}
+    if len(encoded['public-catalog.json']) > RESOURCE_LIMITS['public-catalog.json']:
+        encoded['public-catalog.json'] = (json.dumps(catalog, ensure_ascii=False, allow_nan=False, separators=(',', ':')) + '\n').encode()
+    for name, body in encoded.items():
+        require(len(body) <= RESOURCE_LIMITS[name], 'Public resource exceeds native loader limit: ' + name)
     output.mkdir(parents=True, exist_ok=False)
-    for name, value in zip(RESOURCE_NAMES, (catalog, locations, paths, index)):
-        (output / name).write_bytes(json_bytes(value))
+    for name, body in encoded.items():
+        (output / name).write_bytes(body)
     manifest = dict(schemaVersion=1, publicFieldsOnly=True, version=version, counts=counts,
         sourcePackVersion=original['packVersion'], sourceSHA256={name: digest(source / name) for name in raw},
         resourcesSHA256={name: digest(output / name) for name in RESOURCE_NAMES})
@@ -372,7 +434,7 @@ def prepare(source, output, version, additions, evidence_file=None):
 
 
 def validate(directory):
-    catalog, locations, paths, index = [read_json(directory / name) for name in RESOURCE_NAMES]
+    catalog, locations, paths, index = [read_json(directory / name, RESOURCE_LIMITS[name]) for name in RESOURCE_NAMES]
     counts = validate_payload(catalog, locations, paths)
     manifest = read_json(directory / 'public-catalog-review.json', 100_000)
     require(set(manifest) == {'schemaVersion', 'publicFieldsOnly', 'version', 'counts', 'sourcePackVersion', 'sourceSHA256', 'resourcesSHA256'}, 'Unexpected public review manifest fields')

@@ -85,7 +85,7 @@ struct PinEditor: View {
         place.verification = observed ? .fieldVerified : place.verification == .estimated ? .estimated : .sourceMapped
         if observed { place.identityUncertain = nil }
         // A corrected position is personal evidence; the original research remains in the seed pack.
-        place.sourceIDs = []
+        place.sourceIDs = []; place.referenceKind = nil
         if store.save(place) { dismiss() }
     }
 }

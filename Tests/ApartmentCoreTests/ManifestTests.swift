@@ -17,6 +17,22 @@ final class ManifestTests: XCTestCase {
         let longUnit = DeliveryAddress.resolve("1200 FICTIONAL COURTYARD WAY 04102. LAS VEGAS. NV. 89113", knownAddresses: [street])
         XCTAssertEqual(longUnit.unit, "04102")
         XCTAssertEqual(longUnit.address, street)
+        for suffix in [".Henderson.NV.89052", ", Henderson, NV 89014", " Henderson Nevada 89044-1234"] {
+            let parsed = DeliveryAddress.resolve(street + " 04102" + suffix, knownAddresses: [street])
+            XCTAssertEqual(parsed.address, street)
+            XCTAssertEqual(parsed.unit, "04102")
+        }
+        for namedStreet in ["100 Las Vegas Blvd", "100 Henderson Dr", "100 Nevada Ave"] {
+            let parsed = DeliveryAddress.resolve(namedStreet + " 001\n001.Henderson.NV.89052", knownAddresses: [namedStreet])
+            XCTAssertEqual(parsed.address, namedStreet)
+            XCTAssertEqual(parsed.unit, "001")
+            XCTAssertEqual(LocalSearch.addressKey(namedStreet + ", Henderson NV 89052"), LocalSearch.addressKey(namedStreet))
+        }
+        XCTAssertEqual(LocalSearch.addressKey("100 Las Vegas Blvd"), "100 las vegas blvd")
+        let longer = "100 Henderson Dr North"
+        let longest = DeliveryAddress.resolve(longer + " 001.Henderson.NV.89052", knownAddresses: ["100 Henderson Dr", longer])
+        XCTAssertEqual(longest.address, longer)
+        XCTAssertEqual(longest.unit, "001")
         let explicit = DeliveryAddress.resolve("100 Unknown Rd Apt 0012", knownAddresses: [])
         XCTAssertEqual(explicit.unit, "0012")
         XCTAssertEqual(explicit.address, "100 Unknown Rd")

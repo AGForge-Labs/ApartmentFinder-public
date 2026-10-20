@@ -91,13 +91,13 @@ class PinVisibilityTests(unittest.TestCase):
         self.assertEqual(reader_pattern, writer_pattern.replace('sample=[1-3]', 'sample=3'))
         python_pattern = reader_pattern.replace(r'\z', r'\Z')
         payload = reader_pattern.removeprefix(r'\A').removesuffix(r'\z')
-        payload = payload.replace('(true|false)', 'false').replace('[0-3]', '0')
+        payload = payload.replace('(true|false)', 'false').replace('[0-3]', '0').replace('(?:[1-9]|1[0-9]|2[0-4])', '3')
         self.assertIsNotNone(re.fullmatch(python_pattern, payload))
         for invalid in (payload + ';unexpected=1', payload.replace('window=false', 'window=unknown'),
                         payload.replace('nativeID=0', 'nativeID=999'), '\n' + payload):
             self.assertIsNone(re.fullmatch(python_pattern, invalid))
         self.assertIn('private static var emittedSnapshots', probe)
-        self.assertIn('emittedSnapshots < 3', probe)
+        self.assertIn('emittedSnapshots < 1', probe)
         self.assertIn('scheduledSamples < 24', probe)
         self.assertIn('var views: [UIView] = [host]', probe)
         self.assertIn('native.record(host)', probe)
@@ -105,6 +105,32 @@ class PinVisibilityTests(unittest.TestCase):
         for line in (ROOT / 'App/ApartmentDeliveryMap.swift').read_text().splitlines():
             if '#if DEBUG' in line:
                 self.assertIn('targetEnvironment(simulator)', line)
+
+    def test_pin_probe_protocol_accepts_split_geometry_and_camera_stability(self):
+        source = (ROOT / 'UITests/OnTracFlowTests.swift').read_text(encoding='utf-8')
+        reader = source.split('private func probePinHost() {', 1)[1].split('\n    private func', 1)[0]
+        pattern = re.search(r'let pattern = #"([^"\n]+)"#', reader).group(1).replace(r'\z', r'\Z')
+        packet = ('pinHostSchema=2;sample=1;polls=3;window=true;host=true;map=true;'
+                  'pinBounds=true;hostBounds=true;mapBounds=true;inMap=false;'
+                  'sameWindow=true;convertedBounds=true;mapIntersectsPin=false;'
+                  'projectedInsideMap=true;pinNearProjection=false;cameraObserved=true;'
+                  'cameraStableObserved=true;'
+                  'hiddenAncestor=false;transparentAncestor=false;axHiddenAncestor=false;'
+                  'ancestorTruncated=false;hostLeaf=false;hostAXHidden=false;hostTitle=true;'
+                  'nativeID=0;nativeLabel=0;nativeButton=0;nativeTruncated=false;'
+                  'axID=0;axLabel=1;axButton=0;axUnavailable=true;axTruncated=false')
+        self.assertIsNotNone(re.fullmatch(pattern, packet))
+        for change in (
+            packet.replace('sameWindow=true;', ''),
+            packet.replace('convertedBounds=true', 'convertedBounds=unknown'),
+            packet.replace('cameraStableObserved=true', 'cameraStableObserved=1'),
+            packet.replace('pinHostSchema=2', 'pinHostSchema=1'),
+            packet + ';cameraCompleted=true',
+            packet.replace('polls=3', 'polls=0'),
+            packet.replace('polls=3', 'polls=25'),
+        ):
+            with self.subTest(packet=change):
+                self.assertIsNone(re.fullmatch(pattern, change))
 
     def test_shuffled_stop_expectations_use_the_rendered_separator_without_losing_units(self):
         source = (ROOT / 'UITests/OnTracFlowTests.swift').read_text()
@@ -116,7 +142,7 @@ class PinVisibilityTests(unittest.TestCase):
 
     def test_failed_grouping_is_removed_and_real_selection_acceptance_remains(self):
         source = (ROOT / 'App/ApartmentDeliveryMap.swift').read_text()
-        button = source.split('private func pinButton(_ pin: Pin) -> some View {', 1)[1].split('\n    private func center', 1)[0]
+        button = source.split('private func pinButton(_ pin: Pin, point: CGPoint, viewport: CGSize) -> some View {', 1)[1].split('\n    private func center', 1)[0]
         self.assertIn('Button { select(pin.stop.id) } label:', button)
         self.assertNotIn('.accessibilityElement(children: .combine)', button)
         self.assertIn('.accessibilityIdentifier("mini.pin.\\(pin.stop.sequence).\\(pin.place.id)")', button)

@@ -23,22 +23,43 @@ final class MapAppearanceTests: XCTestCase {
         XCTAssertTrue(secondPin.exists)
         capture(app, "Compact pointed pins on the satellite map")
 
-        let initialX = firstPin.frame.midX
+        waitForSettledPins([firstPin, secondPin])
+        let initialFrame = firstPin.frame
+        let initialX = initialFrame.midX
         let map = app.maps.firstMatch
-        // Exercise background panning for style preservation. The old start was
-        // beside an annotation; dragging there remains a separate usability limit.
-        let startOffset = CGVector(dx: 0.60, dy: 0.35)
-        let endOffset = CGVector(dx: 0.70, dy: 0.35)
         let mapFrame = map.frame
         XCTAssertFalse(mapFrame.isEmpty, "The map must have usable bounds")
-        let start = CGPoint(x: mapFrame.minX + mapFrame.width * startOffset.dx,
-                            y: mapFrame.minY + mapFrame.height * startOffset.dy)
-        let end = CGPoint(x: mapFrame.minX + mapFrame.width * endOffset.dx, y: start.y)
-        let segment = CGRect(x: start.x, y: start.y - 1, width: end.x - start.x, height: 2)
         let coverage = app.staticTexts["mini.coverage"]
         let locationStatus = app.staticTexts["mini.locationStatus"]
         let blocked = [firstPin, secondPin, style, app.buttons["Show all stops"],
                        app.buttons["mini.recenter"], coverage, locationStatus]
+        let next = app.staticTexts["mini.next"]
+        let navigation = app.navigationBars.firstMatch
+        XCTAssertTrue(next.exists)
+        XCTAssertTrue(navigation.exists)
+        let nextFrame = next.frame, navigationFrame = navigation.frame
+        guard [mapFrame, initialFrame, nextFrame, navigationFrame].allSatisfy({ frame in
+            !frame.isEmpty && [frame.minX, frame.minY, frame.maxX, frame.maxY].allSatisfy { $0.isFinite }
+        }) else { XCTFail("Map, pin, navigation and stop-card frames must be finite and nonempty"); return }
+        let top = max(mapFrame.minY, navigationFrame.maxY)
+        let bottom = min(mapFrame.maxY, nextFrame.minY - 24)
+        let visibleMap = CGRect(x: mapFrame.minX, y: top, width: mapFrame.width, height: bottom - top)
+        guard visibleMap.height > 0 else { XCTFail("No visible map above the stop card"); return }
+        let clearance = (app.buttons.allElementsBoundByIndex + [coverage, locationStatus])
+            .filter { $0.exists && $0.isHittable }.map { $0.frame.insetBy(dx: -24, dy: -24) }
+        let startX = mapFrame.minX + mapFrame.width * 0.60
+        let endX = mapFrame.minX + mapFrame.width * 0.70
+        let candidateY = [0.5, 0.35, 0.65].map { visibleMap.minY + visibleMap.height * $0 }
+        guard let y = candidateY.first(where: { y in
+            let path = CGRect(x: startX, y: y - 1, width: endX - startX, height: 2)
+            return visibleMap.contains(path) && !clearance.contains { $0.intersects(path) } &&
+                y > coverage.frame.maxY + 24 && y < locationStatus.frame.minY - 24
+        }) else { XCTFail("No unobstructed style-test pan inside visible map \(visibleMap)"); return }
+        let startOffset = CGVector(dx: 0.60, dy: (y - mapFrame.minY) / mapFrame.height)
+        let endOffset = CGVector(dx: 0.70, dy: startOffset.dy)
+        let start = CGPoint(x: startX, y: y), end = CGPoint(x: endX, y: y)
+        let segment = CGRect(x: start.x, y: start.y - 1, width: end.x - start.x, height: 2)
+        XCTAssertTrue(visibleMap.contains(segment), "The entire drag must stay above the stop card")
         XCTAssertTrue(mapFrame.contains(segment), "The entire drag must stay inside the map bounds")
         XCTAssertGreaterThan(start.x, mapFrame.minX + 44, "Avoid the navigation back-swipe edge")
         for element in blocked {
@@ -50,7 +71,8 @@ final class MapAppearanceTests: XCTestCase {
         }
         XCTAssertGreaterThan(start.y, coverage.frame.maxY + 24, "Stay below the map's top overlay")
         XCTAssertLessThan(start.y, locationStatus.frame.minY - 24, "Stay above the map's bottom overlay")
-        print("MAP-APPEARANCE background drag map=\(mapFrame) start=\(start) end=\(end)")
+        let initialCameraValue = String(describing: app.buttons["mini.recenter"].value)
+        print("MAP-APPEARANCE background drag map=\(mapFrame) visible=\(visibleMap) start=\(start) end=\(end), camera=\(initialCameraValue)")
         map.coordinate(withNormalizedOffset: startOffset)
             .press(forDuration: 0.2, thenDragTo: map.coordinate(withNormalizedOffset: endOffset),
                    withVelocity: .slow, thenHoldForDuration: 0.5)
@@ -59,7 +81,8 @@ final class MapAppearanceTests: XCTestCase {
         waitForSettledPins([firstPin, secondPin])
         let originalTip = CGPoint(x: firstPin.frame.midX, y: firstPin.frame.maxY)
         let secondTip = CGPoint(x: secondPin.frame.midX, y: secondPin.frame.maxY)
-        XCTAssertGreaterThan(abs(originalTip.x - initialX), 5, "Exercise a panned map before changing styles")
+        XCTAssertGreaterThan(abs(originalTip.x - initialX), 5,
+                             "Exercise a panned map before changing styles; before=\(initialFrame), after=\(firstPin.frame), initial camera=\(initialCameraValue), camera=\(String(describing: app.buttons["mini.recenter"].value))")
         capture(app, "Settled panned map before changing style")
         XCTAssertTrue(style.isHittable)
         style.tap()

@@ -177,7 +177,7 @@ class PublicPreflightTests(unittest.TestCase):
         preamble = '          WORK=' + workflow.split('          WORK=', 1)[1].split('          "${WORK[@]}" bash', 1)[0]
         run_selection = re.search(r'^          if \[\[ "\$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics \]\]; then\n            RUN=.*?^          fi', workflow, re.M | re.S).group()
         capture = shlex.quote(sys.executable) + ' -c ' + shlex.quote('import json,sys; print(json.dumps(sys.argv[1:]))')
-        for scope in ('regression', 'activation-diagnostics'):
+        for scope in ('regression', 'map-interaction-regression', 'activation-diagnostics'):
             with self.subTest(scope=scope):
                 script = ('set -euo pipefail\nPUBLIC_SYNTHETIC_SCOPE=' + scope +
                           '\nDIAGNOSTIC_WORK_DEADLINE=12345\nDEVICE=synthetic-device\n' +
@@ -186,7 +186,7 @@ class PublicPreflightTests(unittest.TestCase):
                 result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=2)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 work, run = map(json.loads, result.stdout.splitlines())
-                if scope == 'regression':
+                if scope != 'activation-diagnostics':
                     self.assertEqual(work, ['env'])
                     self.assertEqual(run, ['env'])
                 else:
@@ -194,6 +194,41 @@ class PublicPreflightTests(unittest.TestCase):
                         'work', '--deadline-epoch', '12345', '--'])
                     self.assertEqual(run, ['python3', '-B', 'scripts/public-synthetic-diagnostics.py',
                         'run', '--deadline-epoch', '12345', '--device', 'synthetic-device', '--'])
+
+    def test_map_scope_executes_exact_existing_ui_methods_and_rejects_missing_methods(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        header = '          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<\'PY\'\n'
+        producer = textwrap.dedent(workflow.split(header, 1)[1].split('          PY\n', 1)[0])
+        profile = json.loads((ROOT / 'scripts/public-synthetic-tests.json').read_text())
+        expected = {'native': [], 'ui': profile['ui'] + [
+            'ApartmentFinderUITests/HeadingUpNavigationTests/testStartsHeadingUpAndResumePreservesChosenStop',
+            'ApartmentFinderUITests/HeadingUpNavigationTests/testResumePreservesActualPinchZoomAndSelectedStop',
+            'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch',
+        ]}
+        self.assertEqual(len(expected['ui']), 5)
+        self.assertIn("'map-interaction-regression':5", workflow)
+        self.assertIn('if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi', workflow)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'scripts').mkdir()
+            (root / 'UITests').mkdir()
+            (root / 'scripts/iterate.py').write_text((ROOT / 'scripts/iterate.py').read_text())
+            for name in ('OnTracFlowTests.swift', 'HeadingUpNavigationTests.swift', 'MapAppearanceTests.swift'):
+                (root / 'UITests' / name).write_text((ROOT / 'UITests' / name).read_text())
+            (root / 'scripts/public-synthetic-tests.json').write_text(json.dumps(profile))
+            output = root / 'selection.json'
+            arguments = [sys.executable, '-B', '-c', producer, str(output)]
+            environment = {**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': 'map-interaction-regression'}
+            result = subprocess.run(arguments, cwd=root, env=environment, text=True, capture_output=True, timeout=5)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(output.read_text()), expected)
+            source = root / 'UITests/HeadingUpNavigationTests.swift'
+            source.write_text(source.read_text().replace('func testResumePreservesActualPinchZoomAndSelectedStop()',
+                                                         'func removedPinchRegression()'))
+            output.unlink()
+            result = subprocess.run(arguments, cwd=root, env=environment, text=True, capture_output=True, timeout=5)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse(output.exists())
 
     def test_workflow_optional_test_flags_are_nounset_safe_and_preserve_argument_boundaries(self):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
@@ -381,7 +416,7 @@ class PublicPreflightTests(unittest.TestCase):
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 108),
+            ('core', 'Tests/ApartmentCoreTests', '', 117),
             ('native', 'NativeTests', 'ApartmentFinderTests/', 71),
             ('ui', 'UITests', 'ApartmentFinderUITests/', 2),
         ):

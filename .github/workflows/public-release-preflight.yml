@@ -1,0 +1,55 @@
+# Credential-free infrastructure checks; release approval stays in public-testflight.yml.
+name: Public release infrastructure checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/public-release-preflight.yml
+      - .github/workflows/public-testflight.yml
+      - scripts/public-release*
+      - scripts/testflight*
+      - scripts/public-catalog.py
+      - Tests/public_synthetic/**
+      - Tests/release/**
+      - Tests/signing/**
+      - project-testflight.yml
+permissions:
+  contents: read
+concurrency:
+  group: public-release-preflight-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+jobs:
+  infrastructure:
+    if: >-
+      github.repository == 'AGForge-Labs/ApartmentFinder-public' &&
+      github.event.repository.private == false &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      INTEGRATION_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify the exact PR source and shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$INTEGRATION_HEAD_SHA"
+          bash -n scripts/public-release-validation.sh
+          bash -n scripts/testflight-build.sh
+      - name: Public catalog and privacy regression checks
+        run: python3 -B -m unittest discover -s Tests/public_synthetic -v
+      - name: Release gate regression checks
+        run: python3 -B -m unittest discover -s Tests/release -v
+      - name: Signing safeguards with synthetic fixtures
+        run: python3 -B -m unittest discover -s Tests/signing -v
+      - name: Verify the checkout remains clean
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code
+          test -z "$(git status --porcelain --untracked-files=all)"

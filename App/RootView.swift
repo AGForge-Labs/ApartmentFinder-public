@@ -102,7 +102,7 @@ private struct FinderView: View {
     private var communityPlaces: [Place] {
         guard let community else { return [] }
         let streets = Set(community.matchingAddresses.map { LocalSearch.addressKey($0) })
-        return store.places.filter { $0.communityID == communityID && streets.contains(LocalSearch.addressKey($0.address)) }
+        return store.places.filter { $0.referenceKind == nil && $0.communityID == communityID && streets.contains(LocalSearch.addressKey($0.address)) }
     }
     private var communityPaths: [PathSegment] {
         if let community, let owner = store.communities.first(where: { $0.id == communityID }),

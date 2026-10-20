@@ -1,0 +1,21 @@
+include: project.yml
+settings:
+  base:
+    CODE_SIGNING_ALLOWED: YES
+targets:
+  ApartmentFinder:
+    settings:
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          DEVELOPMENT_TEAM: YU2A5J5978
+          PROVISIONING_PROFILE_SPECIFIER: ApartmentFinder Shared TestFlight
+  ApartmentFinderShare:
+    settings:
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: Apple Distribution
+          DEVELOPMENT_TEAM: YU2A5J5978
+          PROVISIONING_PROFILE_SPECIFIER: ApartmentFinder Share TestFlight

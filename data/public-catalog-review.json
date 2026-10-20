@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "publicFieldsOnly": true,
-  "version": "2026.10.19.2-public",
+  "version": "2026.10.20.3-public",
   "counts": {
-    "communities": 92,
-    "positions": 14517,
+    "communities": 156,
+    "positions": 14749,
     "paths": 17,
-    "sources": 513
+    "sources": 671
   },
-  "sourcePackVersion": "2026.10.14.1",
+  "sourcePackVersion": "2026.10.20.2-public",
   "sourceSHA256": {
-    "catalog.json": "c042837c23c51ec69782eb35d891054ef4985039c2755eb52ab465fb5c1e54b4",
-    "locations.geojson": "4dc8e6c8a9d9bc3d26c07b113f1cb4f9e2d95cce5d665bdab7fed6cb36d90987",
-    "paths.geojson": "a0d8fbc6e4e3ca2b0690bcc3d79e2764a326226faa0d429a82e950cca54a7bc2"
+    "catalog.json": "9e1a05ce36c5b8c3d703bcab1cb930114eb0c69f6a47d7768b251d4454f88c92",
+    "locations.geojson": "928824d4340c5210119ef65a68d9e61f380bea510dea27cc07206068f4d51f35",
+    "paths.geojson": "81ee32a8066575f0ef657511f56fbaf97647777383dfafa976c95aaa92f55275"
   },
   "resourcesSHA256": {
-    "public-catalog.json": "f90d22fa045f0823e47015e3335dc550e3cddce5ef6c78ff415ed81a9a849856",
-    "public-locations.geojson": "51d74a47a55b450f50b4f76d96383caf8bc5a34e2980890dcccd4148d3cf88d1",
-    "public-paths.geojson": "008041c18d2aee36538ae4e0eeb8d3c89f1fe13c82d178842eefd4bb5432759d",
-    "known-addresses.json": "859ac44cc412bd66b118abef50e3c4d1a3cd8978e61c05af33424afbbea10e06"
+    "public-catalog.json": "721f30a6c67e69a32c65550f9de75ff77e786c65ac0fcdc53a3c22508b239853",
+    "public-locations.geojson": "f3b18f6c77dcb76cefa7844f64d92f2140d953d996798885042478e49e8ea09b",
+    "public-paths.geojson": "7746a6ec489336152af35cf423f4438861fba841d4f03757bca6a4c0c10c51bb",
+    "known-addresses.json": "1e90536f6cc56b155a1b62590976fa306ffa2cb62fbccae196b9c8e4d14752c8"
   }
 }

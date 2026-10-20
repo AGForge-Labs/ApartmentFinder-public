@@ -39,6 +39,18 @@ public struct ApartmentGroup: Identifiable, Sendable {
     public var remainingCount: Int { stops.filter { !$0.completed }.count }
     public var nextStop: DeliveryStop? { stops.first { !$0.completed } }
 
+    public func scopedBuildingAssociations(in index: [String: [UnitBuildingAssociation]]) -> [UnitBuildingAssociation] {
+        var values = Dictionary((index[id] ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let key = LocalSearch.addressKey(address)
+        for sourceID in [legacyCommunityID, directoryCommunityID].compactMap({ $0 }) where sourceID != id {
+            for original in index[sourceID] ?? [] where LocalSearch.addressKey(original.address) == key {
+                guard values[original.id] == nil else { continue }
+                var projected = original; projected.communityID = id; values[original.id] = projected
+            }
+        }
+        return values.values.sorted { $0.id < $1.id }
+    }
+
     public func scopedPlaces(in index: [String: [Place]]) -> [Place] {
         var owned = index[id] ?? []
         if let legacyCommunityID, legacyCommunityID != id {
@@ -133,6 +145,8 @@ public struct ApartmentDoorMatch: Sendable {
     public var readyDoor: Place?
     public var issue: Issue?
     public var previousSelection: Place? = nil
+    public var buildingAssociations: [UnitBuildingAssociation] = []
+    public var buildingReferences: [Place] = []
     /// A replacement pin may start with one supported building/floor label.
     /// Competing or explicitly uncertain directory identities need owner input.
     public var supportedIdentityForNewPin: (building: String, floor: String)? {
@@ -142,9 +156,9 @@ public struct ApartmentDoorMatch: Sendable {
               !candidate.floor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         return (candidate.building, candidate.floor)
     }
-    public static func resolve(stop: DeliveryStop, communityID: String, places: [Place], selectedPlaceID: String? = nil) -> Self {
+    public static func resolve(stop: DeliveryStop, communityID: String, places: [Place], selectedPlaceID: String? = nil, buildingAssociations: [UnitBuildingAssociation] = []) -> Self {
         let local = places.filter { $0.communityID == communityID }
-        let resolved = DeliveryAddress.resolve(stop.address, unit: stop.unit, knownAddresses: local.map(\.address))
+        let resolved = DeliveryAddress.resolve(stop.address, unit: stop.unit, knownAddresses: local.map(\.address) + buildingAssociations.filter { $0.communityID == communityID }.map(\.address))
         if resolved.hasConflictingUnit { return Self(candidates: [], issue: .checkUnit) }
         let unit = LocalSearch.normalized(resolved.unit)
         if unit.isEmpty { return Self(candidates: [], issue: .addUnit) }
@@ -178,7 +192,23 @@ public struct ApartmentDoorMatch: Sendable {
             }
             if compatible { return Self(candidates: candidates, readyDoor: checked) }
         }
-        if candidates.isEmpty { return Self(candidates: [], issue: .placePin) }
+        if candidates.isEmpty {
+            let associations = buildingAssociations.filter {
+                $0.communityID == communityID && LocalSearch.addressKey($0.address) == stopAddressKey &&
+                    LocalSearch.normalized($0.unit) == unit
+            }.sorted { $0.id < $1.id }
+            // Even caller-supplied data must have one association per namespace.
+            let unique = Dictionary(grouping: associations, by: \.identifierKind).values.filter { $0.count == 1 }.flatMap { $0 }
+            let references = unique.compactMap { a -> Place? in
+                guard a.identifierKind == .municipalLegal, let id = a.referencePlaceID else { return nil }
+                return local.first {
+                    $0.id == id && $0.kind == .building && $0.verification == .sourceMapped &&
+                        $0.referenceKind == .assessorLegalBuildingPolygon && $0.unit.isEmpty && $0.floor.isEmpty &&
+                        $0.coordinate.isValid && $0.building == a.building && LocalSearch.addressKey($0.address) == stopAddressKey
+                }
+            }.sorted { $0.id < $1.id }
+            return Self(candidates: [], issue: .placePin, buildingAssociations: unique.sorted { $0.id < $1.id }, buildingReferences: references)
+        }
         return Self(candidates: candidates, issue: candidates.count > 1 && (buildings.count > 1 || verified.count > 1) ? .chooseDoor : .confirmPin)
     }
 }
@@ -193,7 +223,7 @@ public extension Place {
         result.coordinate = point; result.building = building; result.floor = floor
         if let address { result.address = address }
         result.kind = .door; result.verification = .fieldVerified
-        result.identityUncertain = nil
+        result.identityUncertain = nil; result.referenceKind = nil
         if result.notes.isEmpty { result.notes = "Door pin checked by owner." }
         return result
     }

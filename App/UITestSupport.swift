@@ -184,6 +184,13 @@ enum SyntheticUIDiagnostics {
     }
     private static var snapshot = Snapshot()
     private static var coordinatorCount = 0
+    private(set) static var pinHostCameraRevision = 0
+    private(set) static var pinHostCameraEventUptime: TimeInterval = 0
+    static func pinHostCameraChanged() {
+        guard enabled, ProcessInfo.processInfo.arguments.contains("--synthetic-pin-host-probe") else { return }
+        pinHostCameraRevision = min(4096, pinHostCameraRevision + 1)
+        pinHostCameraEventUptime = ProcessInfo.processInfo.systemUptime
+    }
     private static var probe: Probe? {
         let arguments = ProcessInfo.processInfo.arguments
         guard let index = arguments.firstIndex(of: "--synthetic-diagnostic-probe"),
@@ -337,6 +344,8 @@ enum SyntheticUIDiagnostics {
     }
     private static func write(_ event: Event) {
         guard enabled, let probe, snapshot.sequence < 4096 else { return }
+        // The instrumented replay must preserve the original launch's witness.
+        guard !ProcessInfo.processInfo.arguments.contains("--synthetic-pin-host-probe") else { return }
         snapshot.probe = probe.rawValue
         snapshot.bannerHitTestingDisabled = bannerHitTestingDisabled
         snapshot.sequence += 1
