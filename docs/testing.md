@@ -8,7 +8,7 @@ It uses one standard `macos-15-intel` job, manual dispatch only, with an exact r
 
 The exact source-checked allowlist in `scripts/public-synthetic-tests.json` selects:
 
-- 108 selected core and public-resource tests: parsing, duplicate deliveries, navigation, GPS freshness, initial framing, manual camera state, completion and rollback
+- 117 selected core and public-resource tests: parsing, duplicate deliveries, navigation, GPS freshness, initial framing, manual camera state, completion and rollback
 - 71 selected native compatibility tests: personal storage, pack migration/failure, Finder independence, selection races, append, completion/undo, location and actual arrow rendering
 - Two fictional OnTrac UI tests: ZIP preview/cancel/empty day, map display, pin-review cancellation, persistence and relaunch
 

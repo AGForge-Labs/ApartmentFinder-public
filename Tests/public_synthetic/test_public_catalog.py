@@ -203,6 +203,19 @@ class PublicCatalogExportTests(unittest.TestCase):
                 self.run_export(valid=False)
                 self.assertFalse(self.output.exists())
 
+    def test_large_public_catalog_uses_compact_json_within_native_loader_limit(self):
+        self.catalog['sources'][0]['title'] = 'x' * 1900
+        self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(11_500)]
+        self.run_export(); self.run_validate()
+        path = self.output / 'public-catalog.json'
+        self.assertLessEqual(path.stat().st_size, 2_000_000)
+        value = json.loads(path.read_bytes())
+        self.assertEqual(value['communities'][0]['aliases'], self.catalog['communities'][0]['aliases'])
+        self.output = self.directory / 'oversized-catalog'
+        self.catalog['communities'][0]['aliases'] *= 2
+        self.run_export(valid=False)
+        self.assertFalse(self.output.exists())
+
     def test_unperformed_field_verification_is_rejected(self):
         self.locations['features'][0]['properties']['verification'] = 'fieldVerified'
         self.run_export(valid=False)
@@ -650,6 +663,18 @@ class PublicCatalogExportTests(unittest.TestCase):
         self.assertTrue(any('disagree on the city label' in n for n in c['gapNotes']))
         self.output = self.directory / 'invalid-city-qualification'
         self.evidence[0]['addressCityDisagreement'] = 'private free text'
+        self.run_export(valid=False)
+
+    def test_single_building_configuration_keeps_unit_and_door_positions_unverified(self):
+        self.evidence = [dict(communityID='fictional',communityType='seniorLiving',areaScope='core',
+            addressSourceIDs=['official-fixture'],coordinate=dict(kind='operatorPublishedPropertyPoint',sourceIDs=['official-fixture']),
+            singleResidentialBuilding=dict(publishedStories=4,publishedApartments=195,sourceIDs=['official-fixture']))]
+        self.run_export(); self.run_validate()
+        c = json.loads((self.output / 'public-catalog.json').read_bytes())['communities'][0]
+        self.assertTrue(any('one residential building' in n and '195' in n and 'remain unverified' in n for n in c['gapNotes']))
+        self.assertEqual(len(json.loads((self.output / 'public-locations.geojson').read_bytes())['features']),1)
+        self.output = self.directory/'invalid-building-count'
+        self.evidence[0]['singleResidentialBuilding']['publishedStories'] = True
         self.run_export(valid=False)
 
     def test_unknown_field_evidence_metadata_is_rejected(self):

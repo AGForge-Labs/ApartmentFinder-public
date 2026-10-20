@@ -42,6 +42,7 @@ COVERAGE_NOTES = [
     'New Silverado-area records may have only a verified property name and street address. Missing unit maps remain explicit research gaps.',
     'Public map geometry is unconfirmed. OpenStreetMap contributors attribution and ODbL requirements apply to retained OSM paths.',
 ]
+RESOURCE_LIMITS = {'public-catalog.json': 2_000_000, 'public-locations.geojson': 64_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
 RESOURCE_NAMES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson', 'known-addresses.json')
 
 
@@ -180,11 +181,18 @@ def validate_payload(catalog, locations, paths):
         refs(community['sourceIDs'])
         if 'publicEvidence' in community:
             evidence = community['publicEvidence']
-            require(set(evidence) <= {'communityType', 'areaScope', 'addressSourceIDs', 'coordinate', 'addressCityDisagreement'} and
-                    evidence['communityType'] in ('apartment', 'condominium') and
+            require(set(evidence) <= {'communityType', 'areaScope', 'addressSourceIDs', 'coordinate', 'addressCityDisagreement', 'singleResidentialBuilding'} and
+                    evidence['communityType'] in ('apartment', 'condominium', 'seniorLiving') and
                     evidence['areaScope'] in ('core', 'edge', 'nearbyOutsideFocus'), 'Unexpected public field evidence')
             require('addressCityDisagreement' not in evidence or type(evidence['addressCityDisagreement']) is bool, 'Invalid city disagreement flag')
             refs(evidence['addressSourceIDs'])
+            if 'singleResidentialBuilding' in evidence:
+                config = evidence['singleResidentialBuilding']
+                require(isinstance(config, dict) and set(config) == {'publishedStories', 'publishedApartments', 'sourceIDs'} and
+                        type(config['publishedStories']) is int and 1 <= config['publishedStories'] <= 100 and
+                        type(config['publishedApartments']) is int and 1 <= config['publishedApartments'] <= 10_000,
+                        'Invalid published building configuration')
+                refs(config['sourceIDs'])
             if 'coordinate' in evidence:
                 proof = evidence['coordinate']
                 require('latitude' in community and set(proof) == {'kind', 'sourceIDs'} and proof['kind'] in
@@ -325,6 +333,10 @@ def gap_notes(community):
     evidence = community.get('publicEvidence', {})
     if evidence.get('communityType') == 'condominium':
         notes.append('Community type: condominium. Verified base street addresses may cover several buildings; no new unit map is supplied.')
+    if evidence.get('communityType') == 'seniorLiving':
+        notes.append('Publicly listed operating senior community; residency and care arrangements vary. No building or unit navigation is established by the address record.')
+    if config := evidence.get('singleResidentialBuilding'):
+        notes.append(f"Published sources describe one residential building with {config['publishedApartments']} apartments on {config['publishedStories']} stories. Building numbers, unit/corridor layout, entrances and doors remain unverified.")
     if evidence.get('areaScope') == 'nearbyOutsideFocus':
         notes.append('This community is nearby but outside the focused Silverado Ranch study area.')
     elif evidence.get('areaScope') == 'edge':
@@ -380,7 +392,7 @@ def prepare(source, output, version, additions, evidence_file=None):
         require(isinstance(evidence, list) and len({e['communityID'] for e in evidence}) == len(evidence), 'Duplicate public field evidence')
         communities = {c['id']: c for c in catalog['communities']}
         for entry in evidence:
-            require(set(entry) <= {'communityID', 'communityType', 'areaScope', 'addressSourceIDs', 'coordinate', 'addressCityDisagreement'} and entry['communityID'] in communities, 'Unexpected public evidence target/fields')
+            require(set(entry) <= {'communityID', 'communityType', 'areaScope', 'addressSourceIDs', 'coordinate', 'addressCityDisagreement', 'singleResidentialBuilding'} and entry['communityID'] in communities, 'Unexpected public evidence target/fields')
             communities[entry['communityID']]['publicEvidence'] = {k: copy.deepcopy(v) for k, v in entry.items() if k != 'communityID'}
     catalog['scopeZIPs'] = sorted(set(catalog['scopeZIPs']) | {c['zip'] for c in catalog['communities'] if c['zip'] in ALLOWED_ZIPS})
     collections = []
@@ -406,9 +418,14 @@ def prepare(source, output, version, additions, evidence_file=None):
     catalog['sources'] = [s for s in catalog['sources'] if s['id'] in refs]
     counts = validate_payload(catalog, locations, paths)
     index = dict(schemaVersion=1, packVersion=version, entries=[dict(address=c['address'], deliveryAddresses=c.get('deliveryAddresses', [])) for c in catalog['communities']])
+    encoded = {name: json_bytes(value) for name, value in zip(RESOURCE_NAMES, (catalog, locations, paths, index))}
+    if len(encoded['public-catalog.json']) > RESOURCE_LIMITS['public-catalog.json']:
+        encoded['public-catalog.json'] = (json.dumps(catalog, ensure_ascii=False, allow_nan=False, separators=(',', ':')) + '\n').encode()
+    for name, body in encoded.items():
+        require(len(body) <= RESOURCE_LIMITS[name], 'Public resource exceeds native loader limit: ' + name)
     output.mkdir(parents=True, exist_ok=False)
-    for name, value in zip(RESOURCE_NAMES, (catalog, locations, paths, index)):
-        (output / name).write_bytes(json_bytes(value))
+    for name, body in encoded.items():
+        (output / name).write_bytes(body)
     manifest = dict(schemaVersion=1, publicFieldsOnly=True, version=version, counts=counts,
         sourcePackVersion=original['packVersion'], sourceSHA256={name: digest(source / name) for name in raw},
         resourcesSHA256={name: digest(output / name) for name in RESOURCE_NAMES})
@@ -417,7 +434,7 @@ def prepare(source, output, version, additions, evidence_file=None):
 
 
 def validate(directory):
-    catalog, locations, paths, index = [read_json(directory / name) for name in RESOURCE_NAMES]
+    catalog, locations, paths, index = [read_json(directory / name, RESOURCE_LIMITS[name]) for name in RESOURCE_NAMES]
     counts = validate_payload(catalog, locations, paths)
     manifest = read_json(directory / 'public-catalog-review.json', 100_000)
     require(set(manifest) == {'schemaVersion', 'publicFieldsOnly', 'version', 'counts', 'sourcePackVersion', 'sourceSHA256', 'resourcesSHA256'}, 'Unexpected public review manifest fields')

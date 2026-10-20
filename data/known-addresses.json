@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "packVersion": "2026.10.20.1-public",
+  "packVersion": "2026.10.20.3-public",
   "entries": [
     {
       "address": "7960 Rafael Rivera Way",
@@ -741,6 +741,86 @@
     },
     {
       "address": "6551 Annie Oakley Drive",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "310 Annabelle Lane",
+      "deliveryAddresses": [
+        "310 Annabelle Lane"
+      ]
+    },
+    {
+      "address": "2570 W Horizon Ridge Parkway",
+      "deliveryAddresses": [
+        "2570 W Horizon Ridge Parkway"
+      ]
+    },
+    {
+      "address": "845 Seven Hills Drive",
+      "deliveryAddresses": [
+        "845 Seven Hills Drive"
+      ]
+    },
+    {
+      "address": "525 Carnegie Street",
+      "deliveryAddresses": [
+        "525 Carnegie Street"
+      ]
+    },
+    {
+      "address": "11088 Amigo Street",
+      "deliveryAddresses": [
+        "11088 Amigo Street"
+      ]
+    },
+    {
+      "address": "2320 Ione Road",
+      "deliveryAddresses": [
+        "2320 Ione Road"
+      ]
+    },
+    {
+      "address": "8158 Giles Street",
+      "deliveryAddresses": [
+        "8158 Giles Street"
+      ]
+    },
+    {
+      "address": "65 E Windmill Lane",
+      "deliveryAddresses": [
+        "65 E Windmill Lane"
+      ]
+    },
+    {
+      "address": "2405 W Serene Avenue",
+      "deliveryAddresses": [
+        "2405 W SERENE AVE",
+        "2455 W SERENE AVE"
+      ]
+    },
+    {
+      "address": "2715 W Pebble Road",
+      "deliveryAddresses": [
+        "2715 W PEBBLE RD",
+        "2735 W PEBBLE RD",
+        "2755 W PEBBLE RD",
+        "2775 W PEBBLE RD",
+        "2815 W PEBBLE RD",
+        "2835 W PEBBLE RD",
+        "2855 W PEBBLE RD",
+        "2875 W PEBBLE RD"
+      ]
+    },
+    {
+      "address": "9655 South Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "11611 South Las Vegas Boulevard",
+      "deliveryAddresses": []
+    },
+    {
+      "address": "1281 Galleria Drive",
       "deliveryAddresses": []
     }
   ]

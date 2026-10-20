@@ -6,7 +6,7 @@ import CryptoKit
 /// A bounded correction of the retained combined Riley source. Saved owner data is never rewritten.
 enum RileyPropertySeparation {
     static func apply(to catalog: inout Catalog, places: inout [Place]) throws {
-        let isPublicVersion = ["2026.10.19.1-public", "2026.10.19.2-public", "2026.10.20.1-public"].contains(catalog.packVersion)
+        let isPublicVersion = ["2026.10.19.1-public", "2026.10.19.2-public", "2026.10.20.1-public", "2026.10.20.2-public", "2026.10.20.3-public"].contains(catalog.packVersion)
         guard catalog.packVersion == "2026.10.14.1" || isPublicVersion,
               let index = catalog.communities.firstIndex(where: { $0.id == "alcove" && $0.address == "6355 S Riley St" }) else { return }
         // A reviewed public generation may already carry the same separation.

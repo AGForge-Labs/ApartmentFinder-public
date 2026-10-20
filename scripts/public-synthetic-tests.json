@@ -109,7 +109,16 @@
     "Stop44ImportTests/testDistinctUnitsAtSameStreetAndPrinted44SurviveFullImportAndBackup",
     "Stop44ImportTests/testExistingSavedUnmatchedRepeatedUnitIsRecognizedOnPlanRefreshWithoutChangingProgress",
     "Stop44ImportTests/testRepeatedStandaloneUnitInsideOneAddressDoesNotLoseSecondContactOrInventThirdStop",
-    "Stop44ImportTests/testTwoGenuinePackagesAtTheSameUnitRemainSeparateRows"
+    "Stop44ImportTests/testTwoGenuinePackagesAtTheSameUnitRemainSeparateRows",
+    "BuildingReferenceTests/testLegalBuildingFallbackIsSeparateFromDoorCandidatesAndDoesNotPrefillPhysicalIdentity",
+    "BuildingReferenceTests/testSchematicAssociationRetainsNoPointAndCannotBorrowLegalGeometry",
+    "BuildingReferenceTests/testExactStreetAndLeadingZeroUnitAreRequiredEvenWhenOnlyOneBuildingExists",
+    "BuildingReferenceTests/testExistingUnitPositionAndCheckedDoorTakePriorityOverBuildingFallback",
+    "BuildingReferenceTests/testUnvalidatedOrConflictingReferenceCannotBecomeFallback",
+    "BuildingReferenceTests/testReferenceStaysOutOfLegacyFinderResultsAndPhysicalDoorConversionClearsType",
+    "BuildingReferenceTests/testPersonalGroupProjectionRetainsReferenceLinkWithoutChangingStoredOwnership",
+    "PublicCatalogSupplementTests/testOldPayloadWithoutAssociationOrReferenceFieldsStillDecodes",
+    "PublicCatalogSupplementTests/testAssociationSupplementPreservesExistingIdentityAndConflictingProvenanceIsExcluded"
   ],
   "native": [
     "ApartmentFinderTests/ApartmentRouteFollowupTests/testAddingAfterBatchCompletionPreservesUndoThroughPersistentStoreReopen",

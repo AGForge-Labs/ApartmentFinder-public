@@ -1,7 +1,7 @@
 {
   "type": "FeatureCollection",
   "schemaVersion": 1,
-  "packVersion": "2026.10.20.1-public",
+  "packVersion": "2026.10.20.3-public",
   "features": [
     {
       "type": "Feature",
@@ -381666,6 +381666,56 @@
         "referenceKind": "assessorLegalBuildingPolygon",
         "sourceIDs": [
           "pub20261020-rancho-serene-polygon-0"
+        ],
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "boca-raton:legal:e77d0b448089:3",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1744653,
+          36.0197806
+        ]
+      },
+      "properties": {
+        "communityID": "boca-raton",
+        "address": "2455 W SERENE AVE",
+        "building": "3",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "sourceIDs": [
+          "pubv3-boca-raton-polygons-2e64ce9cfd90ab8b"
+        ],
+        "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "boca-raton:legal:e77d0b448089:4",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.1752239,
+          36.0203492
+        ]
+      },
+      "properties": {
+        "communityID": "boca-raton",
+        "address": "2405 W SERENE AVE",
+        "building": "4",
+        "unit": "",
+        "floor": "",
+        "kind": "building",
+        "verification": "sourceMapped",
+        "referenceKind": "assessorLegalBuildingPolygon",
+        "sourceIDs": [
+          "pubv3-boca-raton-polygons-2e64ce9cfd90ab8b"
         ],
         "notes": "Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door."
       }
