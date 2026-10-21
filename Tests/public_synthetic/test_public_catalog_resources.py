@@ -9,6 +9,22 @@ ADDED_COMMUNITIES = {'ensemble-ii', 'budget-suites-las-vegas-strip', 'one-las-ve
                      'st-james-place', 'southpark', 'paragon-lofts'}
 ADDED_SOURCES = {'p4-e1', 'p4-e2', 'p4-b1', 'p4-b2', 'p4-o1', 'p4-s1', 'p4-s2',
                  'p4-k1', 'p4-k2', 'p4-p1', 'p4-p2', 'p4-sj', 'p4-dp', 'p4-pv', 'p4-sw'}
+LYRIC_AREA_SOURCE = 'public-lyric-location-20261021'
+LYRIC_AREA_GAPS = (
+    'Community coordinate is a published property reference or source-map reference only; it is not a unit, entrance or delivery destination.',
+    'The operator publishes this property reference point. Surveyed accuracy, entrances, buildings and units are not established by it.',
+)
+
+
+def before_lyric_area_update(community):
+    """Remove only the separately asserted area enrichment for the frozen baseline proof."""
+    value = json.loads(json.dumps(community))
+    if value['id'] == 'lyric':
+        value.pop('latitude', None); value.pop('longitude', None)
+        value['sourceIDs'] = [s for s in value['sourceIDs'] if s != LYRIC_AREA_SOURCE]
+        value['gapNotes'] = [n for n in value['gapNotes'] if n not in LYRIC_AREA_GAPS]
+        value['publicEvidence'].pop('coordinate', None)
+    return value
 
 
 def fingerprint(value):
@@ -60,8 +76,8 @@ class PublicCatalogResourceTests(unittest.TestCase):
     def test_89123_batch_preserves_every_previously_accepted_object(self):
         catalog, locations, paths = resources()
         old = {
-            'communities': [c for c in catalog['communities'] if c['id'] not in ADDED_COMMUNITIES],
-            'sources': [s for s in catalog['sources'] if s['id'] not in ADDED_SOURCES],
+            'communities': [before_lyric_area_update(c) for c in catalog['communities'] if c['id'] not in ADDED_COMMUNITIES],
+            'sources': [s for s in catalog['sources'] if s['id'] not in ADDED_SOURCES | {LYRIC_AREA_SOURCE}],
             'associations': [a for a in catalog['unitBuildingAssociations'] if not a['id'].startswith('p4a-')],
             'locations': [f for f in locations['features'] if f['properties']['communityID'] != 'st-james-place'],
             'paths': paths['features'],
