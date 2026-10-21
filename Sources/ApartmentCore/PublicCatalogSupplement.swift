@@ -23,6 +23,7 @@ public enum PublicCatalogSupplement {
     }
 
     /// Existing IDs, coordinates, community identities and paths always win.
+    /// A missing community area may be filled by a same-street public reference.
     /// A conflicting provenance ID or physical-street identity is left out,
     /// rather than silently rebinding a public record to another source/property.
     /// Personal-only community IDs are reserved by the caller, without copying
@@ -54,8 +55,17 @@ public enum PublicCatalogSupplement {
         for community in supplement.catalog.communities {
             let key = LocalSearch.addressKey(community.address)
             guard !key.isEmpty, addressOwners[key]?.count == 1, usableSources(community.sourceIDs) else { continue }
-            if let existing = baseCommunities[community.id] {
+            if var existing = baseCommunities[community.id] {
                 guard LocalSearch.addressKey(existing.address) == key else { continue }
+                if existing.coordinate == nil, let area = community.coordinate, area.isValid,
+                   let index = result.catalog.communities.firstIndex(where: { $0.id == community.id }) {
+                    // Project only an absent area and its provenance. The imported
+                    // generation, owner coordinates, doors and identities stay intact.
+                    existing.latitude = area.latitude; existing.longitude = area.longitude
+                    for id in community.sourceIDs where !existing.sourceIDs.contains(id) { existing.sourceIDs.append(id) }
+                    result.catalog.communities[index] = existing
+                    neededSources.formUnion(community.sourceIDs)
+                }
                 admitted[community.id] = existing
             } else {
                 guard !reservingCommunityIDs.contains(community.id) else { continue }

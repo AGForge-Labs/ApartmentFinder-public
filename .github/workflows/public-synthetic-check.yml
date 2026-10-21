@@ -19,6 +19,7 @@ on:
         options:
           - regression
           - map-interaction-regression
+          - community-area-controls-regression
           - map-pinch-diagnostics
           - activation-diagnostics
         default: regression
@@ -43,7 +44,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
+          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
           fi
@@ -164,6 +165,20 @@ jobs:
               for kind,identities in focused.items():
                   assert set(identities)<=set(selection[kind])
               selection=focused
+          elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='community-area-controls-regression':
+              sys.path.insert(0,'scripts')
+              from iterate import test_ids
+              focused={'native':[
+                  'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport',
+                  'ApartmentFinderTests/PublicCatalogBundleStoreTests/testSavedPackSupplementPreservesGenerationAndPersonalBytesAcrossReopen'],
+                  'ui':[
+                  'ApartmentFinderUITests/CommunityMapControlsTests/testPausedControlsStayCompactAndKeepTheirActions',
+                  'ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors',
+                  'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
+                  'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch']}
+              for kind,folder,prefix in [('native','NativeTests','ApartmentFinderTests/'),('ui','UITests','ApartmentFinderUITests/')]:
+                  assert all(item.removeprefix(prefix) in test_ids('.',folder) for item in focused[kind])
+              selection=focused
           elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-pinch-diagnostics':
               sys.path.insert(0,'scripts')
               from iterate import test_ids
@@ -189,7 +204,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'map-pinch-diagnostics':1,'regression':73}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':73}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -203,6 +218,7 @@ jobs:
           EXPECTED_NATIVE_COUNT=73
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then EXPECTED_NATIVE_COUNT=1; fi
           [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then

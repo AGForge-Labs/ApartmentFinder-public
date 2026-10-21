@@ -102,6 +102,9 @@ struct UITestManifestControls: ToolbarContent {
                         csv = "sequence,address,unit,notes\n1,7103 S Durango Dr,102,Synthetic test delivery\n2,7163 S Durango Dr,102,Synthetic test delivery\n"
                     } else if arguments.contains("--coverage-south-beach") {
                         csv = "sequence,address,unit,notes\n1,8920 W Russell Rd,2001,Synthetic test delivery\n2,8920 W Russell Rd,2002,Synthetic test delivery\n"
+                    } else if arguments.contains("--community-area-manifest") {
+                        // Public operator labels with invented deliveries, never an owner's manifest.
+                        csv = "sequence,address,unit,notes\n1,304 E Silverado Ranch Blvd,1193,Synthetic regression\n2,304 E Silverado Ranch Blvd,2171,Synthetic regression\n3,240 E Silverado Ranch Blvd,PUBLIC-TEST-A,Synthetic unmapped unit\n4,240 E Silverado Ranch Blvd,PUBLIC-TEST-B,Synthetic unmapped unit\n"
                     } else if arguments.contains("--tuscano-manifest") {
                         let units = arguments.contains("--unmapped-units") ? ["9998", "9999"] : ["2066", "2137"]
                         csv = "sequence,address,unit,notes\n1,123 Synthetic House Ln,,\n2,7255 W Sunset Rd,\(units[0]),Follow the marked pedestrian entrance and check the building sign before approaching. These are simulated instructions for checking long notes. Leave the parcel only at the unit door after checking the building number.\n3,7255 W Sunset Rd,\(units[1]),Simulator regression\n"

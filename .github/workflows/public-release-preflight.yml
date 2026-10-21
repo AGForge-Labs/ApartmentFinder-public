@@ -2,18 +2,24 @@
 name: Public release infrastructure checks
 on:
   pull_request:
-    branches: [main]
+    branches: [main, codex/89123-reviewed-data]
     paths:
       - .github/workflows/public-release-preflight.yml
       - .github/workflows/public-testflight.yml
       - scripts/public-release*
       - scripts/testflight*
       - scripts/public-catalog.py
+      - scripts/public-community-gap-audit.py
       - scripts/public-synthetic-tests.json
       - Sources/ApartmentCore/**
+      - App/ApartmentDeliveryMap.swift
+      - App/ApartmentMiniRouteView.swift
+      - App/UITestSupport.swift
+      - UITests/CommunityMapControlsTests.swift
       - Tests/ApartmentCoreTests/**
       - data/public-*
       - data/known-addresses.json
+      - docs/public-community-geography-audit.json
       - Tests/public_synthetic/**
       - Tests/release/**
       - Tests/signing/**

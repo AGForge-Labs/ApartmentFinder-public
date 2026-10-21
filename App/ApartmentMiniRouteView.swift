@@ -347,7 +347,7 @@ struct ApartmentMiniRouteView: View {
                 Text("Approximate legal-building area · may include courtyard/open space · accuracy unknown · not a unit position, entrance or door")
                     .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.buildingReferenceWarning")
             } else if !match.buildingAssociations.isEmpty {
-                Text("Unit/building association only · geographic location unknown")
+                Text("Building and door locations not mapped")
                     .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.associationWithoutPoint")
             }
             if match.readyDoor == nil && match.candidates.contains(where: { $0.verification == .estimated }) {

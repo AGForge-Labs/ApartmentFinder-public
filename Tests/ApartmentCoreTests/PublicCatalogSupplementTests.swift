@@ -76,6 +76,43 @@ final class PublicCatalogSupplementTests: XCTestCase {
         XCTAssertEqual(result.catalog.communities, base.catalog.communities)
         XCTAssertEqual(result.places, base.places)
     }
+
+    func testMissingCommunityAreaIsSupplementedWithoutReplacingImportedIdentityOrPersonalDoor() throws {
+        let old = community("retained", address: "100 Fictional Rd")
+        let areaSource = source("fictional-area-source")
+        var updated = old
+        updated.latitude = 1; updated.longitude = 2
+        updated.sourceIDs = [areaSource.id]
+        var door = place("owner-door", community: old)
+        door.kind = .door; door.verification = .fieldVerified
+        door.coordinate = Coordinate(latitude: 3, longitude: 4)
+        let base = pack([old], places: [door], version: "retained-import")
+        let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+        let originalBytes = try encoder.encode(base.catalog)
+        let publicPack = pack([updated], sources: [areaSource], version: "public-area-update")
+        let result = PublicCatalogSupplement.applying(publicPack, to: base)
+        let retained = try XCTUnwrap(result.catalog.communities.first)
+        XCTAssertEqual(retained.coordinate, updated.coordinate, "An absent imported community area must not hide a supported public area")
+        XCTAssertEqual(retained.id, old.id); XCTAssertEqual(retained.address, old.address)
+        XCTAssertEqual(retained.name, old.name); XCTAssertEqual(retained.zip, old.zip)
+        XCTAssertEqual(Set(retained.sourceIDs), Set(old.sourceIDs + [areaSource.id]))
+        XCTAssertTrue(result.catalog.sources.contains(areaSource))
+        XCTAssertEqual(result.catalog.packVersion, base.catalog.packVersion)
+        XCTAssertEqual(result.places, [door]); XCTAssertEqual(try encoder.encode(base.catalog), originalBytes)
+        let stop = DeliveryStop(sequence: 1, address: old.address, unit: door.unit)
+        let group = try XCTUnwrap(ApartmentRoutePlan.make(stops: [stop], communities: result.catalog.communities).groups.first)
+        XCTAssertEqual(group.coordinate, updated.coordinate)
+        XCTAssertEqual(ApartmentDoorMatch.resolve(stop: stop, communityID: group.id, places: result.places).readyDoor, door)
+
+        var located = old; located.latitude = 5; located.longitude = 6
+        XCTAssertEqual(PublicCatalogSupplement.applying(publicPack, to: pack([located])).catalog.communities, [located])
+        var otherStreet = updated; otherStreet.address = "200 Fictional Rd"
+        XCTAssertEqual(PublicCatalogSupplement.applying(pack([otherStreet], sources: [areaSource]), to: base).catalog.communities, [old])
+        let conflicting = source(areaSource.id, url: "https://example.invalid/conflicting-area")
+        XCTAssertEqual(PublicCatalogSupplement.applying(publicPack, to: pack([old], sources: [source(), conflicting])).catalog.communities, [old])
+        var invalid = updated; invalid.latitude = 91
+        XCTAssertEqual(PublicCatalogSupplement.applying(pack([invalid], sources: [areaSource]), to: base).catalog.communities, [old])
+    }
     func testPersonalOnlyCommunityIDsAreReservedWithoutSuppressingExistingBaseCommunities() {
         let old = community("saved", address: "100 Fictional Rd")
         let owned = community("owner-id", address: "200 Fictional Rd")

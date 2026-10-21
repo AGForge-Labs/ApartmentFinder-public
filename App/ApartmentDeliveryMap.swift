@@ -97,24 +97,27 @@ struct ApartmentDeliveryMap: View {
                     coverageLabel(pins)
                     if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
                     if pins.isEmpty {
-                        Text(group.coordinate == nil ? "Community location not mapped" : "Community area").font(.caption2)
+                        Text(group.coordinate == nil ? "Community location not mapped" : "Community area · doors not mapped").font(.caption2)
+                            .accessibilityIdentifier("mini.communityLocation")
                     }
                     if showingPropertyForDistantUser {
-                        Text("You’re far from this mini-route · showing apartment pins").font(.caption2)
+                        Text(pins.isEmpty ? "You’re far from this community · showing community area" : "You’re far from this mini-route · showing apartment pins").font(.caption2)
                             .accessibilityIdentifier("mini.distantLocation")
                     }
                 }.padding(10).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                     .padding(12).padding(.trailing, 50)
             }
             .overlay(alignment: .bottomTrailing) {
-                VStack(spacing: 12) {
+                VStack(spacing: 8) {
                     DeliveryMapStyleControl(selection: $mapStyle, accessibilityID: "mini.mapStyle")
+                        .background(.regularMaterial, in: Circle())
                     Button("Show all stops", systemImage: "arrow.up.left.and.arrow.down.right") {
                         following.showOverview(); fitAll(pins, includeLocation: true)
                     }
                     followingControl
-                }.labelStyle(.iconOnly).buttonStyle(.bordered).buttonBorderShape(.circle)
-                    .tint(.primary).padding(12).background(.regularMaterial, in: Capsule()).padding(12)
+                }.labelStyle(.iconOnly).buttonStyle(DeliveryMapControlButtonStyle())
+                    .tint(.primary).fixedSize().padding(12)
+                    .accessibilityElement(children: .contain).accessibilityIdentifier("mini.mapControls")
             }
             .overlay(alignment: .bottomLeading) {
                 Text(location.status).font(.caption).padding(10)
@@ -152,6 +155,10 @@ struct ApartmentDeliveryMap: View {
                 if following.isFollowing {
                     followLocation()
                 }
+                else if following.mode == .overview { fitAll(pins, includeLocation: true) }
+            }
+            .onChange(of: group.coordinate) { _, _ in
+                if following.isFollowing { followLocation() }
                 else if following.mode == .overview { fitAll(pins, includeLocation: true) }
             }
             // Choosing/advancing a delivery changes its highlight, not the user's camera/follow choice.
@@ -193,20 +200,25 @@ struct ApartmentDeliveryMap: View {
 
     @ViewBuilder private var followingControl: some View {
         if following.isFollowing {
-            Button(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? "Showing apartment pins" :
+            Button(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? propertyDescription :
                    location.direction == nil ? "Following your location" : "Following your direction",
                    systemImage: "location.north.fill") { followLocation() }
                 .tint(.teal).accessibilityIdentifier("mini.recenter")
-                .accessibilityValue(Text(verbatim: "\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? "Showing apartment pins" : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")\(cameraChangeDiagnostic)"))
+                .accessibilityValue(Text(verbatim: "\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? propertyDescription : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")\(cameraChangeDiagnostic)"))
                 .accessibilityHint("Pan or zoom the map to pause following")
         } else {
             Button("Resume following", systemImage: "location.fill") {
                 following.resume(); followLocation()
-            }.labelStyle(.titleAndIcon).font(.caption.bold()).buttonBorderShape(.capsule)
+            }
                 .accessibilityIdentifier("mini.recenter")
                 .accessibilityValue(Text(verbatim: "Paused, map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(cameraChangeDiagnostic)"))
                 .accessibilityHint("Center on your position and face your direction, keeping this zoom")
         }
+    }
+
+    private var propertyDescription: String {
+        if !pins.isEmpty { return "Showing apartment pins" }
+        return group.coordinate == nil ? "Community location not mapped" : "Showing community area"
     }
 
     private var cameraChangeDiagnostic: String {
@@ -252,7 +264,11 @@ struct ApartmentDeliveryMap: View {
     private func fitAll(_ pins: [Pin], includeLocation: Bool = false) {
         var coordinates = pins.map { $0.place.coordinate }
         if coordinates.isEmpty, let coordinate = group.coordinate { coordinates.append(coordinate) }
-        if includeLocation, let fix = location.fix, fix.usable(at: .now) { coordinates.append(fix.coordinate) }
+        if includeLocation, let fix = location.fix, fix.usable(at: .now),
+           MiniRouteCameraFraming.frame(pins: coordinates, fix: fix, at: .now,
+               width: Double(viewport.width), height: Double(viewport.height))?.includesUser == true {
+            coordinates.append(fix.coordinate)
+        }
         guard let first = coordinates.first else {
             center(group.coordinate ?? Coordinate(latitude: 36.08, longitude: -115.29), meters: 500)
             return
@@ -263,6 +279,17 @@ struct ApartmentDeliveryMap: View {
         }
         let padding = 75 * MKMapPointsPerMeterAtLatitude(first.latitude)
         camera = .rect(rect.insetBy(dx: -padding, dy: -padding))
+    }
+}
+
+/// Each map action owns one accessible 44-point target. A paused text label must
+/// not widen all three controls or turn their shared background into a large disc.
+private struct DeliveryMapControlButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.labelStyle(.iconOnly).font(.body)
+            .frame(width: 44, height: 44)
+            .background(.regularMaterial, in: Circle())
+            .contentShape(Circle()).opacity(configuration.isPressed ? 0.65 : 1)
     }
 }
 

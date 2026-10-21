@@ -48,7 +48,7 @@ class PreservedArtifactTests(unittest.TestCase):
         }
         self.write_manifest()
         (signed / 'SHA256.txt').write_text(self.actual['ipa_sha256'] + '  ApartmentFinder-TestFlight.ipa\n')
-        self.summary = {'result': 'Passed', 'passedTests': 126, 'totalTestCount': 126,
+        self.summary = {'result': 'Passed', 'passedTests': 128, 'totalTestCount': 128,
                         'failedTests': 0, 'skippedTests': 0, 'expectedFailures': 0}
         self.write_summary()
         attachments = self.directory / 'test-attachments'
@@ -81,13 +81,13 @@ class PreservedArtifactTests(unittest.TestCase):
 
     def test_exact_signed_build_and_reviewed_screenshots_pass(self):
         result = self.verify()
-        self.assertEqual(result['native_tests'], 126)
+        self.assertEqual(result['native_tests'], 128)
         self.assertEqual(result['required_screenshots'], 45)
 
     def test_native_evidence_can_be_checked_without_signing_or_an_ipa(self):
         (self.directory / 'testflight' / 'ApartmentFinder-TestFlight.ipa').unlink()
         result = artifact.verify_native_evidence(self.directory, root=ROOT)
-        self.assertEqual(result, {'native_tests': 126, 'required_screenshots': 45})
+        self.assertEqual(result, {'native_tests': 128, 'required_screenshots': 45})
 
     def test_native_only_command_checks_evidence_without_entering_signing(self):
         (self.directory / 'testflight' / 'ApartmentFinder-TestFlight.ipa').unlink()
@@ -96,7 +96,7 @@ class PreservedArtifactTests(unittest.TestCase):
                                 env=dict(os.environ, GITHUB_SHA=self.commit))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout),
-                         {'commit': self.commit, 'native_tests': 126, 'required_screenshots': 45})
+                         {'commit': self.commit, 'native_tests': 128, 'required_screenshots': 45})
         result = subprocess.run(command + ['--write-outputs'], cwd=ROOT, text=True,
                                 capture_output=True, env=dict(os.environ, GITHUB_SHA=self.commit))
         self.assertNotEqual(result.returncode, 0)

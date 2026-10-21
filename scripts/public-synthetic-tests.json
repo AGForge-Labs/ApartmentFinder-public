@@ -123,7 +123,8 @@
     "PublicCatalogBudgetTests/testPublicBoundaryStillRejectsOversizeSymlinksDirectoriesAndMalformedSchema",
     "PublicCatalogBudgetTests/testOversizedPrivateImportStillRejectsEveryEntryPointAndPreservesSelection",
     "PublicCatalogBudgetTests/testLargerPublicSupplementPreservesImportedGenerationAndPersonalDoorPrecedence",
-    "PublicCatalogBudgetTests/testReviewedCatalogLoadingMeasurements"
+    "PublicCatalogBudgetTests/testReviewedCatalogLoadingMeasurements",
+    "PublicCatalogSupplementTests/testMissingCommunityAreaIsSupplementedWithoutReplacingImportedIdentityOrPersonalDoor"
   ],
   "native": [
     "ApartmentFinderTests/ApartmentRouteFollowupTests/testAddingAfterBatchCompletionPreservesUndoThroughPersistentStoreReopen",

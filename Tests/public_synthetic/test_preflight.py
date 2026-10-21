@@ -230,6 +230,32 @@ class PublicPreflightTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(output.exists())
 
+    def test_community_area_scope_runs_exact_production_bundle_storage_and_physical_ui_cases(self):
+        workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
+        header = '          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<\'PY\'\n'
+        producer = textwrap.dedent(workflow.split(header, 1)[1].split('          PY\n', 1)[0])
+        expected = {
+            'native': [
+                'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport',
+                'ApartmentFinderTests/PublicCatalogBundleStoreTests/testSavedPackSupplementPreservesGenerationAndPersonalBytesAcrossReopen',
+            ],
+            'ui': [
+                'ApartmentFinderUITests/CommunityMapControlsTests/testPausedControlsStayCompactAndKeepTheirActions',
+                'ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors',
+                'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
+                'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch',
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'selection.json'
+            result = subprocess.run([sys.executable, '-B', '-c', producer, str(output)], cwd=ROOT,
+                env={**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': 'community-area-controls-regression'},
+                text=True, capture_output=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(output.read_text()), expected)
+        self.assertIn("'community-area-controls-regression':6", workflow)
+        self.assertIn('if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi', workflow)
+
     def test_workflow_optional_test_flags_are_nounset_safe_and_preserve_argument_boundaries(self):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
         expansion = '${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"}'
@@ -406,9 +432,9 @@ class PublicPreflightTests(unittest.TestCase):
 
     def test_reviewed_native_inventory_matches_current_source(self):
         artifact = module('public_preflight_artifact', ROOT / 'scripts/testflight-artifact.py')
-        self.assertEqual(artifact.expected_test_count(ROOT), 126)
+        self.assertEqual(artifact.expected_test_count(ROOT), 128)
         profile = json.loads((ROOT / 'scripts/iteration-profile.json').read_text())
-        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 40, 'original_pngs': 45})
+        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 42, 'original_pngs': 45})
 
 
     def test_public_selection_is_exact_and_excludes_private_acceptance(self):
@@ -416,7 +442,7 @@ class PublicPreflightTests(unittest.TestCase):
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 122),
+            ('core', 'Tests/ApartmentCoreTests', '', 123),
             ('native', 'NativeTests', 'ApartmentFinderTests/', 71),
             ('ui', 'UITests', 'ApartmentFinderUITests/', 2),
         ):

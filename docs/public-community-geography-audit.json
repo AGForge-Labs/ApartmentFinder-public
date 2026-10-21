@@ -1,0 +1,6509 @@
+{
+  "allCatalog": {
+    "buildingAreaReferences": 255,
+    "communities": 162,
+    "communitiesWithBuildingAreas": 10,
+    "fieldVerifiedPublicDoors": 0,
+    "mappedCommunityAreas": 76,
+    "missingCommunityAreas": 86,
+    "unitBuildingAssociations": 6923,
+    "unitPositions": 14517
+  },
+  "catalogPackVersion": "2026.10.21.1-public-community-areas",
+  "communities": [
+    {
+      "address": "2312 North Green Valley Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "23twelve",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "23Twelve",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "7960 Rafael Rivera Way",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26355375,
+          36.06838725
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "2one5",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "2one5",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 492,
+        "total": 492
+      }
+    },
+    {
+      "address": "9450 W Hacienda Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29892361457242,
+          36.09355727086523
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "abode-red-rock",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Abode Red Rock",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9500 W Maule Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29994428779301,
+          36.06385482505496
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "acerno",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Acerno Villas",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 188,
+        "total": 188
+      }
+    },
+    {
+      "address": "6355 S Riley St",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28510200000001,
+          36.07318775
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "alcove",
+      "countyZIPs": [
+        "89148"
+      ],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Alcove",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 302,
+        "total": 302
+      }
+    },
+    {
+      "address": "6350 S Riley St",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "alcove-6350",
+      "countyZIPs": [
+        "89113"
+      ],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "6350 S Riley St",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 154,
+        "total": 154
+      }
+    },
+    {
+      "address": "2030 Olympic Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "alma",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Alma",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9580 W Reno Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.30070753420557,
+          36.09729615528659
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "amber-hills",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Amber Hills Condominiums",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 176,
+        "total": 176
+      }
+    },
+    {
+      "address": "310 Annabelle Lane",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "annabelle-pines-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Annabelle Pines Apartments",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9330 W Maule Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29586580566337,
+          36.06378920403466
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "apache-hills",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Apache Hills Condominiums",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 88,
+        "total": 88
+      }
+    },
+    {
+      "address": "8855 W Arby Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28480376614708,
+          36.05827838536792
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "arbor-pointe",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Arbor Pointe",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 20,
+        "sourceMapped": 160,
+        "total": 180
+      }
+    },
+    {
+      "address": "8030 W Maule Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26675275,
+          36.06398925
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "arca",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "ARCA Apartments",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 272,
+        "total": 272
+      }
+    },
+    {
+      "address": "375 East Starr Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "arista-apartment-homes",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Arista Apartment Homes",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "11055 Las Vegas Boulevard South",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "ariva-luxury-residences",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ariva Luxury Residences",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "10175 Spencer Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "ascent-at-silverado",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ascent at Silverado",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "7660 W Eldorado Ln",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.25824092226334,
+          36.052893640129
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "ashton-place",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ashton Place Condominiums",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 88,
+        "total": 88
+      }
+    },
+    {
+      "address": "1130 Alper Center Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "aspire-at-alper",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Aspire at Alper",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "3161 Sunridge Heights Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "aspire-at-sunridge-heights",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Aspire at Sunridge Heights",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "6551 Annie Oakley Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "bellevue-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Bellevue Apartments",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "10000 South Maryland Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "belmont",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Belmont by Picerne",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9850 Bermuda Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.152758,
+          36.011296
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "map-bermuda-terrace"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "bermuda-terrace",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Bermuda Terrace",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2405 W Serene Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 2,
+        "total": 2
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "boca-raton",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Boca Raton",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 376,
+        "operatorMap": 0,
+        "total": 376
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8440 S Las Vegas Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "budget-suites-las-vegas-strip",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Budget Suites of America, Las Vegas Strip (extended-stay apartments)",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "7955-7975 W Badura Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26424179306409,
+          36.060246273761244
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "cabrillo",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Cabrillo",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 242,
+        "total": 242
+      }
+    },
+    {
+      "address": "11088 Amigo Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "cactus-valley-retirement-resort",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Cactus Valley Retirement Resort",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "525 Carnegie Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "carnegie-heights-at-henderson",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Carnegie Heights at Henderson",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "975 Seven Hills Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "chateau-calais",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Chateau Calais",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "6160 Rumrill St",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26713112515401,
+          36.0766549479273
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "cimarron-hills",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Cimarron Hills Condominiums",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 84,
+        "total": 84
+      }
+    },
+    {
+      "address": "6151 Mountain Vista Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "citi-lights",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Citi Lights",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8975 W Warm Springs Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28627764784693,
+          36.05477557800876
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "clubs-rhodes-ranch",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Clubs at Rhodes Ranch",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 2,
+        "sourceMapped": 0,
+        "total": 2
+      }
+    },
+    {
+      "address": "9490 Bermuda Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 35,
+        "total": 35
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1533865,
+          36.0177279
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-copper-creek"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "copper-creek",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Copper Creek Apartments",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 608,
+        "operatorMap": 0,
+        "total": 608
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8341 W Warm Springs Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.27292349999999,
+          36.054261249999996
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "core",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Core Apartment Homes",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 320,
+        "total": 320
+      }
+    },
+    {
+      "address": "8000 W Badura Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26542605628984,
+          36.06202313896852
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "coronado-palms",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Coronado Palms",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 384,
+        "total": 384
+      }
+    },
+    {
+      "address": "Mission Hills Dr (area reference)",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "court-yards-spanish-trail",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Court Yards at Spanish Trail",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9550 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.30033866506531,
+          36.08611619231565
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "crescendo",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Crescendo Senior Living",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "1281 Galleria Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "croix-townhomes",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Croix Townhomes",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "1350 Kelso Dunes Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "cyan-at-green-valley",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Cyan at Green Valley",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9655 Ensworth Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.179325,
+          36.01449
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "operator-desert-meadows-map"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "desert-meadows",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Desert Meadows Apartments",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9655 South Las Vegas Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "desert-sky",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Desert Sky",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "1450 East Pebble Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "destinations-pebble",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Destinations Pebble 55+ Active Adult Apartment Homes",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 46,
+        "total": 46
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8445 Las Vegas Boulevard South",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "diamond-sands",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Diamond Sands",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8158 Giles Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "dr-luther-mack-jr-senior-community",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Dr. Luther Mack, Jr. Senior Community",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "65 E Windmill Lane",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "dr-paul-meacham-senior-community",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Dr. Paul Meacham Senior Community",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "3080 St. Rose Pkwy",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "dune",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Dune",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 398,
+        "total": 398
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9235 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29282625,
+          36.08362825
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "ellison",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Ellison",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 294,
+        "total": 294
+      }
+    },
+    {
+      "address": "9265 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.2944685,
+          36.0836485
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "ely-gramercy",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ely at The Gramercy",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 157,
+        "total": 157
+      }
+    },
+    {
+      "address": "11425 Bermuda Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "elysian-at-st-rose",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Elysian at St. Rose",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9145 South Las Vegas Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.17487,
+          36.0241919
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-emerald-suites"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "emerald-suites",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Emerald Suites Las Vegas Boulevard",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "915 Alper Center Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "empire",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Empire",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2675 West Agate Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1769687,
+          36.0238535
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "public-ensemble"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "ensemble",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ensemble Senior Apartments",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2775 W Agate Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "ensemble-ii",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ensemble Senior Apartments, Phase II",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8150 Rafael Rivera Way",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.268921,
+          36.06856675
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "envision-at-sunset",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Envision at Sunset",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 384,
+        "total": 384
+      }
+    },
+    {
+      "address": "8777 W Maule Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28263067389467,
+          36.060144556675326
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "esplanade",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Esplanade",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 382,
+        "total": 382
+      }
+    },
+    {
+      "address": "7227 W Windmill Ln",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.24947275811488,
+          36.0393270302049
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "everett",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Everett Apartment Homes",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 178,
+        "total": 178
+      }
+    },
+    {
+      "address": "8760 W Patrick Ln",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28264600500165,
+          36.07959493890869
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "evo",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "EVO Apartments",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 2,
+        "sourceMapped": 374,
+        "total": 376
+      }
+    },
+    {
+      "address": "3140 St Rose Pkwy",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "evolve",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Evolve",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "6111 S Buffalo Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26311,
+          36.075705750000004
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "evora",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Evora",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 456,
+        "total": 456
+      }
+    },
+    {
+      "address": "9050 W Warm Springs Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28943016476333,
+          36.057360606476664
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "falls-rhodes-ranch",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Falls at Rhodes Ranch",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 360,
+        "total": 360
+      }
+    },
+    {
+      "address": "10244 Jeffreys Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "fora",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Fora Apartments",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "625 Whitney Ranch Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "galleria-palms-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Galleria Palms Apartments",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "Harbour Towne Ave (area reference)",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "gardens-spanish-trail",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Gardens at Spanish Trail",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2325 East Torino Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.120128,
+          36.0277493
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "map-heirloom-at-pebble"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "heirloom-at-pebble",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Heirloom at Pebble",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2570 W Horizon Ridge Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "horizon-pines",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Horizon Pines",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2575 West Horizon Ridge Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "horizon-ridge-park-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Horizon Ridge Park Apartments",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "3610 Sunridge Heights Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "ilumina-on-raiders-way",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ilumina on Raiders Way",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "Crooked Stick Way / Heather Downs Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.27806851546578,
+          36.09809166645102
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "islands-spanish-trail",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Islands at Spanish Trail",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2720 West Serene Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "jovanna-villas",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Jovanna Villas",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "7701 W Robindale Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.25997974549605,
+          36.0474520862906
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "la-paloma",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "La Paloma Condominiums",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 156,
+        "total": 156
+      }
+    },
+    {
+      "address": "2951 Siena Heights Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "la-serena-at-the-heights",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "La Serena at the Heights",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "930 Carnegie Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "la-vie-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "La Vie Apartments",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2300 East Silverado Ranch Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 27,
+        "total": 27
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1207166,
+          36.015003
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-latigo"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "latigo",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Latigo Condominiums",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 400,
+        "operatorMap": 0,
+        "total": 400
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "6550 Quarterhorse Ln",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29141518016999,
+          36.06931079648645
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "level25-curve",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Level 25 at The Curve by Picerne",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 326,
+        "total": 326
+      }
+    },
+    {
+      "address": "5453 S Durango Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28048084429682,
+          36.08986614349729
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "level25-durango",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Level 25 at Durango by Picerne",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 168,
+        "sourceMapped": 0,
+        "total": 168
+      }
+    },
+    {
+      "address": "9005 W Oquendo Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29083011363845,
+          36.08000133726486
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "level25-oquendo",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Level 25 at Oquendo by Picerne",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 302,
+        "total": 302
+      }
+    },
+    {
+      "address": "8251 W Sunset Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.27132020362583,
+          36.06930135547162
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "level25-sunset",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Level 25 at Sunset by Picerne",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 248,
+        "sourceMapped": 12,
+        "total": 260
+      }
+    },
+    {
+      "address": "2715 W Pebble Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "loft-5",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Loft 5",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "11611 South Las Vegas Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "lvb",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "LVB",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "304 East Silverado Ranch Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.159018,
+          36.01408
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "public-lyric-location-20261021"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "lyric",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Lyric",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 376,
+        "total": 376
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2096 Ramrod Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "madison-at-green-valley",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Madison at Green Valley",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "50 East Serene Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 9,
+        "total": 9
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1705479,
+          36.0221884
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-manhattan"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "manhattan",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Manhattan Condominiums",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 699,
+        "operatorMap": 0,
+        "total": 699
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "11210 South Las Vegas Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "marlowe-south-las-vegas",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Marlowe South Las Vegas",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "6655 S Fort Apache Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29832882544059,
+          36.06758790154419
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "martin-fort-apache",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Martin Apartment Homes",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 90,
+        "sourceMapped": 0,
+        "total": 90
+      }
+    },
+    {
+      "address": "3000 High View Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "martinique-bay",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Martinique Bay",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "7880 W Maule Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26277339477619,
+          36.06390669529705
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "maverick",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Maverick",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 8,
+        "sourceMapped": 0,
+        "total": 8
+      }
+    },
+    {
+      "address": "8680 W Oquendo Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.2807944,
+          36.0833189
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "melody",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Melody Senior Living",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2300 Via Inspirada",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "mera-henderson",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Mera Henderson",
+      "postalZIP": "89044",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9170 W Oquendo Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.298192,
+          36.082356499999996
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "mera-rhodes-ranch",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Mera Rhodes Ranch",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 173,
+        "total": 173
+      }
+    },
+    {
+      "address": "9242 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29408585581515,
+          36.086122068664764
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "michael-b",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Michael B Townhomes and Flats",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 252,
+        "total": 252
+      }
+    },
+    {
+      "address": "875 East Silverado Ranch Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "milan",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Milan Apartment Townhomes",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "555 East Silverado Ranch Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 24,
+        "total": 24
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1513547,
+          36.0115349
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-montana"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "montana",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Montana Condominiums",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 350,
+        "operatorMap": 0,
+        "total": 350
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "1050 Whitney Ranch Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "montego-bay",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Montego Bay",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8555 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.27695008212385,
+          36.0841942931318
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "morgyn-ridge",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Morgyn Ridge Condominiums",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 157,
+        "total": 157
+      }
+    },
+    {
+      "address": "8147 W Warm Springs Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26844025,
+          36.0546435
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "nightfall",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Night Fall",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 340,
+        "total": 340
+      }
+    },
+    {
+      "address": "2750 West Wigwam Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "octave-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Octave Apartments",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8255 S Las Vegas Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "one-las-vegas",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "One Las Vegas",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9314 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29631375,
+          36.086307749999996
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "pace",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Pace Apartments",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 192,
+        "total": 192
+      }
+    },
+    {
+      "address": "650 Whitney Ranch Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "palm-villas-at-whitney-ranch",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Palm Villas at Whitney Ranch",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2860 Blue Key Court",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "paragon-lofts",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Paragon Lofts (Phase 1)",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8610 South Maryland Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "paramount",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Paramount by Picerne",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 365,
+        "total": 365
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "71 East Agate Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 20,
+        "total": 20
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1684465,
+          36.0227748
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryInteriorReference",
+          "sourceIDs": [
+            "cc-boundary-park-avenue"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "park-avenue",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Park Avenue Condominiums",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 640,
+        "operatorMap": 0,
+        "total": 640
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8400 South Maryland Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "parkside-villas",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Parkside Villas Apartment Homes",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 200,
+        "total": 200
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "10192 South Maryland Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "parkway-at-silverado-ranch",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Parkway at Silverado Ranch",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8805 Jeffreys Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 29,
+        "total": 29
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1217212,
+          36.0300005
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-pebble-creek-village"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "pebble-creek-village",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Pebble Creek Village",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 196,
+        "operatorMap": 0,
+        "total": 196
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9620 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.30263452054467,
+          36.08604844016408
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "portola-russell",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Portola on Russell",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 280,
+        "total": 280
+      }
+    },
+    {
+      "address": "10115 Jeffreys Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "positano",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Positano",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "360 North Arroyo Grande Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "promontory-point",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Promontory Point",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8680 Ensworth Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "prosper-150",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Prosper 150",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9405 Eastern Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 14,
+        "total": 14
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.120546,
+          36.01842
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "map-rancho-serene"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "rancho-serene",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Rancho Serene Apartments",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 215,
+        "operatorMap": 0,
+        "total": 215
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "12215 Gilespie Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "revolution",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Revolution",
+      "postalZIP": "89044",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "3001 West Warm Springs Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "sage-at-green-valley",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Sage at Green Valley",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2320 Ione Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "salterra-at-las-vegas",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Salterra at Las Vegas",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8025 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26786101868768,
+          36.08408730670526
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "san-tropez",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "San Tropez",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 336,
+        "total": 336
+      }
+    },
+    {
+      "address": "175 E. Bruner Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "sant",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Santé",
+      "postalZIP": "89044",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 238,
+        "total": 238
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9000 South Las Vegas Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 72,
+        "total": 72
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1704736,
+          36.0264854
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-sedona"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "sedona",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Sedona on the Boulevard",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 560,
+        "operatorMap": 0,
+        "total": 560
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "1235 East Shelbourne Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "shelbourne-avenue",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Shelbourne Avenue Apartments",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "30 East Silverado Ranch Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.1673579,
+          36.0138087
+        ],
+        "evidence": {
+          "kind": "municipalBoundaryCentroid",
+          "sourceIDs": [
+            "cc-boundary-silverado-courts"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "silverado-courts",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Silverado Courts",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "3675 Volunteer Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "societe",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Societe",
+      "postalZIP": "89044",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8960 W Post Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28738244184702,
+          36.07424726675785
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "solana-post",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Solana Apartment Homes",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 12,
+        "sourceMapped": 192,
+        "total": 204
+      }
+    },
+    {
+      "address": "7685 Orange Fury Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "solaris-warm-springs",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Solaris at Warm Springs",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8920 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28618275000001,
+          36.08626375
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "south-beach",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "South Beach by Logan",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 220,
+        "total": 220
+      }
+    },
+    {
+      "address": "10200 Giles Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "south-blvd",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "South Blvd",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8070 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.26726340469114,
+          36.086008119883175
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "southern-vista",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Southern Vista Condominiums",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 272,
+        "total": 272
+      }
+    },
+    {
+      "address": "7450 S Eastern Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "southpark",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Southpark Condominiums",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9925 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.3095018507285,
+          36.08408448631948
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "southwest-ranch",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Southwest Ranch Condominiums",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 272,
+        "total": 272
+      }
+    },
+    {
+      "address": "7340 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.25068432782041,
+          36.08607415613024
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "spanish-ridge",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Spanish Ridge Apartments",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 180,
+        "total": 180
+      }
+    },
+    {
+      "address": "7380 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.25254130105023,
+          36.086033391383864
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "spanish-ridge-7380",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Spanish Ridge Apartments - 7380 Russell",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 68,
+        "total": 68
+      }
+    },
+    {
+      "address": "5355 S Rainbow Blvd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.24405466842379,
+          36.091450925964836
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "spanish-wells",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Spanish Wells Apartments",
+      "postalZIP": "89118",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 180,
+        "sourceMapped": 0,
+        "total": 180
+      }
+    },
+    {
+      "address": "Emerald Springs Ln (area reference)",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "springs-spanish-trail",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Springs at Spanish Trail",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "985 Wigwam Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "spur",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Spur",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "5450 S Fort Apache Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29620038193639,
+          36.089841512197204
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "st-clair",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "St. Clair Apartment Homes",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 184,
+        "total": 184
+      }
+    },
+    {
+      "address": "2615 W Gary Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 23,
+        "total": 23
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "st-james-place",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": false,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Southgate Condominiums",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 179,
+        "operatorMap": 0,
+        "total": 179
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2725 West Wigwam Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "summer-winds",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Summer Winds",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 350,
+        "total": 350
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9700 W Sunset Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.3045504461625,
+          36.07116663426975
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "sunset-canyon",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Sunset Canyon",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 187,
+        "total": 187
+      }
+    },
+    {
+      "address": "8985 S Durango Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28071398432738,
+          36.024888576653005
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "sunset-cliffs",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Sunset Cliffs",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 366,
+        "total": 366
+      }
+    },
+    {
+      "address": "551 Eiger Way",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "sunset-winds-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Sunset Winds Apartments",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "6355 S Durango Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28116735128853,
+          36.0730979348992
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "sw",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "SW",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 12,
+        "sourceMapped": 302,
+        "total": 314
+      }
+    },
+    {
+      "address": "7413 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.25302306123461,
+          36.08415282222198
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "tango-bay",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Tango Bay",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 136,
+        "total": 136
+      }
+    },
+    {
+      "address": "9465 W Post Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29960125,
+          36.07293575
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "tesora",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Tesora",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 322,
+        "total": 322
+      }
+    },
+    {
+      "address": "3660 St. Rose Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-aviator",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Aviator",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2001 Ramrod Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-bristol-at-sunset-apartment-homes",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Bristol at Sunset Apartment Homes",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "831 Coronado Center Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-domain",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Domain",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "10701 South Eastern Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-equestrian-by-picerne",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Equestrian by Picerne",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "430 East Cactus Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-lennox-las-vegas",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Lennox Las Vegas",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "981 Whitney Ranch Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-marlow",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Marlow",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2950 North Green Valley Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-passage-by-picerne",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Passage by Picerne",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "10250 Spencer Street",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-pearl-at-st-rose",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Pearl at St. Rose",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "6530 Annie Oakley Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-sorrelle",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Sorrelle",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "11000 S. Eastern Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-summit-by-picerne",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Summit by Picerne",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 366,
+        "total": 366
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "9280 W Post Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29526875,
+          36.074901
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "tommy-post",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Tommy at Post",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 384,
+        "total": 384
+      }
+    },
+    {
+      "address": "240 East Silverado Ranch Boulevard",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.16156023077903,
+          36.01422151644452
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "map-trend"
+          ]
+        },
+        "mapped": true
+      },
+      "communityID": "trend",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Trend!",
+      "postalZIP": "89183",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 361,
+        "total": 361
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "7255 W Sunset Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.24977704167185,
+          36.0685808727026
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "tuscano",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Tuscano Condominiums",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 352,
+        "total": 352
+      }
+    },
+    {
+      "address": "3370 St. Rose Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "veritas",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Veritas",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "8475 Michael Cherry Ave",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.27625325,
+          36.06381225
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "vestra",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Vestra at UnCommons",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 353,
+        "total": 353
+      }
+    },
+    {
+      "address": "325 North Gibson Road",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "villa-serena",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Villa Serena",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2815 West Ford Avenue",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "villanova",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Villanova",
+      "postalZIP": "89123",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "2362 North Green Valley Parkway",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "villas-at-green-valley",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Villas at Green Valley",
+      "postalZIP": "89014",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "845 Seven Hills Drive",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "vintage-at-seven-hills",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": true,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Vintage at Seven Hills",
+      "postalZIP": "89052",
+      "priorityArea": true,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 0,
+        "total": 0
+      }
+    },
+    {
+      "address": "7181 S Durango Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.28142376872177,
+          36.05736953180694
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "vistana",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Vistana Condominiums",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 732,
+        "total": 732
+      }
+    },
+    {
+      "address": "5055 S Fort Apache Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29888374999999,
+          36.097257
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "viva-summerland",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Viva Summerland",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 206,
+        "total": 206
+      }
+    },
+    {
+      "address": "9625 W Russell Rd",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.3027185,
+          36.0841505
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "viviani",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Viviani",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 270,
+        "total": 270
+      }
+    },
+    {
+      "address": "7017 S Buffalo Dr",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.2620192646534,
+          36.05929376453689
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "wyatt",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Wyatt",
+      "postalZIP": "89113",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 250,
+        "total": 250
+      }
+    },
+    {
+      "address": "5175 S Jerry Tarkanian Way",
+      "buildingAreaReferences": {
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.29130638637423,
+          36.09482322555539
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "zerzura",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Zerzura",
+      "postalZIP": "89148",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "sourceMapped": 466,
+        "total": 466
+      }
+    }
+  ],
+  "interpretation": [
+    "Community coordinates are area references, not building anchors or delivery doors.",
+    "Approximate building references are counted separately from unit positions and verified doors.",
+    "Unit/building associations supply labels only and do not count as geographic coverage.",
+    "Missing public verified doors does not imply that an owner has no saved personal pins.",
+    "This inventory does not establish complete apartment or ZIP coverage."
+  ],
+  "priorityArea": {
+    "buildingAreaReferences": 255,
+    "communities": 97,
+    "communitiesWithBuildingAreas": 10,
+    "fieldVerifiedPublicDoors": 0,
+    "mappedCommunityAreas": 16,
+    "missingCommunityAreas": 81,
+    "unitBuildingAssociations": 6923,
+    "unitPositions": 0
+  },
+  "priorityZIPs": [
+    "89123",
+    "89183",
+    "89052",
+    "89014",
+    "89044"
+  ],
+  "schemaVersion": 1,
+  "scope": "Bundled public catalog only; owner-recorded pins and imported private data are excluded."
+}

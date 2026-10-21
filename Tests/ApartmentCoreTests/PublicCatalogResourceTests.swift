@@ -14,7 +14,7 @@ final class PublicCatalogResourceTests: XCTestCase {
     }
     func testPublicPackDecodesQualifiedPositionsAndKeepsRileyAndRussellStreetsSeparate() throws {
         let data = try pack()
-        XCTAssertEqual(data.catalog.packVersion, "2026.10.20.5-public-89123")
+        XCTAssertEqual(data.catalog.packVersion, "2026.10.21.1-public-community-areas")
         XCTAssertEqual(data.catalog.communities.count, 162)
         XCTAssertEqual(data.places.count, 14_772)
         XCTAssertEqual(Set(data.places.map(\.id)).count, 14_772)
@@ -60,7 +60,7 @@ final class PublicCatalogResourceTests: XCTestCase {
             "montana", "latigo", "pebble-creek-village", "manhattan", "park-avenue", "silverado-courts", "emerald-suites", "desert-meadows"]
         let communities = data.catalog.communities.filter { expected.contains($0.id) }
         XCTAssertEqual(Set(communities.map(\.id)), expected)
-        XCTAssertEqual(communities.compactMap(\.coordinate).count, 15)
+        XCTAssertEqual(communities.compactMap(\.coordinate).count, 16)
         XCTAssertTrue(communities.allSatisfy { ["89123", "89183"].contains($0.zip) })
         XCTAssertFalse(data.places.contains { expected.contains($0.communityID) && $0.kind != .building })
         XCTAssertEqual(data.places.filter { expected.contains($0.communityID) }.count, 230)

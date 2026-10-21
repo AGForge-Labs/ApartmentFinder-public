@@ -119,7 +119,7 @@ def expected_test_count(root):
             tests.extend(re.findall(r"(?m)^\s*func\s+(test[A-Za-z0-9_]*)\s*\(",
                                     path.read_text(encoding="utf-8")))
         counts[directory] = len(tests)
-    require(counts == {"NativeTests": 86, "UITests": 40}, "Reviewed native test inventory changed")
+    require(counts == {"NativeTests": 86, "UITests": 42}, "Reviewed native test inventory changed")
     return sum(counts.values())
 
 
