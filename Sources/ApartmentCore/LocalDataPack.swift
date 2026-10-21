@@ -71,16 +71,27 @@ public struct LocalDataPack: Sendable {
             let p = feature.properties
             guard feature.type == "Feature", feature.geometry.type == "Point", !feature.id.isEmpty else { throw CoreError("Invalid point feature.") }
             try validate(p.communityID, p.sourceIDs)
-            if p.referenceKind != nil {
-                guard p.kind == .building, p.verification == .sourceMapped, p.unit.isEmpty, p.floor.isEmpty,
-                      !p.building.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                    throw CoreError("A legal-building reference cannot represent a unit, entrance or door.")
-                }
-            }
-            return Place(id: feature.id, communityID: p.communityID, address: p.address, building: p.building,
+            let place = Place(id: feature.id, communityID: p.communityID, address: p.address, building: p.building,
                          unit: p.unit, floor: p.floor, kind: p.kind, verification: p.verification,
                          coordinate: try coordinate(feature.geometry.coordinates), sourceIDs: p.sourceIDs,
-                         notes: p.notes, approachID: p.approachID, graphNodeID: p.graphNodeID, identityUncertain: p.identityUncertain, referenceKind: p.referenceKind)
+                         notes: p.notes, approachID: p.approachID, graphNodeID: p.graphNodeID, identityUncertain: p.identityUncertain, referenceKind: p.referenceKind,
+                         estimatedHorizontalUncertaintyM: p.estimatedHorizontalUncertaintyM, mapLabelOccurrenceID: p.mapLabelOccurrenceID, sourceUnitID: p.sourceUnitID, referenceAddresses: p.referenceAddresses)
+            if p.referenceKind != nil, !place.isValidBuildingAreaReference {
+                throw CoreError("A building reference must retain its source type and bounded area precision, without representing a unit, entrance or door.")
+            }
+            if p.referenceKind != .operatorMapBuildingArea, p.estimatedHorizontalUncertaintyM != nil || p.mapLabelOccurrenceID != nil {
+                throw CoreError("Operator area metadata requires an operator building-area reference.")
+            }
+            if let aliases = p.referenceAddresses {
+                let keys = aliases.map { LocalSearch.addressKey($0) }
+                let allowed = Set(catalog.communities.first { $0.id == p.communityID }?.matchingAddresses.map { LocalSearch.addressKey($0) } ?? [])
+                guard place.isValidBuildingAreaReference, !keys.isEmpty, keys.count <= 8, Set(keys).count == keys.count,
+                      !keys.contains(""), Set(keys).isSubset(of: allowed) else { throw CoreError("Building reference street aliases require explicit community streets.") }
+            }
+            if p.sourceUnitID != nil, p.kind != .unitPosition || p.verification != .sourceMapped || p.sourceUnitID?.isEmpty == true {
+                throw CoreError("A source unit identifier requires a published unit position.")
+            }
+            return place
         }
         let segments: [PathSegment] = try lines.features.map { feature in
             let p = feature.properties
@@ -113,14 +124,35 @@ public struct LocalDataPack: Sendable {
                     throw CoreError("Only an explicit operator schematic can supply a map floor label.")
                 }
             }
-            if let referenceID = a.referencePlaceID {
-                guard a.identifierKind == .municipalLegal, let reference = placesByID[referenceID],
-                      reference.referenceKind == .assessorLegalBuildingPolygon,
-                      reference.communityID == a.communityID, reference.building == a.building,
-                      LocalSearch.addressKey(reference.address) == addressKey else {
-                    throw CoreError("A unit association has no matching legal-building reference.")
+            if let sourceUnitID = a.sourceUnitID {
+                guard a.identifierKind == .operatorMap, !sourceUnitID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw CoreError("A source unit ID requires an explicit operator unit association.")
                 }
             }
+            if a.historicalLegalAlias != nil || a.historicalFloor != nil {
+                guard a.identifierKind == .municipalLegal, a.historicalLegalAlias == true else {
+                    throw CoreError("Historical floor interpretation requires an explicitly historical legal alias.")
+                }
+            }
+            if let referenceID = a.referencePlaceID {
+                guard let reference = placesByID[referenceID], reference.matchesBuildingAssociation(a) else {
+                    throw CoreError("A unit association has no matching source-qualified building reference.")
+                }
+            }
+        }
+        let floorReferences = catalog.unitFloorReferences ?? []
+        guard floorReferences.count <= 50_000, Set(floorReferences.map(\.id)).count == floorReferences.count else {
+            throw CoreError("Invalid or duplicate floor-only references.")
+        }
+        var floorKeys = Set<String>()
+        for reference in floorReferences {
+            try validate(reference.communityID, reference.sourceIDs)
+            let address = LocalSearch.addressKey(reference.address)
+            let key = [reference.communityID, address, LocalSearch.normalized(reference.unit)].joined(separator: "|")
+            guard !reference.id.isEmpty, !reference.unit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !reference.floor.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  addressesByCommunity[reference.communityID]?.contains(address) == true,
+                  floorKeys.insert(key).inserted else { throw CoreError("A floor-only reference has ambiguous identity.") }
         }
         try RileyPropertySeparation.apply(to: &catalog, places: &places)
         return LocalDataPack(catalog: catalog, places: places, paths: segments)
@@ -140,6 +172,10 @@ private struct PointProperties: Decodable {
     var approachID: String?; var graphNodeID: String?
     var identityUncertain: Bool?
     var referenceKind: BuildingReferenceKind?
+    var estimatedHorizontalUncertaintyM: Double?
+    var mapLabelOccurrenceID: String?
+    var sourceUnitID: String?
+    var referenceAddresses: [String]?
 }
 private struct LineFeature: Decodable {
     var type: String; var id: String; var geometry: LineGeometry; var properties: LineProperties

@@ -105,6 +105,8 @@ struct UITestManifestControls: ToolbarContent {
                     } else if arguments.contains("--community-area-manifest") {
                         // Public operator labels with invented deliveries, never an owner's manifest.
                         csv = "sequence,address,unit,notes\n1,304 E Silverado Ranch Blvd,1193,Synthetic regression\n2,304 E Silverado Ranch Blvd,2171,Synthetic regression\n3,240 E Silverado Ranch Blvd,PUBLIC-TEST-A,Synthetic unmapped unit\n4,240 E Silverado Ranch Blvd,PUBLIC-TEST-B,Synthetic unmapped unit\n"
+                    } else if arguments.contains("--reviewed-89123-manifest") {
+                        csv = "sequence,address,unit,notes\n1,1450 E Pebble Rd,1000,Synthetic regression\n2,1450 E Pebble Rd,1001,Synthetic regression\n3,1450 E Pebble Rd,1159,Synthetic regression\n4,8680 Ensworth St,101,Synthetic regression\n5,8680 Ensworth St,201,Synthetic regression\n6,2725 W Wigwam Ave,1041,Synthetic regression\n7,2725 W Wigwam Ave,1044,Synthetic regression\n8,2750 W Wigwam Ave,1101,Synthetic regression\n9,8255 S Las Vegas Blvd,101,Synthetic regression\n"
                     } else if arguments.contains("--tuscano-manifest") {
                         let units = arguments.contains("--unmapped-units") ? ["9998", "9999"] : ["2066", "2137"]
                         csv = "sequence,address,unit,notes\n1,123 Synthetic House Ln,,\n2,7255 W Sunset Rd,\(units[0]),Follow the marked pedestrian entrance and check the building sign before approaching. These are simulated instructions for checking long notes. Leave the parcel only at the unit door after checking the building number.\n3,7255 W Sunset Rd,\(units[1]),Simulator regression\n"

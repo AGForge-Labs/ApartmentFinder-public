@@ -23,13 +23,16 @@ SOURCE_FIELDS = set(SOURCE_FIELD_ORDER)
 COMMUNITY_FIELDS = {'id', 'name', 'address', 'zip', 'countyZIPs', 'deliveryAddresses', 'aliases',
                     'sourceIDs', 'researchStatus', 'gapNotes', 'latitude', 'longitude', 'publicEvidence'}
 POINT_FIELDS = {'communityID', 'address', 'building', 'unit', 'floor', 'kind', 'verification',
-                'sourceIDs', 'notes', 'identityUncertain', 'referenceKind'}
+                'sourceIDs', 'notes', 'identityUncertain', 'referenceKind', 'estimatedHorizontalUncertaintyM',
+                'mapLabelOccurrenceID', 'sourceUnitID', 'referenceAddresses'}
 PATH_FIELDS = {'communityID', 'fromNode', 'toNode', 'mode', 'oneWay', 'blocked', 'stairs',
                'confirmed', 'sourceIDs', 'notes'}
 CATALOG_FIELDS = {'schemaVersion', 'packVersion', 'generatedAt', 'scopeZIPs', 'deliveryAreaExceptions',
-                  'sources', 'communities', 'coverage', 'unitBuildingAssociations'}
-ASSOCIATION_FIELDS = {'id', 'communityID', 'address', 'unit', 'building', 'identifierKind', 'sourceIDs', 'referencePlaceID', 'mapFloor'}
+                  'sources', 'communities', 'coverage', 'unitBuildingAssociations', 'unitFloorReferences'}
+ASSOCIATION_FIELDS = {'id', 'communityID', 'address', 'unit', 'building', 'identifierKind', 'sourceIDs', 'referencePlaceID', 'mapFloor', 'sourceUnitID', 'historicalLegalAlias', 'historicalFloor'}
+FLOOR_REFERENCE_FIELDS = {'id', 'communityID', 'address', 'unit', 'floor', 'sourceIDs', 'sourceRevision'}
 BUILDING_REFERENCE_NOTE = 'Assessor legal-building reference derived from official condominium polygons; the area may include courtyard or open space and need not lie on a physical roof. Legal IDs may differ from physical signs; absolute positional accuracy is unknown. This is not a unit position, entrance or exact door.'
+OPERATOR_BUILDING_REFERENCE_NOTE = 'Approximate operator-map building area matched to public aerial imagery; working uncertainty {uncertainty:g} m is not guaranteed accuracy. Physical signs remain unverified. This is not a unit position, entrance or exact door.'
 COLLECTION_FIELDS = {'type', 'schemaVersion', 'packVersion', 'features'}
 GAP = 'Public property identity and available source positions are incomplete. No exact door, entrance or current access condition is established.'
 REFERENCE_GAP = 'Community coordinate is a published property reference or source-map reference only; it is not a unit, entrance or delivery destination.'
@@ -43,7 +46,7 @@ COVERAGE_NOTES = [
     'Public map geometry is unconfirmed. OpenStreetMap contributors attribution and ODbL requirements apply to retained OSM paths.',
 ]
 # Mirrors the dedicated compiled-public-bundle reader, not private/import budgets.
-RESOURCE_LIMITS = {'public-catalog.json': 2_100_000, 'public-locations.geojson': 64_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
+RESOURCE_LIMITS = {'public-catalog.json': 3_000_000, 'public-locations.geojson': 64_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
 RESOURCE_NAMES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson', 'known-addresses.json')
 
 
@@ -133,6 +136,8 @@ def position_note(feature):
             return note
         return SOURCE_NOTE + ' This 6355 position falls in the retained 89148 county polygon, consistent with the official postal address.'
     if 'referenceKind' in p:
+        if p['referenceKind'] == 'operatorMapBuildingArea':
+            return OPERATOR_BUILDING_REFERENCE_NOTE.format(uncertainty=p.get('estimatedHorizontalUncertaintyM', 0))
         return BUILDING_REFERENCE_NOTE
     return ESTIMATE_NOTE if p['verification'] == 'estimated' else SOURCE_NOTE
 
@@ -197,7 +202,9 @@ def validate_payload(catalog, locations, paths):
             if 'coordinate' in evidence:
                 proof = evidence['coordinate']
                 require('latitude' in community and set(proof) == {'kind', 'sourceIDs'} and proof['kind'] in
-                    ('operatorPublishedPropertyPoint', 'municipalBoundaryCentroid', 'municipalBoundaryInteriorReference'), 'Unsupported coordinate evidence')
+                    ('operatorPublishedPropertyPoint', 'municipalBoundaryCentroid', 'municipalBoundaryInteriorReference',
+                     'municipalBusinessLicensePropertyReference', 'hudApproximatePropertyReference',
+                     'countyPublishedAddressPropertyReference', 'countyTestAddressPropertyReference'), 'Unsupported coordinate evidence')
                 refs(proof['sourceIDs'])
             elif 'latitude' in community:
                 raise ValueError('Public field evidence omits coordinate provenance')
@@ -221,9 +228,20 @@ def validate_payload(catalog, locations, paths):
                 coordinate(feature['geometry']['coordinates'])
                 require(p['kind'] in ('building', 'unitPosition') and p['verification'] in ('sourceMapped', 'estimated'), 'Unsupported public precision or field verification')
                 if 'referenceKind' in p:
-                    require(p['referenceKind'] == 'assessorLegalBuildingPolygon' and p['kind'] == 'building' and
+                    require(p['referenceKind'] in ('assessorLegalBuildingPolygon', 'operatorMapBuildingArea') and p['kind'] == 'building' and
                             p['verification'] == 'sourceMapped' and p['unit'] == '' and p['floor'] == '' and
                             bool(p['building'].strip()), 'Unsupported building reference precision')
+                if p.get('referenceKind') == 'operatorMapBuildingArea':
+                    allowance = p.get('estimatedHorizontalUncertaintyM')
+                    require(type(allowance) in (int, float) and math.isfinite(allowance) and 1 <= allowance <= 100,
+                            'Unsupported operator building working uncertainty')
+                    text(p.get('mapLabelOccurrenceID'), 'operator map occurrence')
+                else:
+                    require('estimatedHorizontalUncertaintyM' not in p and 'mapLabelOccurrenceID' not in p,
+                            'Building-area metadata on an unrelated location')
+                if 'sourceUnitID' in p:
+                    text(p['sourceUnitID'], 'source unit ID')
+                    require(p['kind'] == 'unitPosition' and p['verification'] == 'sourceMapped', 'Source unit ID on a non-unit position')
                 require(p['notes'] == position_note(feature), 'Unexpected public position text')
                 for key in ('address', 'building', 'unit', 'floor'):
                     text(p[key], 'position ' + key, empty=True)
@@ -245,6 +263,15 @@ def validate_payload(catalog, locations, paths):
         aliases = {'west':'w', 'east':'e', 'north':'n', 'south':'s', 'road':'rd', 'street':'st',
                    'avenue':'ave', 'drive':'dr', 'lane':'ln', 'boulevard':'blvd', 'court':'ct', 'way':'wy', 'parkway':'pkwy'}
         return ' '.join(aliases.get(x, x) for x in re.findall(r'[a-z0-9]+', value.lower()))
+    for f in locations['features']:
+        p = f['properties']
+        if 'referenceAddresses' in p:
+            c = communities[p['communityID']]; values = p['referenceAddresses']
+            require(p.get('referenceKind') in ('assessorLegalBuildingPolygon', 'operatorMapBuildingArea') and
+                    isinstance(values, list) and 1 <= len(values) <= 8, 'Invalid building-reference street aliases')
+            for value in values: text(value, 'building-reference street alias')
+            keys = [address_key(value) for value in values]
+            require(len(set(keys)) == len(keys) and set(keys) <= {address_key(x) for x in [c['address']] + c.get('deliveryAddresses', [])}, 'Unsupported building-reference street alias')
     for a in associations:
         require(isinstance(a, dict) and set(a) <= ASSOCIATION_FIELDS, 'Unexpected building association fields')
         for key in ('id', 'communityID', 'address', 'unit', 'building', 'identifierKind'):
@@ -263,9 +290,32 @@ def validate_payload(catalog, locations, paths):
         if 'referencePlaceID' in a:
             text(a['referencePlaceID'], 'building reference ID')
             f = points_by_id.get(a['referencePlaceID']); p = f['properties'] if f else {}
-            require(a['identifierKind'] == 'municipalLegal' and p.get('referenceKind') == 'assessorLegalBuildingPolygon' and
-                    p.get('communityID') == a['communityID'] and address_key(p.get('address', '')) == address_key(a['address']) and
+            require((a['identifierKind'], p.get('referenceKind')) in
+                    (('municipalLegal', 'assessorLegalBuildingPolygon'), ('operatorMap', 'operatorMapBuildingArea')) and
+                    p.get('communityID') == a['communityID'] and address_key(a['address']) in
+                    {address_key(x) for x in [p.get('address', '')] + p.get('referenceAddresses', [])} and
                     p.get('building') == a['building'], 'Building association reference mismatch')
+        if 'sourceUnitID' in a:
+            text(a['sourceUnitID'], 'source unit ID')
+            require(a['identifierKind'] == 'operatorMap', 'Operator source unit ID on another namespace')
+        if 'historicalLegalAlias' in a or 'historicalFloor' in a:
+            require(a.get('historicalLegalAlias') is True and a['identifierKind'] == 'municipalLegal', 'Unsupported historical alias namespace')
+            require('historicalFloor' not in a or a['historicalFloor'] in ('ground', 'second'), 'Unsupported historical floor interpretation')
+    floors = catalog.get('unitFloorReferences', [])
+    require(isinstance(floors, list) and len(floors) <= 50_000, 'Invalid floor-only reference collection')
+    floor_ids, floor_keys = set(), set()
+    for row in floors:
+        require(isinstance(row, dict) and set(row) <= FLOOR_REFERENCE_FIELDS, 'Unexpected floor-only fields')
+        for key in ('id', 'communityID', 'address', 'unit', 'floor'):
+            text(row[key], 'floor-only ' + key)
+        require(row['communityID'] in communities and row['id'] not in floor_ids, 'Unknown or duplicate floor-only identity')
+        floor_ids.add(row['id']); refs(row['sourceIDs'])
+        c = communities[row['communityID']]
+        require(address_key(row['address']) in {address_key(x) for x in [c['address']] + c.get('deliveryAddresses', [])}, 'Floor-only street mismatch')
+        key = (row['communityID'], address_key(row['address']), row['unit'].lower())
+        require(key not in floor_keys, 'Ambiguous floor-only identity'); floor_keys.add(key)
+        if 'sourceRevision' in row:
+            require(isinstance(row['sourceRevision'], str) and re.fullmatch(r'\d{4}-\d{2}-\d{2}', row['sourceRevision']), 'Invalid floor source revision')
     return dict(communities=len(communities), positions=len(locations['features']), paths=len(paths['features']), sources=len(sources))
 
 
@@ -351,6 +401,14 @@ def gap_notes(community):
         notes.append('Reference coordinate is an area-weighted centroid derived from published municipal whole-community polygons. It is not an entrance, building or unit.')
     elif kind == 'municipalBoundaryInteriorReference':
         notes.append('Reference coordinate is a derived interior point of published municipal whole-community polygons, not their true centroid or an entrance, building or unit.')
+    elif kind == 'municipalBusinessLicensePropertyReference':
+        notes.append('County business-license property reference rematched by exact property name and address; record IDs may change. This is not a unit, building, entrance or door.')
+    elif kind == 'hudApproximatePropertyReference':
+        notes.append('HUD publishes this approximate property reference; physical accuracy is unmeasured. This is not a unit, building, entrance or door.')
+    elif kind == 'countyPublishedAddressPropertyReference':
+        notes.append('County published common-address property reference, independently matched to its property polygon. This is not a unit, building, entrance or door.')
+    elif kind == 'countyTestAddressPropertyReference':
+        notes.append('County Test service common-address reference, independently inside the matching property polygon; lower confidence service lineage is retained. This is not a unit, building, entrance or door.')
     return notes
 
 
@@ -369,6 +427,9 @@ def prepare(source, output, version, additions, evidence_file=None):
     if 'unitBuildingAssociations' in catalog:
         catalog['unitBuildingAssociations'] = [{k: copy.deepcopy(v) for k, v in a.items() if k in ASSOCIATION_FIELDS}
                                                for a in catalog['unitBuildingAssociations']]
+    if 'unitFloorReferences' in catalog:
+        catalog['unitFloorReferences'] = [{k: copy.deepcopy(v) for k, v in row.items() if k in FLOOR_REFERENCE_FIELDS}
+                                          for row in catalog['unitFloorReferences']]
     for filename in additions:
         extra = read_json(filename, 2_000_000)
         catalog['sources'].extend({k: s[k] for k in SOURCE_FIELD_ORDER} for s in extra['sources'])
@@ -415,6 +476,7 @@ def prepare(source, output, version, additions, evidence_file=None):
         community['gapNotes'] = gap_notes(community)
     refs = {i for c in catalog['communities'] for i in c['sourceIDs']}
     refs.update(i for a in catalog.get('unitBuildingAssociations', []) for i in a['sourceIDs'])
+    refs.update(i for a in catalog.get('unitFloorReferences', []) for i in a['sourceIDs'])
     refs.update(i for collection in collections for f in collection['features'] for i in f['properties']['sourceIDs'])
     catalog['sources'] = [s for s in catalog['sources'] if s['id'] in refs]
     counts = validate_payload(catalog, locations, paths)

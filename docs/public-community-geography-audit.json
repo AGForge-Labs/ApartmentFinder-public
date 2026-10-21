@@ -1,19 +1,20 @@
 {
   "allCatalog": {
-    "buildingAreaReferences": 255,
+    "buildingAreaReferences": 401,
     "communities": 162,
-    "communitiesWithBuildingAreas": 10,
+    "communitiesWithBuildingAreas": 19,
     "fieldVerifiedPublicDoors": 0,
-    "mappedCommunityAreas": 76,
-    "missingCommunityAreas": 86,
-    "unitBuildingAssociations": 6923,
-    "unitPositions": 14517
+    "mappedCommunityAreas": 96,
+    "missingCommunityAreas": 66,
+    "unitBuildingAssociations": 8015,
+    "unitPositions": 15019
   },
-  "catalogPackVersion": "2026.10.21.1-public-community-areas",
+  "catalogPackVersion": "2026.10.21.2-public-89123-geography",
   "communities": [
     {
       "address": "2312 North Green Valley Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -29,6 +30,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -39,12 +41,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -52,6 +56,7 @@
     {
       "address": "7960 Rafael Rivera Way",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -70,6 +75,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -80,12 +86,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 492,
         "total": 492
       }
@@ -93,6 +101,7 @@
     {
       "address": "9450 W Hacienda Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -111,6 +120,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -121,12 +131,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -134,6 +146,7 @@
     {
       "address": "9500 W Maule Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -152,6 +165,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -162,12 +176,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 188,
         "total": 188
       }
@@ -175,6 +191,7 @@
     {
       "address": "6355 S Riley St",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -195,6 +212,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -205,12 +223,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 302,
         "total": 302
       }
@@ -218,6 +238,7 @@
     {
       "address": "6350 S Riley St",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -235,6 +256,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -245,12 +267,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 154,
         "total": 154
       }
@@ -258,6 +282,7 @@
     {
       "address": "2030 Olympic Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -273,6 +298,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -283,12 +309,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -296,6 +324,7 @@
     {
       "address": "9580 W Reno Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -314,6 +343,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -324,12 +354,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 176,
         "total": 176
       }
@@ -337,6 +369,7 @@
     {
       "address": "310 Annabelle Lane",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -352,6 +385,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -362,12 +396,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -375,6 +411,7 @@
     {
       "address": "9330 W Maule Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -393,6 +430,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -403,12 +441,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 88,
         "total": 88
       }
@@ -416,6 +456,7 @@
     {
       "address": "8855 W Arby Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -434,6 +475,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -444,12 +486,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 20,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 160,
         "total": 180
       }
@@ -457,6 +501,7 @@
     {
       "address": "8030 W Maule Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -475,6 +520,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -485,12 +531,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 272,
         "total": 272
       }
@@ -498,6 +546,7 @@
     {
       "address": "375 East Starr Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -513,6 +562,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -523,12 +573,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -536,6 +588,7 @@
     {
       "address": "11055 Las Vegas Boulevard South",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -551,6 +604,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -561,12 +615,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -574,6 +630,7 @@
     {
       "address": "10175 Spencer Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -589,6 +646,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -599,12 +657,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -612,6 +672,7 @@
     {
       "address": "7660 W Eldorado Ln",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -630,6 +691,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -640,12 +702,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 88,
         "total": 88
       }
@@ -653,6 +717,7 @@
     {
       "address": "1130 Alper Center Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -668,6 +733,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -678,12 +744,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -691,6 +759,7 @@
     {
       "address": "3161 Sunridge Heights Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -706,6 +775,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -716,12 +786,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -729,6 +801,7 @@
     {
       "address": "6551 Annie Oakley Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -744,6 +817,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -754,12 +828,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -767,6 +843,7 @@
     {
       "address": "10000 South Maryland Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -782,6 +859,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -792,12 +870,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -805,6 +885,7 @@
     {
       "address": "9850 Bermuda Road",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -828,6 +909,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -838,12 +920,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -851,13 +935,23 @@
     {
       "address": "2405 W Serene Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 2,
         "total": 2
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.174835,
+          36.020114
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-boca-raton-84c173565338",
+            "g21-boca-raton-7e6e8b11c929"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "boca-raton",
       "countyZIPs": [],
@@ -866,9 +960,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -876,12 +971,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 376,
         "operatorMap": 0,
         "total": 376
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -889,13 +986,23 @@
     {
       "address": "8440 S Las Vegas Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17128549950823,
+          36.03664800000968
+        ],
+        "evidence": {
+          "kind": "municipalBusinessLicensePropertyReference",
+          "sourceIDs": [
+            "g21-budget-suites-las-vegas-strip-a1a48d5e7f7f",
+            "g21-budget-suites-las-vegas-strip-a52602a687d8"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "budget-suites-las-vegas-strip",
       "countyZIPs": [],
@@ -904,9 +1011,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -914,12 +1022,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -927,6 +1037,7 @@
     {
       "address": "7955-7975 W Badura Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -945,6 +1056,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -955,12 +1067,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 242,
         "total": 242
       }
@@ -968,6 +1082,7 @@
     {
       "address": "11088 Amigo Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -983,6 +1098,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -993,12 +1109,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1006,6 +1124,7 @@
     {
       "address": "525 Carnegie Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1021,6 +1140,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1031,12 +1151,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1044,6 +1166,7 @@
     {
       "address": "975 Seven Hills Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1059,6 +1182,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1069,12 +1193,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1082,6 +1208,7 @@
     {
       "address": "6160 Rumrill St",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1100,6 +1227,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1110,12 +1238,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 84,
         "total": 84
       }
@@ -1123,6 +1253,7 @@
     {
       "address": "6151 Mountain Vista Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1138,6 +1269,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1148,12 +1280,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1161,6 +1295,7 @@
     {
       "address": "8975 W Warm Springs Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1179,6 +1314,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1189,12 +1325,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 2,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 2
       }
@@ -1202,6 +1340,7 @@
     {
       "address": "9490 Bermuda Road",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 35,
         "total": 35
       },
@@ -1225,6 +1364,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -1235,12 +1375,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 608,
         "operatorMap": 0,
         "total": 608
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1248,6 +1390,7 @@
     {
       "address": "8341 W Warm Springs Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1266,6 +1409,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1276,12 +1420,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 320,
         "total": 320
       }
@@ -1289,6 +1435,7 @@
     {
       "address": "8000 W Badura Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1307,6 +1454,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1317,12 +1465,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 384,
         "total": 384
       }
@@ -1330,6 +1480,7 @@
     {
       "address": "Mission Hills Dr (area reference)",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1345,6 +1496,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1355,12 +1507,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1368,6 +1522,7 @@
     {
       "address": "9550 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1386,6 +1541,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1396,12 +1552,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1409,6 +1567,7 @@
     {
       "address": "1281 Galleria Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1424,6 +1583,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1434,12 +1594,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1447,6 +1609,7 @@
     {
       "address": "1350 Kelso Dunes Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1462,6 +1625,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1472,12 +1636,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1485,6 +1651,7 @@
     {
       "address": "9655 Ensworth Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1508,6 +1675,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1518,12 +1686,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1531,13 +1701,23 @@
     {
       "address": "9655 South Las Vegas Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17267099980933,
+          36.014778998906834
+        ],
+        "evidence": {
+          "kind": "hudApproximatePropertyReference",
+          "sourceIDs": [
+            "g21-desert-sky-24b843dd8521",
+            "g21-desert-sky-3b5effece92e"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "desert-sky",
       "countyZIPs": [],
@@ -1546,9 +1726,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -1556,12 +1737,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1569,8 +1752,9 @@
     {
       "address": "1450 East Pebble Road",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 10,
         "qualifiedLegalPolygon": 0,
-        "total": 0
+        "total": 10
       },
       "communityArea": {
         "coordinate": null,
@@ -1584,8 +1768,9 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
+        "buildingAreasMissing": false,
         "communityAreaMissing": true,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
@@ -1594,12 +1779,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
-        "operatorMap": 46,
-        "total": 46
+        "operatorMap": 416,
+        "total": 416
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1607,13 +1794,23 @@
     {
       "address": "8445 Las Vegas Boulevard South",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17471900053964,
+          36.03630600031391
+        ],
+        "evidence": {
+          "kind": "municipalBusinessLicensePropertyReference",
+          "sourceIDs": [
+            "g21-diamond-sands-a1a48d5e7f7f",
+            "g21-diamond-sands-2b5fb1f2c87f"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "diamond-sands",
       "countyZIPs": [],
@@ -1622,9 +1819,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -1632,12 +1830,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1645,13 +1845,23 @@
     {
       "address": "8158 Giles Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.1695915,
+          36.0411114
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-dr-luther-mack-jr-senior-community-39412ac335a6",
+            "g21-dr-luther-mack-jr-senior-community-4ff9053d5c7a"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "dr-luther-mack-jr-senior-community",
       "countyZIPs": [],
@@ -1660,9 +1870,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -1670,12 +1881,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1683,13 +1896,23 @@
     {
       "address": "65 E Windmill Lane",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.1694623,
+          36.0418629
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-dr-paul-meacham-senior-community-e6eb8ff353a9",
+            "g21-dr-paul-meacham-senior-community-a5d5a6c0190b"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "dr-paul-meacham-senior-community",
       "countyZIPs": [],
@@ -1698,9 +1921,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -1708,12 +1932,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1721,6 +1947,7 @@
     {
       "address": "3080 St. Rose Pkwy",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1736,6 +1963,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1746,12 +1974,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 398,
         "total": 398
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1759,6 +1989,7 @@
     {
       "address": "9235 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1777,6 +2008,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1787,12 +2019,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 294,
         "total": 294
       }
@@ -1800,6 +2034,7 @@
     {
       "address": "9265 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1818,6 +2053,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1828,12 +2064,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 157,
         "total": 157
       }
@@ -1841,6 +2079,7 @@
     {
       "address": "11425 Bermuda Road",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1856,6 +2095,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1866,12 +2106,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1879,8 +2121,9 @@
     {
       "address": "9145 South Las Vegas Boulevard",
       "buildingAreaReferences": {
-        "qualifiedLegalPolygon": 0,
-        "total": 0
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 10,
+        "total": 10
       },
       "communityArea": {
         "coordinate": [
@@ -1902,8 +2145,9 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
+        "buildingAreasMissing": false,
         "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
@@ -1912,12 +2156,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1925,6 +2171,7 @@
     {
       "address": "915 Alper Center Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1940,6 +2187,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -1950,12 +2198,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -1963,6 +2213,7 @@
     {
       "address": "2675 West Agate Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -1986,6 +2237,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -1996,12 +2248,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2009,13 +2263,22 @@
     {
       "address": "2775 W Agate Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17843150027795,
+          36.023795999821125
+        ],
+        "evidence": {
+          "kind": "municipalBusinessLicensePropertyReference",
+          "sourceIDs": [
+            "g21-ensemble-ii-8c9b1fddafd8"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "ensemble-ii",
       "countyZIPs": [],
@@ -2024,9 +2287,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -2034,12 +2298,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2047,6 +2313,7 @@
     {
       "address": "8150 Rafael Rivera Way",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2065,6 +2332,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2075,12 +2343,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 384,
         "total": 384
       }
@@ -2088,6 +2358,7 @@
     {
       "address": "8777 W Maule Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2106,6 +2377,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2116,12 +2388,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 382,
         "total": 382
       }
@@ -2129,6 +2403,7 @@
     {
       "address": "7227 W Windmill Ln",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2147,6 +2422,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2157,12 +2433,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 178,
         "total": 178
       }
@@ -2170,6 +2448,7 @@
     {
       "address": "8760 W Patrick Ln",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2188,6 +2467,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2198,12 +2478,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 2,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 374,
         "total": 376
       }
@@ -2211,6 +2493,7 @@
     {
       "address": "3140 St Rose Pkwy",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2226,6 +2509,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2236,12 +2520,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2249,6 +2535,7 @@
     {
       "address": "6111 S Buffalo Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2267,6 +2554,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2277,12 +2565,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 456,
         "total": 456
       }
@@ -2290,6 +2580,7 @@
     {
       "address": "9050 W Warm Springs Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2308,6 +2599,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2318,12 +2610,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 360,
         "total": 360
       }
@@ -2331,6 +2625,7 @@
     {
       "address": "10244 Jeffreys Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2346,6 +2641,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2356,12 +2652,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2369,6 +2667,7 @@
     {
       "address": "625 Whitney Ranch Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2384,6 +2683,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2394,12 +2694,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2407,6 +2709,7 @@
     {
       "address": "Harbour Towne Ave (area reference)",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2422,6 +2725,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2432,12 +2736,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2445,6 +2751,7 @@
     {
       "address": "2325 East Torino Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2468,6 +2775,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2478,12 +2786,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2491,6 +2801,7 @@
     {
       "address": "2570 W Horizon Ridge Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2506,6 +2817,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2516,12 +2828,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2529,6 +2843,7 @@
     {
       "address": "2575 West Horizon Ridge Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2544,6 +2859,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2554,12 +2870,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2567,6 +2885,7 @@
     {
       "address": "3610 Sunridge Heights Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2582,6 +2901,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2592,12 +2912,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2605,6 +2927,7 @@
     {
       "address": "Crooked Stick Way / Heather Downs Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2623,6 +2946,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2633,12 +2957,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2646,13 +2972,22 @@
     {
       "address": "2720 West Serene Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.1783835,
+          36.0212592
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-jovanna-villas-e1d4f802d7b5"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "jovanna-villas",
       "countyZIPs": [],
@@ -2661,9 +2996,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -2671,12 +3007,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2684,6 +3022,7 @@
     {
       "address": "7701 W Robindale Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2702,6 +3041,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2712,12 +3052,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 156,
         "total": 156
       }
@@ -2725,6 +3067,7 @@
     {
       "address": "2951 Siena Heights Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2740,6 +3083,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2750,12 +3094,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2763,6 +3109,7 @@
     {
       "address": "930 Carnegie Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2778,6 +3125,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -2788,12 +3136,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2801,6 +3151,7 @@
     {
       "address": "2300 East Silverado Ranch Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 27,
         "total": 27
       },
@@ -2824,6 +3175,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -2834,12 +3186,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 400,
         "operatorMap": 0,
         "total": 400
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -2847,6 +3201,7 @@
     {
       "address": "6550 Quarterhorse Ln",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2865,6 +3220,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2875,12 +3231,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 326,
         "total": 326
       }
@@ -2888,6 +3246,7 @@
     {
       "address": "5453 S Durango Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2906,6 +3265,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2916,12 +3276,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 168,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 168
       }
@@ -2929,6 +3291,7 @@
     {
       "address": "9005 W Oquendo Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2947,6 +3310,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2957,12 +3321,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 302,
         "total": 302
       }
@@ -2970,6 +3336,7 @@
     {
       "address": "8251 W Sunset Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -2988,6 +3355,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -2998,12 +3366,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 248,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 12,
         "total": 260
       }
@@ -3011,13 +3381,23 @@
     {
       "address": "2715 W Pebble Road",
       "buildingAreaReferences": {
-        "qualifiedLegalPolygon": 0,
-        "total": 0
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 8,
+        "total": 8
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.1773,
+          36.0281
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-loft-5-0dcdeea19b36",
+            "g21-loft-5-f3dcbbc3b6f8"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "loft-5",
       "countyZIPs": [],
@@ -3026,9 +3406,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -3036,12 +3417,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
-        "municipalLegal": 0,
+        "historicalLegalAliases": 0,
+        "municipalLegal": 272,
         "operatorMap": 0,
-        "total": 0
+        "total": 272
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3049,6 +3432,7 @@
     {
       "address": "11611 South Las Vegas Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3064,6 +3448,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3074,12 +3459,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3087,6 +3474,7 @@
     {
       "address": "304 East Silverado Ranch Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3110,6 +3498,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3120,12 +3509,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 376,
         "total": 376
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3133,6 +3524,7 @@
     {
       "address": "2096 Ramrod Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3148,6 +3540,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3158,12 +3551,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3171,6 +3566,7 @@
     {
       "address": "50 East Serene Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 9,
         "total": 9
       },
@@ -3194,6 +3590,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -3204,12 +3601,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 699,
         "operatorMap": 0,
         "total": 699
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3217,6 +3616,7 @@
     {
       "address": "11210 South Las Vegas Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3232,6 +3632,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3242,12 +3643,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3255,6 +3658,7 @@
     {
       "address": "6655 S Fort Apache Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3273,6 +3677,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3283,12 +3688,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 90,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 90
       }
@@ -3296,6 +3703,7 @@
     {
       "address": "3000 High View Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3311,6 +3719,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3321,12 +3730,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3334,6 +3745,7 @@
     {
       "address": "7880 W Maule Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3352,6 +3764,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3362,12 +3775,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 8,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 8
       }
@@ -3375,6 +3790,7 @@
     {
       "address": "8680 W Oquendo Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3393,6 +3809,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3403,12 +3820,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3416,6 +3835,7 @@
     {
       "address": "2300 Via Inspirada",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3431,6 +3851,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3441,12 +3862,14 @@
       "postalZIP": "89044",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3454,6 +3877,7 @@
     {
       "address": "9170 W Oquendo Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3472,6 +3896,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3482,12 +3907,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 173,
         "total": 173
       }
@@ -3495,6 +3922,7 @@
     {
       "address": "9242 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3513,6 +3941,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3523,12 +3952,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 252,
         "total": 252
       }
@@ -3536,6 +3967,7 @@
     {
       "address": "875 East Silverado Ranch Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3551,6 +3983,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3561,12 +3994,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3574,6 +4009,7 @@
     {
       "address": "555 East Silverado Ranch Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 24,
         "total": 24
       },
@@ -3597,6 +4033,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -3607,12 +4044,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 350,
         "operatorMap": 0,
         "total": 350
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3620,6 +4059,7 @@
     {
       "address": "1050 Whitney Ranch Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3635,6 +4075,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3645,12 +4086,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3658,6 +4101,7 @@
     {
       "address": "8555 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3676,6 +4120,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3686,12 +4131,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 157,
         "total": 157
       }
@@ -3699,6 +4146,7 @@
     {
       "address": "8147 W Warm Springs Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3717,6 +4165,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3727,12 +4176,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 340,
         "total": 340
       }
@@ -3740,13 +4191,22 @@
     {
       "address": "2750 West Wigwam Avenue",
       "buildingAreaReferences": {
-        "qualifiedLegalPolygon": 0,
-        "total": 0
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 35,
+        "total": 35
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17924559199349,
+          36.036602795617306
+        ],
+        "evidence": {
+          "kind": "countyTestAddressPropertyReference",
+          "sourceIDs": [
+            "g21-octave-apartments-1c94c9674cdd"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "octave-apartments",
       "countyZIPs": [],
@@ -3755,9 +4215,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -3765,12 +4226,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
-        "municipalLegal": 0,
+        "historicalLegalAliases": 264,
+        "municipalLegal": 264,
         "operatorMap": 0,
-        "total": 0
+        "total": 264
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3778,13 +4241,22 @@
     {
       "address": "8255 S Las Vegas Boulevard",
       "buildingAreaReferences": {
-        "qualifiedLegalPolygon": 0,
-        "total": 0
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 2,
+        "total": 2
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17597855010557,
+          36.03978767798283
+        ],
+        "evidence": {
+          "kind": "countyTestAddressPropertyReference",
+          "sourceIDs": [
+            "g21-one-las-vegas-0b4c782ae496"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "one-las-vegas",
       "countyZIPs": [],
@@ -3793,9 +4265,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 359,
       "gaps": {
-        "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -3803,12 +4276,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3816,6 +4291,7 @@
     {
       "address": "9314 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3834,6 +4310,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -3844,12 +4321,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 192,
         "total": 192
       }
@@ -3857,6 +4336,7 @@
     {
       "address": "650 Whitney Ranch Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -3872,6 +4352,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -3882,12 +4363,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3895,13 +4378,23 @@
     {
       "address": "2860 Blue Key Court",
       "buildingAreaReferences": {
-        "qualifiedLegalPolygon": 0,
-        "total": 0
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 8,
+        "total": 8
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17987442826488,
+          36.0317289787432
+        ],
+        "evidence": {
+          "kind": "countyPublishedAddressPropertyReference",
+          "sourceIDs": [
+            "g21-paragon-lofts-e089a5d5bd55",
+            "g21-paragon-lofts-34361a665a99"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "paragon-lofts",
       "countyZIPs": [],
@@ -3910,9 +4403,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -3920,12 +4414,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
-        "municipalLegal": 0,
+        "historicalLegalAliases": 0,
+        "municipalLegal": 16,
         "operatorMap": 0,
-        "total": 0
+        "total": 16
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3933,13 +4429,22 @@
     {
       "address": "8610 South Maryland Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 27,
         "qualifiedLegalPolygon": 0,
-        "total": 0
+        "total": 27
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.134211,
+          36.033529
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-paramount-868b263d0375"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "paramount",
       "countyZIPs": [],
@@ -3948,9 +4453,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -3958,12 +4464,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 365,
         "total": 365
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -3971,6 +4479,7 @@
     {
       "address": "71 East Agate Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 20,
         "total": 20
       },
@@ -3994,6 +4503,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -4004,12 +4514,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 640,
         "operatorMap": 0,
         "total": 640
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4017,13 +4529,22 @@
     {
       "address": "8400 South Maryland Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 25,
         "qualifiedLegalPolygon": 0,
-        "total": 0
+        "total": 25
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.135054,
+          36.036853
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-parkside-villas-7af66dd55071"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "parkside-villas",
       "countyZIPs": [],
@@ -4032,9 +4553,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -4042,12 +4564,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 200,
         "total": 200
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4055,6 +4579,7 @@
     {
       "address": "10192 South Maryland Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4070,6 +4595,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4080,12 +4606,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4093,6 +4621,7 @@
     {
       "address": "8805 Jeffreys Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 29,
         "total": 29
       },
@@ -4116,6 +4645,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -4126,12 +4656,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 196,
         "operatorMap": 0,
         "total": 196
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4139,6 +4671,7 @@
     {
       "address": "9620 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4157,6 +4690,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -4167,12 +4701,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 280,
         "total": 280
       }
@@ -4180,6 +4716,7 @@
     {
       "address": "10115 Jeffreys Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4195,6 +4732,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4205,12 +4743,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4218,6 +4758,7 @@
     {
       "address": "360 North Arroyo Grande Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4233,6 +4774,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4243,12 +4785,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4256,13 +4800,22 @@
     {
       "address": "8680 Ensworth Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.179064,
+          36.032371
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-prosper-150-e5d1cc7d19e0"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "prosper-150",
       "countyZIPs": [],
@@ -4271,29 +4824,33 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Prosper 150",
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
-        "sourceMapped": 0,
-        "total": 0
+        "operatorSourceUnitReferences": 150,
+        "sourceMapped": 150,
+        "total": 150
       }
     },
     {
       "address": "9405 Eastern Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 14,
         "total": 14
       },
@@ -4317,6 +4874,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -4327,12 +4885,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 215,
         "operatorMap": 0,
         "total": 215
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4340,6 +4900,7 @@
     {
       "address": "12215 Gilespie Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4355,6 +4916,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4365,12 +4927,14 @@
       "postalZIP": "89044",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4378,6 +4942,7 @@
     {
       "address": "3001 West Warm Springs Road",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4393,6 +4958,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4403,12 +4969,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4416,6 +4984,7 @@
     {
       "address": "2320 Ione Road",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4431,6 +5000,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4441,12 +5011,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4454,6 +5026,7 @@
     {
       "address": "8025 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4472,6 +5045,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -4482,12 +5056,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 336,
         "total": 336
       }
@@ -4495,6 +5071,7 @@
     {
       "address": "175 E. Bruner Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4510,6 +5087,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4520,12 +5098,14 @@
       "postalZIP": "89044",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 238,
         "total": 238
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4533,6 +5113,7 @@
     {
       "address": "9000 South Las Vegas Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 72,
         "total": 72
       },
@@ -4556,6 +5137,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
@@ -4566,12 +5148,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 560,
         "operatorMap": 0,
         "total": 560
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4579,13 +5163,24 @@
     {
       "address": "1235 East Shelbourne Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.1352237,
+          36.0385623
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-shelbourne-avenue-22cdc044b127",
+            "g21-shelbourne-avenue-89c1cc498cf9",
+            "g21-shelbourne-avenue-7bef52f23be2"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "shelbourne-avenue",
       "countyZIPs": [],
@@ -4594,9 +5189,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -4604,12 +5200,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4617,6 +5215,7 @@
     {
       "address": "30 East Silverado Ranch Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4640,6 +5239,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -4650,12 +5250,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4663,6 +5265,7 @@
     {
       "address": "3675 Volunteer Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4678,6 +5281,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4688,12 +5292,14 @@
       "postalZIP": "89044",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4701,6 +5307,7 @@
     {
       "address": "8960 W Post Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4719,6 +5326,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -4729,12 +5337,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 12,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 192,
         "total": 204
       }
@@ -4742,6 +5352,7 @@
     {
       "address": "7685 Orange Fury Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4757,6 +5368,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4767,12 +5379,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4780,6 +5394,7 @@
     {
       "address": "8920 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4798,6 +5413,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -4808,12 +5424,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 220,
         "total": 220
       }
@@ -4821,6 +5439,7 @@
     {
       "address": "10200 Giles Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4836,6 +5455,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -4846,12 +5466,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4859,6 +5481,7 @@
     {
       "address": "8070 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4877,6 +5500,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -4887,12 +5511,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 272,
         "total": 272
       }
@@ -4900,13 +5526,22 @@
     {
       "address": "7450 S Eastern Avenue",
       "buildingAreaReferences": {
-        "qualifiedLegalPolygon": 0,
-        "total": 0
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 21,
+        "total": 21
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.11715542813825,
+          36.053837127580024
+        ],
+        "evidence": {
+          "kind": "countyTestAddressPropertyReference",
+          "sourceIDs": [
+            "g21-southpark-0b4c782ae496"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "southpark",
       "countyZIPs": [],
@@ -4915,9 +5550,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
-        "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "buildingAreasMissing": false,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -4925,12 +5561,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
-        "municipalLegal": 0,
+        "historicalLegalAliases": 0,
+        "municipalLegal": 168,
         "operatorMap": 0,
-        "total": 0
+        "total": 168
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -4938,6 +5576,7 @@
     {
       "address": "9925 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4956,6 +5595,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -4966,12 +5606,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 272,
         "total": 272
       }
@@ -4979,6 +5621,7 @@
     {
       "address": "7340 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -4997,6 +5640,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5007,12 +5651,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 180,
         "total": 180
       }
@@ -5020,6 +5666,7 @@
     {
       "address": "7380 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5038,6 +5685,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5048,12 +5696,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 68,
         "total": 68
       }
@@ -5061,6 +5711,7 @@
     {
       "address": "5355 S Rainbow Blvd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5079,6 +5730,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5089,12 +5741,14 @@
       "postalZIP": "89118",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 180,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 180
       }
@@ -5102,6 +5756,7 @@
     {
       "address": "Emerald Springs Ln (area reference)",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5117,6 +5772,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5127,12 +5783,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5140,6 +5798,7 @@
     {
       "address": "985 Wigwam Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5155,6 +5814,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5165,12 +5825,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5178,6 +5840,7 @@
     {
       "address": "5450 S Fort Apache Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5196,6 +5859,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5206,12 +5870,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 184,
         "total": 184
       }
@@ -5219,13 +5885,22 @@
     {
       "address": "2615 W Gary Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 23,
         "total": 23
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.17660106211244,
+          36.014518038381176
+        ],
+        "evidence": {
+          "kind": "countyTestAddressPropertyReference",
+          "sourceIDs": [
+            "g21-st-james-place-1c94c9674cdd"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "st-james-place",
       "countyZIPs": [],
@@ -5234,9 +5909,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -5244,12 +5920,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 179,
         "operatorMap": 0,
         "total": 179
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5257,13 +5935,23 @@
     {
       "address": "2725 West Wigwam Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.1775339,
+          36.034899
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-summer-winds-c1ae9272bb3d",
+            "g21-summer-winds-baa8df57e45b"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "summer-winds",
       "countyZIPs": [],
@@ -5272,29 +5960,33 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Summer Winds",
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
-        "operatorMap": 350,
-        "total": 350
+        "operatorMap": 352,
+        "total": 352
       },
       "unitPositions": {
         "estimated": 0,
-        "sourceMapped": 0,
-        "total": 0
+        "operatorSourceUnitReferences": 352,
+        "sourceMapped": 352,
+        "total": 352
       }
     },
     {
       "address": "9700 W Sunset Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5313,6 +6005,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5323,12 +6016,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 187,
         "total": 187
       }
@@ -5336,6 +6031,7 @@
     {
       "address": "8985 S Durango Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5354,6 +6050,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5364,12 +6061,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 366,
         "total": 366
       }
@@ -5377,6 +6076,7 @@
     {
       "address": "551 Eiger Way",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5392,6 +6092,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5402,12 +6103,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5415,6 +6118,7 @@
     {
       "address": "6355 S Durango Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5433,6 +6137,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5443,12 +6148,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 12,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 302,
         "total": 314
       }
@@ -5456,6 +6163,7 @@
     {
       "address": "7413 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5474,6 +6182,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5484,12 +6193,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 136,
         "total": 136
       }
@@ -5497,6 +6208,7 @@
     {
       "address": "9465 W Post Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5515,6 +6227,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5525,12 +6238,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 322,
         "total": 322
       }
@@ -5538,6 +6253,7 @@
     {
       "address": "3660 St. Rose Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5553,6 +6269,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5563,12 +6280,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5576,6 +6295,7 @@
     {
       "address": "2001 Ramrod Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5591,6 +6311,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5601,12 +6322,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5614,6 +6337,7 @@
     {
       "address": "831 Coronado Center Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5629,6 +6353,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5639,12 +6364,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5652,6 +6379,7 @@
     {
       "address": "10701 South Eastern Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5667,6 +6395,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5677,12 +6406,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5690,6 +6421,7 @@
     {
       "address": "430 East Cactus Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5705,6 +6437,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5715,12 +6448,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5728,6 +6463,7 @@
     {
       "address": "981 Whitney Ranch Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5743,6 +6479,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5753,12 +6490,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5766,6 +6505,7 @@
     {
       "address": "2950 North Green Valley Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5781,6 +6521,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5791,12 +6532,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5804,6 +6547,7 @@
     {
       "address": "10250 Spencer Street",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5819,6 +6563,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5829,12 +6574,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5842,6 +6589,7 @@
     {
       "address": "6530 Annie Oakley Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5857,6 +6605,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5867,12 +6616,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5880,6 +6631,7 @@
     {
       "address": "11000 S. Eastern Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5895,6 +6647,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -5905,12 +6658,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 366,
         "total": 366
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -5918,6 +6673,7 @@
     {
       "address": "9280 W Post Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5936,6 +6692,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5946,12 +6703,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 384,
         "total": 384
       }
@@ -5959,6 +6718,7 @@
     {
       "address": "240 East Silverado Ranch Boulevard",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -5982,6 +6742,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -5992,12 +6753,14 @@
       "postalZIP": "89183",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 361,
         "total": 361
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -6005,6 +6768,7 @@
     {
       "address": "7255 W Sunset Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6023,6 +6787,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -6033,12 +6798,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 352,
         "total": 352
       }
@@ -6046,6 +6813,7 @@
     {
       "address": "3370 St. Rose Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6061,6 +6829,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -6071,12 +6840,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -6084,6 +6855,7 @@
     {
       "address": "8475 Michael Cherry Ave",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6102,6 +6874,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -6112,12 +6885,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 353,
         "total": 353
       }
@@ -6125,6 +6900,7 @@
     {
       "address": "325 North Gibson Road",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6140,6 +6916,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -6150,12 +6927,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -6163,13 +6942,23 @@
     {
       "address": "2815 West Ford Avenue",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
       "communityArea": {
-        "coordinate": null,
-        "evidence": null,
-        "mapped": false
+        "coordinate": [
+          -115.178755,
+          36.031678
+        ],
+        "evidence": {
+          "kind": "operatorPublishedPropertyPoint",
+          "sourceIDs": [
+            "g21-villanova-fb8ad865af22",
+            "g21-villanova-f4a387964af0"
+          ]
+        },
+        "mapped": true
       },
       "communityID": "villanova",
       "countyZIPs": [],
@@ -6178,9 +6967,10 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
-        "communityAreaMissing": true,
+        "communityAreaMissing": false,
         "unitPositionsMissing": true,
         "verifiedPublicDoorsMissing": true
       },
@@ -6188,12 +6978,14 @@
       "postalZIP": "89123",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -6201,6 +6993,7 @@
     {
       "address": "2362 North Green Valley Parkway",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6216,6 +7009,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -6226,12 +7020,14 @@
       "postalZIP": "89014",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -6239,6 +7035,7 @@
     {
       "address": "845 Seven Hills Drive",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6254,6 +7051,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
@@ -6264,12 +7062,14 @@
       "postalZIP": "89052",
       "priorityArea": true,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
       }
@@ -6277,6 +7077,7 @@
     {
       "address": "7181 S Durango Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6295,6 +7096,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -6305,12 +7107,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 732,
         "total": 732
       }
@@ -6318,6 +7122,7 @@
     {
       "address": "5055 S Fort Apache Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6336,6 +7141,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -6346,12 +7152,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 206,
         "total": 206
       }
@@ -6359,6 +7167,7 @@
     {
       "address": "9625 W Russell Rd",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6377,6 +7186,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -6387,12 +7197,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 270,
         "total": 270
       }
@@ -6400,6 +7212,7 @@
     {
       "address": "7017 S Buffalo Dr",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6418,6 +7231,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -6428,12 +7242,14 @@
       "postalZIP": "89113",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 250,
         "total": 250
       }
@@ -6441,6 +7257,7 @@
     {
       "address": "5175 S Jerry Tarkanian Way",
       "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
         "qualifiedLegalPolygon": 0,
         "total": 0
       },
@@ -6459,6 +7276,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
@@ -6469,12 +7287,14 @@
       "postalZIP": "89148",
       "priorityArea": false,
       "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
         "municipalLegal": 0,
         "operatorMap": 0,
         "total": 0
       },
       "unitPositions": {
         "estimated": 0,
+        "operatorSourceUnitReferences": 0,
         "sourceMapped": 466,
         "total": 466
       }
@@ -6488,14 +7308,14 @@
     "This inventory does not establish complete apartment or ZIP coverage."
   ],
   "priorityArea": {
-    "buildingAreaReferences": 255,
+    "buildingAreaReferences": 401,
     "communities": 97,
-    "communitiesWithBuildingAreas": 10,
+    "communitiesWithBuildingAreas": 19,
     "fieldVerifiedPublicDoors": 0,
-    "mappedCommunityAreas": 16,
-    "missingCommunityAreas": 81,
-    "unitBuildingAssociations": 6923,
-    "unitPositions": 0
+    "mappedCommunityAreas": 36,
+    "missingCommunityAreas": 61,
+    "unitBuildingAssociations": 8015,
+    "unitPositions": 502
   },
   "priorityZIPs": [
     "89123",

@@ -195,7 +195,8 @@ jobs:
                   'ApartmentFinderUITests/HeadingUpNavigationTests/testStartsHeadingUpAndResumePreservesChosenStop',
                   'ApartmentFinderUITests/HeadingUpNavigationTests/testResumePreservesActualPinchZoomAndSelectedStop',
                   'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch']}
-              assert set(selection['ui'])<=set(focused['ui'])
+              assert {'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
+                      'ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation'}<=set(focused['ui'])
               assert all(item.removeprefix('ApartmentFinderUITests/') in test_ids('.', 'UITests') for item in focused['ui'])
               selection=focused
           with open(sys.argv[1],'w') as output: json.dump(selection,output)
@@ -204,7 +205,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':73}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -215,7 +216,7 @@ jobs:
           PY
           FILTERS=()
           while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
-          EXPECTED_NATIVE_COUNT=73
+          EXPECTED_NATIVE_COUNT=79
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi
@@ -258,3 +259,31 @@ jobs:
           print(json.dumps(dict(scope='public-synthetic-'+os.environ['PUBLIC_SYNTHETIC_SCOPE'],passed=len(expected),full_acceptance=False,release_eligible=False)))
           PY
           "${WORK[@]}" python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/checkout-validation"
+      - name: Build unsigned Release app and embedded Share extension
+        if: ${{ inputs.scope == 'regression' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$EXPECTED_COMMIT" ]]
+          xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -jobs 1 \
+            -derivedDataPath "$RUNNER_TEMP/UnsignedRelease" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+          python3 -B - "$RUNNER_TEMP/UnsignedRelease/Build/Products/Release-iphoneos/ApartmentFinder.app" <<'PY'
+          import hashlib,json,os,plistlib,sys
+          from pathlib import Path
+          app=Path(sys.argv[1]); share=app/'PlugIns/ApartmentFinderShare.appex'
+          for bundle,identity in [(app,'dev.galaxybigbird.ApartmentFinder'),(share,'dev.galaxybigbird.ApartmentFinder.Share')]:
+              info=plistlib.loads((bundle/'Info.plist').read_bytes())
+              assert info['CFBundleIdentifier']==identity
+              assert (bundle/info['CFBundleExecutable']).is_file()
+              assert not (bundle/'_CodeSignature').exists()
+          review=json.loads(Path('data/public-catalog-review.json').read_bytes())
+          for name,digest in review['resourcesSHA256'].items():
+              assert hashlib.sha256((app/name).read_bytes()).hexdigest()==digest
+          assert hashlib.sha256((share/'known-addresses.json').read_bytes()).hexdigest()==review['resourcesSHA256']['known-addresses.json']
+          print(json.dumps(dict(scope='unsigned-release-app-and-share',candidate=os.environ['EXPECTED_COMMIT'],app=True,embeddedShare=True,resourcesMatch=True,distributionSigning=False,upload=False,full_acceptance=False,release_eligible=False)))
+          PY
+          python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/unsigned-release-checkout"

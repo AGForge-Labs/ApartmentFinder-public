@@ -43,7 +43,7 @@ class CommunityGapAuditTests(unittest.TestCase):
         row = result['communities'][0]
         self.assertFalse(row['communityArea']['mapped'])
         self.assertEqual(row['doors'], dict(geographicPoints=2, fieldVerified=1))
-        self.assertEqual(row['unitPositions'], dict(total=2, estimated=1, sourceMapped=1))
+        self.assertEqual(row['unitPositions'], dict(total=2, estimated=1, sourceMapped=1, operatorSourceUnitReferences=0))
 
     def test_checked_in_inventory_is_deterministic_and_covers_every_catalog_record(self):
         catalog = json.loads((ROOT / 'data/public-catalog.json').read_bytes())
@@ -54,6 +54,24 @@ class CommunityGapAuditTests(unittest.TestCase):
         self.assertEqual({r['communityID'] for r in result['communities']}, {c['id'] for c in catalog['communities']})
         self.assertEqual(len(result['communities']), len(catalog['communities']))
         self.assertEqual(result['allCatalog']['unitBuildingAssociations'], len(catalog['unitBuildingAssociations']))
+
+    def test_final_gap_list_matches_exact_catalog_identities_and_geography(self):
+        audit = json.loads((ROOT / 'docs/public-community-geography-audit.json').read_bytes())
+        ledger = json.loads((ROOT / 'docs/89123-catalog-geography-gaps.json').read_bytes())
+        rows = [row for row in audit['communities'] if row['postalZIP'] == '89123']
+        missing = {row['communityID']: row for row in rows
+                   if row['buildingAreaReferences']['total'] == 0 and row['unitPositions']['total'] == 0}
+        self.assertEqual(len(rows), ledger['catalogCommunities'])
+        self.assertEqual(len(missing), ledger['communitiesWithoutUnitOrBuildingGeography'])
+        self.assertEqual(len(rows) - len(missing), ledger['communitiesWithSomeUnitOrBuildingGeography'])
+        self.assertEqual({row['communityId'] for row in ledger['communities']}, set(missing))
+        self.assertFalse(ledger['completeZIPCoverage'])
+        self.assertEqual(ledger['verifiedDoorsAdded'], 0)
+        for row in ledger['communities']:
+            self.assertEqual(row['catalogAddress'], missing[row['communityId']]['address'])
+            self.assertEqual(row['name'], missing[row['communityId']]['name'])
+            self.assertTrue(row['sourceURLs'])
+            self.assertTrue(all(url.startswith('https://') for url in row['sourceURLs']))
 
 
 if __name__ == '__main__':

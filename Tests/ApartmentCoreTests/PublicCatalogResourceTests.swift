@@ -14,16 +14,17 @@ final class PublicCatalogResourceTests: XCTestCase {
     }
     func testPublicPackDecodesQualifiedPositionsAndKeepsRileyAndRussellStreetsSeparate() throws {
         let data = try pack()
-        XCTAssertEqual(data.catalog.packVersion, "2026.10.21.1-public-community-areas")
+        XCTAssertEqual(data.catalog.packVersion, "2026.10.21.2-public-89123-geography")
         XCTAssertEqual(data.catalog.communities.count, 162)
-        XCTAssertEqual(data.places.count, 14_772)
-        XCTAssertEqual(Set(data.places.map(\.id)).count, 14_772)
-        XCTAssertEqual(data.places.filter { $0.verification == .sourceMapped }.count, 14_030)
+        XCTAssertEqual(data.places.count, 15_420)
+        XCTAssertEqual(Set(data.places.map(\.id)).count, 15_420)
+        XCTAssertEqual(data.places.filter { $0.verification == .sourceMapped }.count, 14_678)
         XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 742)
-        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 14_517)
-        XCTAssertEqual(data.places.filter { $0.referenceKind == .assessorLegalBuildingPolygon && $0.kind == .building && $0.unit.isEmpty && $0.floor.isEmpty }.count, 255)
-        XCTAssertEqual(data.catalog.unitBuildingAssociations?.count, 6_923)
-        XCTAssertEqual(data.catalog.unitBuildingAssociations?.filter { $0.referencePlaceID != nil }.count, 4_223)
+        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 15_019)
+        XCTAssertEqual(data.places.filter { $0.referenceKind == .assessorLegalBuildingPolygon && $0.kind == .building && $0.unit.isEmpty && $0.floor.isEmpty }.count, 339)
+        XCTAssertEqual(data.places.filter { $0.referenceKind == .operatorMapBuildingArea }.count, 62)
+        XCTAssertEqual(data.catalog.unitBuildingAssociations?.count, 8_015)
+        XCTAssertEqual(data.catalog.unitBuildingAssociations?.filter { $0.referencePlaceID != nil }.count, 5_924)
         XCTAssertEqual(data.paths.count, 17)
         XCTAssertTrue(data.paths.allSatisfy { !$0.confirmed })
         XCTAssertFalse(data.catalog.coverage.inventoryComplete)
@@ -60,10 +61,10 @@ final class PublicCatalogResourceTests: XCTestCase {
             "montana", "latigo", "pebble-creek-village", "manhattan", "park-avenue", "silverado-courts", "emerald-suites", "desert-meadows"]
         let communities = data.catalog.communities.filter { expected.contains($0.id) }
         XCTAssertEqual(Set(communities.map(\.id)), expected)
-        XCTAssertEqual(communities.compactMap(\.coordinate).count, 16)
+        XCTAssertEqual(communities.compactMap(\.coordinate).count, 20)
         XCTAssertTrue(communities.allSatisfy { ["89123", "89183"].contains($0.zip) })
         XCTAssertFalse(data.places.contains { expected.contains($0.communityID) && $0.kind != .building })
-        XCTAssertEqual(data.places.filter { expected.contains($0.communityID) }.count, 230)
+        XCTAssertEqual(data.places.filter { expected.contains($0.communityID) }.count, 302)
         let index = try KnownAddressIndex.read(Data(contentsOf: dataDirectory.appendingPathComponent("known-addresses.json")))
         XCTAssertEqual(index.addresses, data.catalog.communities.flatMap(\.matchingAddresses))
         for street in ["6350 S Riley St", "6355 S Riley St", "7340 W Russell Rd", "7380 W Russell Rd", "9400 Bermuda Road"] {
@@ -76,7 +77,7 @@ final class PublicCatalogResourceTests: XCTestCase {
             "st-james-place", "southpark", "paragon-lofts"]
         let added = data.catalog.communities.filter { addedIDs.contains($0.id) }
         XCTAssertEqual(Set(added.map(\.id)), addedIDs)
-        XCTAssertTrue(added.allSatisfy { $0.zip == "89123" && $0.coordinate == nil })
+        XCTAssertTrue(added.allSatisfy { $0.zip == "89123" && $0.coordinate != nil })
         XCTAssertFalse(data.places.contains { addedIDs.contains($0.communityID) && $0.kind != .building })
         let phaseOne = try XCTUnwrap(added.first { $0.id == "paragon-lofts" })
         XCTAssertEqual(phaseOne.matchingAddresses.count, 8)
@@ -87,9 +88,9 @@ final class PublicCatalogResourceTests: XCTestCase {
         }
         let legal = data.catalog.unitBuildingAssociations?.filter { $0.communityID == "st-james-place" } ?? []
         let schematic = data.catalog.unitBuildingAssociations?.filter { $0.communityID == "destinations-pebble" } ?? []
-        XCTAssertEqual(legal.count, 179); XCTAssertEqual(schematic.count, 46)
+        XCTAssertEqual(legal.count, 179); XCTAssertEqual(schematic.count, 416)
         XCTAssertTrue(legal.allSatisfy { $0.identifierKind == .municipalLegal && $0.referencePlaceID != nil && $0.mapFloor == nil })
-        XCTAssertTrue(schematic.allSatisfy { $0.identifierKind == .operatorMap && $0.referencePlaceID == nil && $0.mapFloor == nil })
+        XCTAssertTrue(schematic.allSatisfy { $0.identifierKind == .operatorMap && $0.referencePlaceID != nil && $0.mapFloor != nil })
         let legalMatch = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: "2615 W Gary Avenue", unit: "1001"),
             communityID: "st-james-place", places: data.places, buildingAssociations: legal)
         XCTAssertEqual(legalMatch.buildingReferences.count, 1)
@@ -98,18 +99,24 @@ final class PublicCatalogResourceTests: XCTestCase {
         let schematicMatch = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: "1450 E Pebble Road", unit: "1022"),
             communityID: "destinations-pebble", places: data.places, buildingAssociations: schematic)
         XCTAssertEqual(schematicMatch.buildingAssociations.count, 1)
-        XCTAssertTrue(schematicMatch.buildingReferences.isEmpty)
+        XCTAssertEqual(schematicMatch.buildingReferences.count, 1)
         XCTAssertTrue(schematicMatch.candidates.isEmpty); XCTAssertNil(schematicMatch.readyDoor)
         for (communityID, street, unit, building, count) in [
             ("parkside-villas", "8400 S Maryland Parkway", "1018", "5", 200),
-            ("summer-winds", "2725 W Wigwam Avenue", "1001", "1", 350)] {
+            ("summer-winds", "2725 W Wigwam Avenue", "1001", "1", 352)] {
             let rows = data.catalog.unitBuildingAssociations?.filter { $0.communityID == communityID } ?? []
             XCTAssertEqual(rows.count, count)
-            XCTAssertTrue(rows.allSatisfy { $0.identifierKind == .operatorMap && $0.referencePlaceID == nil && $0.mapFloor == nil })
+            XCTAssertTrue(rows.allSatisfy { $0.identifierKind == .operatorMap })
             let match = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: street, unit: unit),
                 communityID: communityID, places: data.places, buildingAssociations: rows)
-            XCTAssertEqual(match.buildingAssociations.first?.building, building)
-            XCTAssertTrue(match.buildingReferences.isEmpty); XCTAssertTrue(match.candidates.isEmpty)
+            if communityID == "summer-winds" {
+                XCTAssertEqual(match.candidates.first?.building, building)
+                XCTAssertEqual(match.candidates.first?.floor, "1")
+                XCTAssertTrue(match.buildingReferences.isEmpty)
+            } else {
+                XCTAssertEqual(match.buildingAssociations.first?.building, building)
+                XCTAssertEqual(match.buildingReferences.count, 1); XCTAssertTrue(match.candidates.isEmpty)
+            }
             XCTAssertNil(match.readyDoor)
         }
         let wrongStreet = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: "7450 S Eastern Avenue", unit: "1001"),

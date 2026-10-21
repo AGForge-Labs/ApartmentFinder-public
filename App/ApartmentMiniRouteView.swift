@@ -342,13 +342,27 @@ struct ApartmentMiniRouteView: View {
             ForEach(match.buildingAssociations) { association in
                 Text("\(association.identifierKind.label) \(association.building)\(association.mapFloor.map { " · Map floor \($0)" } ?? "") · signs unverified")
                     .font(.subheadline).accessibilityIdentifier("mini.buildingAssociation.\(association.id)")
+                if association.historicalLegalAlias == true {
+                    Text("Historical legal alias · \(association.historicalFloor.map { "\($0.rawValue) floor from recorded plat interpretation · " } ?? "")current signage unverified")
+                        .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.historicalAliasWarning")
+                }
+            }
+            ForEach(match.floorReferences) { reference in
+                Text("County floor \(reference.floor)\(reference.sourceRevision.map { " (\($0))" } ?? "") · tower unknown · current signage unverified")
+                    .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.floorOnlyReference")
             }
             if !match.buildingReferences.isEmpty {
-                Text("Approximate legal-building area · may include courtyard/open space · accuracy unknown · not a unit position, entrance or door")
+                Text(match.buildingReferences.contains(where: { $0.referenceKind == .operatorMapBuildingArea }) ?
+                     "Approximate operator building area · working uncertainty \(Int(match.buildingReferences.compactMap(\.estimatedHorizontalUncertaintyM).max() ?? 20)) m, not guaranteed accuracy · not a unit position, entrance or door" :
+                     "Approximate legal-building area · may include courtyard/open space · accuracy unknown · not a unit position, entrance or door")
                     .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.buildingReferenceWarning")
             } else if !match.buildingAssociations.isEmpty {
                 Text("Building and door locations not mapped")
                     .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.associationWithoutPoint")
+            }
+            if match.readyDoor == nil && match.candidates.contains(where: { $0.sourceUnitID != nil }) {
+                Text("Operator unit reference · source floor label · physical accuracy unmeasured · not an entrance or door")
+                    .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.sourceUnitWarning")
             }
             if match.readyDoor == nil && match.candidates.contains(where: { $0.verification == .estimated }) {
                 Label("May be inaccurate · Check or correct this pin on arrival", systemImage: "exclamationmark.triangle.fill")

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUTC": "2026-10-21T06:44:14.152456+00:00",
+  "scope": "31 communities whose postalZIP is 89123 in the pinned public catalog audit; not a census of all ZIP housing",
+  "catalogCommunities": 31,
+  "communitiesWithSomeUnitOrBuildingGeography": 19,
+  "communitiesWithoutUnitOrBuildingGeography": 12,
+  "completeZIPCoverage": false,
+  "verifiedDoorsAdded": 0,
+  "partialCoverage": [
+    "One Las Vegas: 359 floor-only records, two contextual tower areas, zero unit-to-tower joins.",
+    "Octave: 264 historical legal aliases; current physical inventory and signage are not certified."
+  ],
+  "communities": [
+    {
+      "communityId": "budget-suites-las-vegas-strip",
+      "name": "Budget Suites of America, Las Vegas Strip (extended-stay apartments)",
+      "catalogAddress": "8440 S Las Vegas Boulevard",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.budgetsuites.com/property.php?name=lasvegas_the_strip",
+        "https://www.budgetsuites.com/images/maps/lasvegas_the_strip.jpg"
+      ],
+      "checkedFinding": "Downloaded and visually inspected the official property's published map. It is a regional street map with a property star, not a labeled siteplan. No new building or unit geography accepted.",
+      "nextEvidenceNeeded": "Readable public operator siteplan or unambiguous building-label geography needed. The regional property map must not be treated as building/unit evidence."
+    },
+    {
+      "communityId": "desert-meadows",
+      "name": "Desert Meadows Apartments",
+      "catalogAddress": "9655 Ensworth Street",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.desertmeadowsapartments.com/floorplans/",
+        "https://www.desertmeadowsapartments.com/gallery/",
+        "https://www.desertmeadowsapartments.com/ebrochure/"
+      ],
+      "checkedFinding": "Prior floorplan useSVGMap:false evidence retained. Fresh official gallery HTML links 25 community-photo assets, no labeled siteplan recovered. E-Brochure page is an outbound email/share form, not a public downloadable PDF; no form submitted or outreach performed.",
+      "nextEvidenceNeeded": "Public labeled siteplan or exact building-to-unit geographic source needed; lack of a source in these checks does not prove none exists."
+    },
+    {
+      "communityId": "desert-sky",
+      "name": "Desert Sky",
+      "catalogAddress": "9655 South Las Vegas Boulevard",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.desertskyaptslasvegas.com/",
+        "https://www.desertskyaptslasvegas.com/las-vegas/dsk-desert-sky/conventional/",
+        "https://www.desertskyaptslasvegas.com/las-vegas/dsk-desert-sky/photos/",
+        "https://www.desertskyaptslasvegas.com/floorplans/las-vegas-NV/dsk-desert-sky/the-amber-715665-1/",
+        "https://medialibrarycfo.entrata.com/14917/MLv3/3/68/2022/3/7/63127/5fea0ad314fe98.98038348552.jpg"
+      ],
+      "checkedFinding": "New verified unlabeled siteplan retained for future corroboration. Zero new geographic pins accepted. Existing stable community ID preserved. Do not geocode every unit to one property or building centroid.",
+      "nextEvidenceNeeded": "A labeled siteplan or authoritative geographic unit/building source that links actual unit IDs to positions. This reference image alone does not resolve the gap."
+    },
+    {
+      "communityId": "diamond-sands",
+      "name": "Diamond Sands",
+      "catalogAddress": "8445 Las Vegas Boulevard South",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://dsalasvegas.com/",
+        "https://dsalasvegas.com/floor-plans/",
+        "https://dsalasvegas.com/photos/",
+        "https://www.apartments.com/diamond-sands-on-the-boulevard-las-vegas-nv/vvm86yf/",
+        "https://dsalasvegas.com/location/"
+      ],
+      "checkedFinding": "All 96 exact linked photos in the operator gallery were visually checked across two passes. They contain interiors, amenities and exteriors, no labeled siteplan or geographic unit/building map. Official model floorplans and property-location map also provide no unit/building geography. This does not prove no source exists elsewhere.",
+      "nextEvidenceNeeded": "Readable public operator-labeled siteplan or exact building-to-unit geographic source."
+    },
+    {
+      "communityId": "dr-luther-mack-jr-senior-community",
+      "name": "Dr. Luther Mack, Jr. Senior Community",
+      "catalogAddress": "8158 Giles Street",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://gpmglv.com/homes/dr-luther-mack-jr-senior-community"
+      ],
+      "checkedFinding": "Operator provides an exact-address embedded location map, already captured by prior pass. No labeled apartment/site/floor plan was located in this bounded check.",
+      "nextEvidenceNeeded": "An exact-address public site plan or floor diagram with apartment numbers, or an authoritative unit-to-building range schedule. A single community point is not 48 unit positions."
+    },
+    {
+      "communityId": "dr-paul-meacham-senior-community",
+      "name": "Dr. Paul Meacham Senior Community",
+      "catalogAddress": "65 E Windmill Lane",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.gpmglv.com/homes/dr-paul-meacham-senior-community"
+      ],
+      "checkedFinding": "Operator provides an exact-address embedded location map, already captured by prior pass. No labeled apartment/site/floor plan was located in this bounded check.",
+      "nextEvidenceNeeded": "An exact-address public floor diagram or apartment-number schedule linked to a physical building. Keep this distinct from adjacent Dr. Luther Mack."
+    },
+    {
+      "communityId": "ensemble",
+      "name": "Ensemble Senior Apartments",
+      "catalogAddress": "2675 West Agate Avenue",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.heirloombyovation.com/apartments/nv/las-vegas/ensemble/",
+        "https://www.heirloombyovation.com/apartments/nv/las-vegas/ensemble/floor-plans",
+        "https://maps.clarkcountynv.gov/assessor/AssessorParcelDetail/parceldetail.aspx?hdnparcel=17720601012&logo=1"
+      ],
+      "checkedFinding": "Prior official inventory exposes model labels with BUILDING 1 / BUILDING 2 but no numbered units and no physical building/address crosswalk. Disabled template map is already rejected as foreign and was not fetched again. Current exact-address county parcel independently confirms separation from 2775.",
+      "nextEvidenceNeeded": "Operator or government map explicitly locating Building 1 and Building 2 and joining numbered apartments to each; authoritative 2675 versus 2775 address crosswalk. Do not assume Building 2 equals Ensemble II."
+    },
+    {
+      "communityId": "ensemble-ii",
+      "name": "Ensemble Senior Apartments, Phase II",
+      "catalogAddress": "2775 W Agate Avenue",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.clarkcountynv.gov/assets/documents/residents/community_housing_fund/caper-2024-final-w-updates-12-2-25.pdf#page=64"
+      ],
+      "checkedFinding": "County parcel at exact address independently corroborates existing separate Ensemble II identity. No separate address-bound operator site plan or numbered unit map was found. Existing county reference remains property/parcel-level only.",
+      "nextEvidenceNeeded": "An address-bound labeled plan or unit range schedule for 2775 W Agate. Do not import 2675 operator model labels as a proven phase/building crosswalk."
+    },
+    {
+      "communityId": "heirloom-at-pebble",
+      "name": "Heirloom at Pebble",
+      "catalogAddress": "2325 East Torino Avenue",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.heirloombyovation.com/apartments/nv/las-vegas/heirloom-at-pebble/",
+        "https://www.heirloombyovation.com/apartments/nv/las-vegas/heirloom-at-pebble/floor-plans",
+        "https://ovationco.com/2025/06/24/heirloom-at-pebble-grand-opening-a-new-chapter-in-affordable-senior-living/"
+      ],
+      "checkedFinding": "Fresh official floor-plan configuration says locationName Heirloom at Pebble, locationAddress 2325 E Torino Ave, Las Vegas, NV, enableSiteMap none. It retains the same disabled foreign SightMap template; not fetched. County address service returns one exact address point at -115.11979841089108,36.02934912146685; not a building or door.",
+      "nextEvidenceNeeded": "An official as-built or public floor plan with actual apartment labels, ideally four-floor stacking, tied to exact parcel/address. Recover the 2023 project narrative source below if a current official copy exists."
+    },
+    {
+      "communityId": "jovanna-villas",
+      "name": "Jovanna Villas",
+      "catalogAddress": "2720 West Serene Avenue",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://westcorpmg.com/properties/jovanna-villas/",
+        "https://westcorpmg.com/portfolio/",
+        "https://maps.clarkcountynv.gov/arcgis/rest/services/OpenDoor/Address_OpenDoor/FeatureServer/2/query?where=%28strno%3D2815+AND+UPPER%28strname%29%3D%27FORD%27%29+OR+%28strno%3D2720+AND+UPPER%28strname%29%3D%27SERENE%27%29+OR+%28strno%3D2750+AND+UPPER%28strname%29%3D%27WIGWAM%27%29&outFields=OBJECTID%2CAPN%2Cstrno%2Cstrdir%2Cstrname%2Cstrtype%2Cstrunit%2Csubname%2CLEGAL_DESCR3%2CSTATELANDUSE&returnGeometry=true&returnCentroid=true&outSR=4326&resultRecordCount=1000&orderByFields=APN&f=json"
+      ],
+      "checkedFinding": "No new readable operator unit/building map recovered; no previously rejected floorplan-template coordinates reused.",
+      "nextEvidenceNeeded": "An exact-address labeled operator siteplan or explicit unit/building geographic crosswalk; no property-center duplication."
+    },
+    {
+      "communityId": "shelbourne-avenue",
+      "name": "Shelbourne Avenue Apartments",
+      "catalogAddress": "1235 East Shelbourne Avenue",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.accessiblespace.org/accessible-housing/nevada-accessible-housing/shelbourne-avenue-apartments/",
+        "https://accessiblespace.caveman.hutman.net/wp-content/uploads/2024/05/Shelbourne-1.pdf"
+      ],
+      "checkedFinding": "Operator publishes a brochure. Indexed brochure content shows generic apartment layouts and a neighborhood locator map, not an enumerated unit/building plan. Brochure was not represented as an individual-unit source.",
+      "nextEvidenceNeeded": "A floor/elevator directory or exact-address drawing showing the 24 actual apartment labels and their floor/building associations."
+    },
+    {
+      "communityId": "villanova",
+      "name": "Villanova",
+      "catalogAddress": "2815 West Ford Avenue",
+      "postalZIP": "89123",
+      "sourceURLs": [
+        "https://www.villanovalv.com/photogallery",
+        "https://maps.clarkcountynv.gov/arcgis/rest/services/OpenDoor/Address_OpenDoor/FeatureServer/2/query?where=%28strno%3D2815+AND+UPPER%28strname%29%3D%27FORD%27%29+OR+%28strno%3D2720+AND+UPPER%28strname%29%3D%27SERENE%27%29+OR+%28strno%3D2750+AND+UPPER%28strname%29%3D%27WIGWAM%27%29&outFields=OBJECTID%2CAPN%2Cstrno%2Cstrdir%2Cstrname%2Cstrtype%2Cstrunit%2Csubname%2CLEGAL_DESCR3%2CSTATELANDUSE&returnGeometry=true&returnCentroid=true&outSR=4326&resultRecordCount=1000&orderByFields=APN&f=json"
+      ],
+      "checkedFinding": "No new explicit unit/building-to-map evidence recovered; absence across the full web is not asserted.",
+      "nextEvidenceNeeded": "An exact-address labeled operator siteplan or explicit unit/building geographic crosswalk; no property-center duplication."
+    }
+  ]
+}

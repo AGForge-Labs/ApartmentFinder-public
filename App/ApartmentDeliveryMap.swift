@@ -22,6 +22,7 @@ struct ApartmentDeliveryMap: View {
     @State private var diagnosticMapCenter: CLLocationCoordinate2D?
     #endif
     @AppStorage(DeliveryMapStyle.preferenceKey) private var mapStyle = DeliveryMapStyle.satellite
+    private var focusedStopID: String? { selectedStopID ?? group.nextStop?.id }
 
     private struct Pin: Identifiable {
         let stop: DeliveryStop
@@ -31,7 +32,11 @@ struct ApartmentDeliveryMap: View {
         var id: String { stop.id + "|" + place.id }
         var color: Color { stop.completed ? .gray : ready ? .teal : .orange }
         var status: String {
+            if place.referenceKind == .operatorMapBuildingArea {
+                return "Approximate operator building area; working uncertainty \(Int(place.estimatedHorizontalUncertaintyM ?? 0)) meters is not guaranteed accuracy; physical signs unverified; not a door"
+            }
             if buildingReference { return "Legal building reference; physical signs and accuracy unverified; not a door" }
+            if !ready && place.sourceUnitID != nil { return "Published operator unit reference; not an entrance or checked door" }
             let accuracy = ready ? "Checked door" : place.verification == .estimated ? "May be inaccurate" : "Suggested location"
             return stop.completed ? "Delivered, \(accuracy)" : accuracy
         }
@@ -41,11 +46,23 @@ struct ApartmentDeliveryMap: View {
         let coordinates: [CLLocationCoordinate2D]
     }
     private var pins: [Pin] {
-        group.stops.flatMap { stop -> [Pin] in
+        let raw = group.stops.flatMap { stop -> [Pin] in
             let match = store.doorMatch(stop, groupID: group.id)
             let places = match.readyDoor.map { [$0] } ?? match.candidates
             return (places.isEmpty ? match.buildingReferences : places).map { Pin(stop: stop, place: $0, ready: match.readyDoor?.id == $0.id) }
         }
+        // The selected unit represents its explicit area; repeated printed
+        // building badges never collapse distinct source roof-lobe IDs.
+        var chosen: [String: Pin] = [:]
+        for pin in raw where pin.buildingReference {
+            if chosen[pin.place.id] == nil || pin.stop.id == focusedStopID { chosen[pin.place.id] = pin }
+        }
+        return raw.filter { !$0.buildingReference || chosen[$0.place.id]?.stop.id == $0.stop.id }
+    }
+    private var contextAreas: [Place] { store.buildingAreaReferences(groupID: group.id) }
+    private var fallbackCoordinates: [Coordinate] {
+        let areas = contextAreas.map(\.coordinate)
+        return areas.isEmpty ? group.coordinate.map { [$0] } ?? [] : areas
     }
     private func guides(_ pins: [Pin]) -> [OrderGuide] {
         let byStop = Dictionary(grouping: pins.filter { !$0.buildingReference }, by: { $0.stop.id })
@@ -74,8 +91,14 @@ struct ApartmentDeliveryMap: View {
                     MapPolyline(coordinates: guide.coordinates)
                         .stroke(.teal.opacity(0.75), style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
                 }
-                if pins.isEmpty, let center = group.coordinate {
-                    Marker("Community area", systemImage: "building.2", coordinate: center.cl).tint(.secondary)
+                if pins.isEmpty {
+                    if !contextAreas.isEmpty {
+                        ForEach(contextAreas) { area in
+                            Marker("\(area.building) area · unit location unknown", systemImage: "building.2", coordinate: area.coordinate.cl).tint(.orange)
+                        }
+                    } else if let center = group.coordinate {
+                        Marker("Community area", systemImage: "building.2", coordinate: center.cl).tint(.secondary)
+                    }
                 }
                 if let fix = location.fix, fix.usable(at: .now) {
                     Annotation("You", coordinate: fix.coordinate.cl) {
@@ -97,7 +120,7 @@ struct ApartmentDeliveryMap: View {
                     coverageLabel(pins)
                     if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
                     if pins.isEmpty {
-                        Text(group.coordinate == nil ? "Community location not mapped" : "Community area · doors not mapped").font(.caption2)
+                        Text(!contextAreas.isEmpty ? "Building areas only · unit location unknown" : group.coordinate == nil ? "Community location not mapped" : "Community area · doors not mapped").font(.caption2)
                             .accessibilityIdentifier("mini.communityLocation")
                     }
                     if showingPropertyForDistantUser {
@@ -182,6 +205,9 @@ struct ApartmentDeliveryMap: View {
                         pinButton(pin, point: point, viewport: geometry.size)
                         #endif
                     }
+                    // Stacked floors retain their exact source coordinates. The
+                    // focused unit must own the visible marker and its tap target.
+                    .zIndex(pin.stop.id == focusedStopID ? 1 : 0)
                 }
             }
         }.clipped()
@@ -218,6 +244,7 @@ struct ApartmentDeliveryMap: View {
 
     private var propertyDescription: String {
         if !pins.isEmpty { return "Showing apartment pins" }
+        if !contextAreas.isEmpty { return "Showing building areas" }
         return group.coordinate == nil ? "Community location not mapped" : "Showing community area"
     }
 
@@ -237,7 +264,7 @@ struct ApartmentDeliveryMap: View {
         let usableFix = location.fix.flatMap { $0.usable(at: .now) ? $0 : nil }
         if let direction = location.direction { followedHeading = direction.degrees }
         let positions = pins.map { $0.place.coordinate }
-        let frame = MiniRouteCameraFraming.frame(pins: positions.isEmpty ? group.coordinate.map { [$0] } ?? [] : positions,
+        let frame = MiniRouteCameraFraming.frame(pins: positions.isEmpty ? fallbackCoordinates : positions,
             fix: usableFix, at: .now, width: Double(viewport.width), height: Double(viewport.height))
         guard let frame else { fitAll(pins); return }
         following.adoptInitialFrame(distance: frame.distance, includesUser: frame.includesUser)
@@ -251,8 +278,8 @@ struct ApartmentDeliveryMap: View {
     private func pinButton(_ pin: Pin, point: CGPoint, viewport: CGSize) -> some View {
         Button { select(pin.stop.id) } label: {
             DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
-                           color: pin.color, selected: selectedStopID == pin.stop.id, estimated: pin.place.verification == .estimated,
-                           referenceLabel: pin.buildingReference ? "Unit \(pin.stop.unit) · Legal B\(pin.place.building) reference" : nil)
+                           color: pin.color, selected: focusedStopID == pin.stop.id, estimated: pin.place.verification == .estimated,
+                           referenceLabel: pin.buildingReference ? "Unit \(pin.stop.unit) · \(pin.place.referenceKind == .operatorMapBuildingArea ? "Approx" : "Legal") B\(pin.place.building) area" : nil)
                 .contentShape(ProjectedDeliveryPinHitRegion(point: point, viewport: viewport))
         }.buttonStyle(.plain)
             .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")
@@ -263,7 +290,7 @@ struct ApartmentDeliveryMap: View {
     }
     private func fitAll(_ pins: [Pin], includeLocation: Bool = false) {
         var coordinates = pins.map { $0.place.coordinate }
-        if coordinates.isEmpty, let coordinate = group.coordinate { coordinates.append(coordinate) }
+        if coordinates.isEmpty { coordinates = fallbackCoordinates }
         if includeLocation, let fix = location.fix, fix.usable(at: .now),
            MiniRouteCameraFraming.frame(pins: coordinates, fix: fix, at: .now,
                width: Double(viewport.width), height: Double(viewport.height))?.includesUser == true {

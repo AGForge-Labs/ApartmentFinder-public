@@ -6,7 +6,7 @@ public enum PublicCatalogSupplement {
     // Only the immutable reviewed public bundle gets this measured budget.
     // User-selected imports and private generations keep DataPackPayload's limits.
     static func readCatalogFile(_ url: URL) throws -> Data {
-        try DataPackPayload.boundedData(url, maximum: 2_100_000)
+        try DataPackPayload.boundedData(url, maximum: 3_000_000)
     }
 
     public static func read(from bundle: Bundle) throws -> LocalDataPack? {
@@ -34,6 +34,7 @@ public enum PublicCatalogSupplement {
             result.catalog.communities = []; result.catalog.sources = []
             result.catalog.deliveryAreaExceptions = nil
             result.catalog.unitBuildingAssociations = nil
+            result.catalog.unitFloorReferences = nil
             result.places = []; result.paths = []
         }
         let baseCommunities = Dictionary(result.catalog.communities.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -48,7 +49,9 @@ public enum PublicCatalogSupplement {
         }
         var addressOwners: [String: Set<String>] = [:]
         for community in result.catalog.communities + supplement.catalog.communities {
-            addressOwners[LocalSearch.addressKey(community.address), default: []].insert(community.id)
+            for address in community.matchingAddresses {
+                addressOwners[LocalSearch.addressKey(address), default: []].insert(community.id)
+            }
         }
         var admitted: [String: Community] = [:]
         var neededSources = Set<String>()
@@ -57,11 +60,22 @@ public enum PublicCatalogSupplement {
             guard !key.isEmpty, addressOwners[key]?.count == 1, usableSources(community.sourceIDs) else { continue }
             if var existing = baseCommunities[community.id] {
                 guard LocalSearch.addressKey(existing.address) == key else { continue }
+                var changed = false
                 if existing.coordinate == nil, let area = community.coordinate, area.isValid,
-                   let index = result.catalog.communities.firstIndex(where: { $0.id == community.id }) {
+                   result.catalog.communities.contains(where: { $0.id == community.id }) {
                     // Project only an absent area and its provenance. The imported
                     // generation, owner coordinates, doors and identities stay intact.
                     existing.latitude = area.latitude; existing.longitude = area.longitude
+                    changed = true
+                }
+                var streets = Set(existing.matchingAddresses.map { LocalSearch.addressKey($0) })
+                for address in community.deliveryAddresses ?? [] where addressOwners[LocalSearch.addressKey(address)]?.count == 1 {
+                    if streets.insert(LocalSearch.addressKey(address)).inserted {
+                        existing.deliveryAddresses = (existing.deliveryAddresses ?? []) + [address]
+                        changed = true
+                    }
+                }
+                if changed, let index = result.catalog.communities.firstIndex(where: { $0.id == community.id }) {
                     for id in community.sourceIDs where !existing.sourceIDs.contains(id) { existing.sourceIDs.append(id) }
                     result.catalog.communities[index] = existing
                     neededSources.formUnion(community.sourceIDs)
@@ -88,6 +102,7 @@ public enum PublicCatalogSupplement {
             guard let community = admitted[point.communityID], usableSources(point.sourceIDs),
                   !pointIDs.contains(point.id),
                   admittedAddressKeys[community.id]?.contains(LocalSearch.addressKey(point.address)) == true,
+                  (point.referenceAddresses ?? []).allSatisfy({ admittedAddressKeys[community.id]?.contains(LocalSearch.addressKey($0)) == true }),
                   !existingIdentities.contains(PinIdentity(point)) else { continue }
             result.places.append(point)
             pointIDs.insert(point.id)
@@ -95,23 +110,70 @@ public enum PublicCatalogSupplement {
         }
         // Preserve first-record precedence without rescanning every unit for each reference.
         let placesByID = Dictionary(result.places.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let publicPlacesByID = Dictionary(supplement.places.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var associations = result.catalog.unitBuildingAssociations ?? []
+        let baseAssociationKeysByID = Dictionary(associations.map { ($0.id, associationKey($0)) }, uniquingKeysWith: { first, _ in first })
         var associationIDs = Set(associations.map(\.id))
         var associationKeys = Set(associations.map(associationKey))
-        for a in supplement.catalog.unitBuildingAssociations ?? [] {
+        let indexesByKey = Dictionary(grouping: associations.indices, by: { associationKey(associations[$0]) })
+        let publicAssociations = supplement.catalog.unitBuildingAssociations ?? []
+        let publicKeyCounts = Dictionary(grouping: publicAssociations, by: associationKey).mapValues(\.count)
+        for a in publicAssociations {
             guard let community = admitted[a.communityID], usableSources(a.sourceIDs),
-                  !associationIDs.contains(a.id), !associationKeys.contains(associationKey(a)),
+                  publicKeyCounts[associationKey(a)] == 1,
                   admittedAddressKeys[community.id]?.contains(LocalSearch.addressKey(a.address)) == true else { continue }
+            if let existingKey = baseAssociationKeysByID[a.id], existingKey != associationKey(a) { continue }
             if let referenceID = a.referencePlaceID {
-                guard let reference = placesByID[referenceID],
-                      reference.referenceKind == .assessorLegalBuildingPolygon, reference.kind == .building,
-                      reference.communityID == a.communityID, reference.building == a.building,
-                      LocalSearch.addressKey(reference.address) == LocalSearch.addressKey(a.address) else { continue }
+                guard let reference = placesByID[referenceID], let published = publicPlacesByID[referenceID],
+                      usableSources(published.sourceIDs), reference.matchesBuildingAssociation(a), published.matchesBuildingAssociation(a),
+                      reference.coordinate == published.coordinate, reference.referenceKind == published.referenceKind,
+                      reference.estimatedHorizontalUncertaintyM == published.estimatedHorizontalUncertaintyM,
+                      reference.mapLabelOccurrenceID == published.mapLabelOccurrenceID,
+                      reference.referenceAddresses == published.referenceAddresses,
+                      Set(reference.sourceIDs) == Set(published.sourceIDs) else { continue }
             }
+            if let indexes = indexesByKey[associationKey(a)] {
+                guard indexes.count == 1, let index = indexes.first else { continue }
+                var existing = associations[index]
+                guard existing.building == a.building,
+                      existing.referencePlaceID == nil || existing.referencePlaceID == a.referencePlaceID,
+                      existing.mapFloor == nil || existing.mapFloor == a.mapFloor,
+                      existing.sourceUnitID == nil || existing.sourceUnitID == a.sourceUnitID,
+                      existing.historicalLegalAlias == nil || existing.historicalLegalAlias == a.historicalLegalAlias,
+                      existing.historicalFloor == nil || existing.historicalFloor == a.historicalFloor else { continue }
+                // Missing reviewed metadata is projected in memory only. An
+                // existing value, identity, source or stored generation wins.
+                let before = existing
+                if existing.referencePlaceID == nil { existing.referencePlaceID = a.referencePlaceID }
+                if existing.mapFloor == nil { existing.mapFloor = a.mapFloor }
+                if existing.sourceUnitID == nil { existing.sourceUnitID = a.sourceUnitID }
+                if existing.historicalLegalAlias == nil { existing.historicalLegalAlias = a.historicalLegalAlias }
+                if existing.historicalFloor == nil { existing.historicalFloor = a.historicalFloor }
+                if existing != before {
+                    for id in a.sourceIDs where !existing.sourceIDs.contains(id) { existing.sourceIDs.append(id) }
+                    associations[index] = existing; neededSources.formUnion(a.sourceIDs)
+                }
+                continue
+            }
+            guard !associationIDs.contains(a.id), !associationKeys.contains(associationKey(a)) else { continue }
             associations.append(a); associationIDs.insert(a.id); associationKeys.insert(associationKey(a))
             neededSources.formUnion(a.sourceIDs)
         }
         if !associations.isEmpty { result.catalog.unitBuildingAssociations = associations }
+        var floorReferences = result.catalog.unitFloorReferences ?? []
+        var floorIDs = Set(floorReferences.map(\.id))
+        func floorKey(_ r: UnitFloorReference) -> String {
+            [r.communityID, LocalSearch.addressKey(r.address), LocalSearch.normalized(r.unit)].joined(separator: "|")
+        }
+        var floorKeys = Set(floorReferences.map(floorKey))
+        for reference in supplement.catalog.unitFloorReferences ?? [] {
+            guard let community = admitted[reference.communityID], usableSources(reference.sourceIDs),
+                  !floorIDs.contains(reference.id), !floorKeys.contains(floorKey(reference)),
+                  admittedAddressKeys[community.id]?.contains(LocalSearch.addressKey(reference.address)) == true else { continue }
+            floorReferences.append(reference); floorIDs.insert(reference.id); floorKeys.insert(floorKey(reference))
+            neededSources.formUnion(reference.sourceIDs)
+        }
+        if !floorReferences.isEmpty { result.catalog.unitFloorReferences = floorReferences }
         var pathIDs = Set(result.paths.map(\.id))
         for path in supplement.paths {
             guard admitted[path.communityID] != nil, !path.confirmed, !pathIDs.contains(path.id), usableSources(path.sourceIDs) else { continue }
@@ -135,10 +197,12 @@ public enum PublicCatalogSupplement {
         let unit: String
         let floor: String
         let kind: LocationKind
+        let operatorAreaOccurrence: String?
         init(_ point: Place) {
             communityID = point.communityID; address = LocalSearch.addressKey(point.address)
             building = LocalSearch.normalized(point.building); unit = LocalSearch.normalized(point.unit)
             floor = LocalSearch.normalized(point.floor); kind = point.kind
+            operatorAreaOccurrence = point.referenceKind == .operatorMapBuildingArea ? (point.mapLabelOccurrenceID ?? point.id) : nil
         }
     }
 }

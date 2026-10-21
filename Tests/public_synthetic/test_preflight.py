@@ -200,7 +200,9 @@ class PublicPreflightTests(unittest.TestCase):
         header = '          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<\'PY\'\n'
         producer = textwrap.dedent(workflow.split(header, 1)[1].split('          PY\n', 1)[0])
         profile = json.loads((ROOT / 'scripts/public-synthetic-tests.json').read_text())
-        expected = {'native': [], 'ui': profile['ui'] + [
+        expected = {'native': [], 'ui': [
+            'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
+            'ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation',
             'ApartmentFinderUITests/HeadingUpNavigationTests/testStartsHeadingUpAndResumePreservesChosenStop',
             'ApartmentFinderUITests/HeadingUpNavigationTests/testResumePreservesActualPinchZoomAndSelectedStop',
             'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch',
@@ -432,9 +434,9 @@ class PublicPreflightTests(unittest.TestCase):
 
     def test_reviewed_native_inventory_matches_current_source(self):
         artifact = module('public_preflight_artifact', ROOT / 'scripts/testflight-artifact.py')
-        self.assertEqual(artifact.expected_test_count(ROOT), 128)
+        self.assertEqual(artifact.expected_test_count(ROOT), 131)
         profile = json.loads((ROOT / 'scripts/iteration-profile.json').read_text())
-        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 42, 'original_pngs': 45})
+        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 45, 'original_pngs': 45})
 
 
     def test_public_selection_is_exact_and_excludes_private_acceptance(self):
@@ -442,9 +444,9 @@ class PublicPreflightTests(unittest.TestCase):
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 123),
+            ('core', 'Tests/ApartmentCoreTests', '', 142),
             ('native', 'NativeTests', 'ApartmentFinderTests/', 71),
-            ('ui', 'UITests', 'ApartmentFinderUITests/', 2),
+            ('ui', 'UITests', 'ApartmentFinderUITests/', 8),
         ):
             values = selection[key]
             self.assertEqual(len(values), count)
@@ -460,6 +462,12 @@ class PublicPreflightTests(unittest.TestCase):
         self.assertEqual(set(selection['ui']), {
             'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
             'ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation',
+            'ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors',
+            'ApartmentFinderUITests/CommunityMapControlsTests/testPausedControlsStayCompactAndKeepTheirActions',
+            'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch',
+            'ApartmentFinderUITests/Reviewed89123GeographyUITests/testPebbleUsesOneApproximateMarkerPerBuildingAndRetainsUnitFloorSelection',
+            'ApartmentFinderUITests/Reviewed89123GeographyUITests/testStackedSourceUnitFloorsAndRecoveredSummerLabelsRemainUnverified',
+            'ApartmentFinderUITests/Reviewed89123GeographyUITests/testHistoricalAliasAndFloorOnlyReferenceDoNotInventATowerOrDoor',
         })
         for identity in selection['core']:
             cls = identity.split('/')[0]
@@ -510,6 +518,7 @@ class WorkflowResultProcessingTests(unittest.TestCase):
                          summary_status=0, tests_status=0, summary=None, tree=None):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
         block = workflow.split('            DIAGNOSTICS_COLLECTED=1\n          fi\n', 1)[1]
+        block = block.split('\n      - name:', 1)[0]
         summary = summary if summary is not None else {
             'totalTestCount': 3, 'passedTests': 3, 'failedTests': 0,
             'skippedTests': 0, 'expectedFailures': 0,

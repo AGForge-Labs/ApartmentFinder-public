@@ -17,7 +17,7 @@ def valid_point(longitude, latitude):
 
 def build_audit(catalog, features):
     communities = {c['id']: c for c in catalog['communities']}
-    points, associations = defaultdict(list), defaultdict(list)
+    points, associations, floors = defaultdict(list), defaultdict(list), defaultdict(list)
     for feature in features:
         cid = feature['properties']['communityID']
         if cid not in communities:
@@ -31,6 +31,9 @@ def build_audit(catalog, features):
         if cid not in communities:
             raise ValueError('Association has no catalog community')
         associations[cid].append(association)
+    for reference in catalog.get('unitFloorReferences', []):
+        if reference['communityID'] not in communities: raise ValueError('Floor reference has no catalog community')
+        floors[reference['communityID']].append(reference)
     rows = []
     for cid, community in sorted(communities.items()):
         local = points[cid]
@@ -45,14 +48,18 @@ def build_audit(catalog, features):
             communityArea=dict(mapped=anchor, coordinate=([community['longitude'], community['latitude']] if anchor else None),
                 evidence=community.get('publicEvidence', {}).get('coordinate')),
             buildingAreaReferences=dict(total=len(building),
-                qualifiedLegalPolygon=sum(p.get('referenceKind') == 'assessorLegalBuildingPolygon' for p in building)),
+                qualifiedLegalPolygon=sum(p.get('referenceKind') == 'assessorLegalBuildingPolygon' for p in building),
+                approximateOperatorArea=sum(p.get('referenceKind') == 'operatorMapBuildingArea' for p in building)),
             unitPositions=dict(total=len(unit), sourceMapped=sum(p.get('verification') == 'sourceMapped' for p in unit),
-                estimated=sum(p.get('verification') == 'estimated' for p in unit)),
+                estimated=sum(p.get('verification') == 'estimated' for p in unit),
+                operatorSourceUnitReferences=sum(p.get('sourceUnitID') is not None for p in unit)),
             doors=dict(geographicPoints=len(doors), fieldVerified=verified),
             entrances=sum(p['kind'] == 'entrance' for p in local),
             unitBuildingAssociations=dict(total=len(associations[cid]),
                 operatorMap=sum(a['identifierKind'] == 'operatorMap' for a in associations[cid]),
-                municipalLegal=sum(a['identifierKind'] == 'municipalLegal' for a in associations[cid])),
+                municipalLegal=sum(a['identifierKind'] == 'municipalLegal' for a in associations[cid]),
+                historicalLegalAliases=sum(a.get('historicalLegalAlias') is True for a in associations[cid])),
+            floorOnlyReferences=len(floors[cid]),
             gaps=dict(communityAreaMissing=not anchor, buildingAreasMissing=not building,
                 unitPositionsMissing=not unit, verifiedPublicDoorsMissing=verified == 0))
         rows.append(row)

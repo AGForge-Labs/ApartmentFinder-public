@@ -35,7 +35,7 @@ final class PublicCatalogBudgetTests: XCTestCase {
     }
 
     func testBundledCatalogAcceptsReviewedGrowthThroughExactPublicBoundary() throws {
-        for count in [2_000_001, 2_100_000] {
+        for count in [2_000_001, 2_100_000, 2_386_642, 3_000_000] {
             let bundle = try publicBundle(catalog: paddedCatalog(count))
             do {
                 let pack = try XCTUnwrap(PublicCatalogSupplement.read(from: bundle))
@@ -47,7 +47,7 @@ final class PublicCatalogBudgetTests: XCTestCase {
     }
 
     func testPublicBoundaryStillRejectsOversizeSymlinksDirectoriesAndMalformedSchema() throws {
-        let tooLarge = try publicBundle(catalog: paddedCatalog(2_100_001))
+        let tooLarge = try publicBundle(catalog: paddedCatalog(3_000_001))
         XCTAssertThrowsError(try PublicCatalogSupplement.read(from: tooLarge))
         let malformed = try publicBundle(catalog: Data(catalog.replacingOccurrences(of: "\"schemaVersion\":1", with: "\"schemaVersion\":2").utf8))
         XCTAssertThrowsError(try PublicCatalogSupplement.read(from: malformed))

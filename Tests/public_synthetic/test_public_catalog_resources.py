@@ -36,10 +36,37 @@ def resources():
     return [json.loads((ROOT / 'data' / name).read_bytes()) for name in
             ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson')]
 
+
+def frozen_ea_resources(current=None):
+    """Reverse only reviewed additive fields, then verify immutable old hashes.
+
+    Identity, source objects, coordinates of old places and paths are never
+    restored from a replacement fixture: their current objects must still match.
+    """
+    catalog, locations, paths = json.loads(json.dumps(current)) if current is not None else resources()
+    proof = json.loads((ROOT/'docs/89123-geography-preservation.json').read_bytes())
+    allowed_community = {'latitude','longitude','sourceIDs','gapNotes','publicEvidence','deliveryAddresses'}
+    allowed_association = {'sourceIDs','referencePlaceID','mapFloor','sourceUnitID'}
+    for values, changes, allowed in [(catalog['communities'],proof['communityEnrichments'],allowed_community),
+                                    (catalog['unitBuildingAssociations'],proof['associationEnrichments'],allowed_association)]:
+        for value in values:
+            change = changes.get(value['id'])
+            if change:
+                if not (set(change['restore']) | set(change['remove'])) <= allowed:
+                    raise AssertionError('Unreviewed baseline restoration field')
+                value.update(change['restore'])
+                for field in change['remove']: value.pop(field, None)
+    catalog['sources'] = [s for s in catalog['sources'] if not s['id'].startswith('g21-')]
+    original_ids = set(proof['baselineAssociationIDs'])
+    catalog['unitBuildingAssociations'] = [a for a in catalog['unitBuildingAssociations'] if a['id'] in original_ids]
+    added_locations = set(proof['newLocationIDs'])
+    locations['features'] = [f for f in locations['features'] if f['id'] not in added_locations]
+    return catalog, locations, paths
+
 class PublicCatalogResourceTests(unittest.TestCase):
     def test_incremental_batch_preserves_all_prior_unit_positions_and_qualified_references(self):
-        catalog = json.loads((ROOT / 'data/public-catalog.json').read_bytes())
-        points = json.loads((ROOT / 'data/public-locations.geojson').read_bytes())['features']
+        catalog, locations, _ = frozen_ea_resources()
+        points = locations['features']
         units = sorted((p for p in points if p['properties']['kind'] == 'unitPosition'), key=lambda f:f['id'])
         digest = hashlib.sha256(json.dumps(units,sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
         self.assertEqual(digest, '5d7a593a41cf89aa58e6fae222b9afb6ab14446e5b1d25ff49a260d19ffb1a4f')
@@ -74,7 +101,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
                          {'89123':31,'89183':20,'89052':20,'89014':22,'89044':4})
 
     def test_89123_batch_preserves_every_previously_accepted_object(self):
-        catalog, locations, paths = resources()
+        catalog, locations, paths = frozen_ea_resources()
         old = {
             'communities': [before_lyric_area_update(c) for c in catalog['communities'] if c['id'] not in ADDED_COMMUNITIES],
             'sources': [s for s in catalog['sources'] if s['id'] not in ADDED_SOURCES | {LYRIC_AREA_SOURCE}],
@@ -96,7 +123,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
                 self.assertEqual(fingerprint(sorted(old[name], key=lambda x:x['id'])), digest)
 
     def test_six_property_identities_have_exact_address_scope_and_no_new_coordinates(self):
-        catalog, _, _ = resources()
+        catalog, _, _ = frozen_ea_resources()
         communities = {c['id']: c for c in catalog['communities']}
         streets = {'ensemble-ii':'2775 W Agate Avenue',
                    'budget-suites-las-vegas-strip':'8440 S Las Vegas Boulevard',
@@ -120,7 +147,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
         self.assertEqual(communities['one-las-vegas']['deliveryAddresses'], [])
 
     def test_recovered_associations_match_exact_reviewed_street_unit_and_building_facts(self):
-        catalog, _, _ = resources()
+        catalog, _, _ = frozen_ea_resources()
         added = [a for a in catalog['unitBuildingAssociations'] if a['id'].startswith('p4a-')]
         self.assertEqual(len(added), 775)
         facts = sorted([[a['communityID'], a['address'], a['unit'], a['building'], a['identifierKind']]
@@ -149,7 +176,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
             self.assertFalse(set(a) & {'latitude', 'longitude', 'doorCoordinates', 'unitCoordinates'})
 
     def test_new_legal_references_preserve_reviewed_points_and_explicit_approximation(self):
-        catalog, locations, _ = resources()
+        catalog, locations, _ = frozen_ea_resources()
         references = [f for f in locations['features'] if f['properties']['communityID'] == 'st-james-place']
         self.assertEqual(len(references), 23)
         facts = sorted([[f['id'], f['geometry']['coordinates'], f['properties']['address'],
@@ -167,7 +194,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
                 self.assertEqual((p['address'], p['building']), (a['address'], a['building']))
 
     def test_phase_two_and_unverified_townhome_targets_remain_outside_active_catalog(self):
-        catalog, locations, _ = resources()
+        catalog, locations, _ = frozen_ea_resources()
         communities = {c['id']: c for c in catalog['communities']}
         phase_one = communities['paragon-lofts']
         self.assertEqual({phase_one['address'], *phase_one['deliveryAddresses']}, {
@@ -186,8 +213,65 @@ class PublicCatalogResourceTests(unittest.TestCase):
                          'paradise-spa', 'raven-point'}.isdisjoint(communities))
 
     def test_public_resources_fit_dedicated_public_catalog_and_unchanged_other_limits(self):
-        limits = {'public-catalog.json':2_100_000,'public-locations.geojson':64_000_000,
+        limits = {'public-catalog.json':3_000_000,'public-locations.geojson':64_000_000,
                   'public-paths.geojson':16_000_000,'known-addresses.json':2_000_000}
         for name,maximum in limits.items():
             with self.subTest(resource=name):
                 self.assertLessEqual((ROOT/'data'/name).stat().st_size,maximum)
+
+    def test_current_increment_retains_frozen_ea_objects_and_adds_only_qualified_geography(self):
+        catalog, locations, paths = frozen_ea_resources()
+        # Independently frozen from published EA, not taken from the mutable receipt.
+        expected = {
+            'communities': (catalog['communities'],162,'23283b98146ffa68d49946c632f6001c5aa19a84eb48659cd8b1f7466cd3aefd'),
+            'sources': (catalog['sources'],687,'816a3a3bcdcec35a865b9646dca93cac2767579ffb5a800d36ea1ed7b1d59df4'),
+            'associations': (catalog['unitBuildingAssociations'],6923,'de40fb257a10f3c87a086bebfab5236e41acd7fb353bcb57c5affb6356f94dd2'),
+            'locations': (locations['features'],14772,'4bb7c11a9b3aa5c50c5855e455cd5b8b84fc614c9a4b6d85ca584ca7bf6ae484'),
+            'paths': (paths['features'],17,'67affb5e94806f7853896517b3f9185433e9d52b96ca7a8a5042811aea923a98'),
+        }
+        for name,(values,count,digest) in expected.items():
+            with self.subTest(collection=name):
+                self.assertEqual(len(values),count)
+                self.assertEqual(fingerprint(sorted(values,key=lambda x:x['id'])),digest)
+        current,points,_ = resources()
+        self.assertEqual(len(current['unitBuildingAssociations']),8015)
+        self.assertEqual(len(current['unitFloorReferences']),359)
+        self.assertEqual(len(points['features']),15420)
+        self.assertEqual(sum(p['properties'].get('referenceKind')=='operatorMapBuildingArea' for p in points['features']),62)
+        self.assertEqual(sum(p['properties'].get('referenceKind')=='assessorLegalBuildingPolygon' for p in points['features']),339)
+        self.assertEqual(sum(p['properties'].get('sourceUnitID') is not None for p in points['features']),502)
+        self.assertFalse(any(p['properties']['kind'] in ('door','entrance') or p['properties']['verification']=='fieldVerified' for p in points['features']))
+        self.assertFalse(any(a['communityID']=='one-las-vegas' for a in current['unitBuildingAssociations']))
+
+    def test_exact_reviewed_new_values_are_checked_before_reversing_the_delta(self):
+        catalog,locations,_ = resources()
+        proof=json.loads((ROOT/'docs/89123-geography-preservation.json').read_bytes())
+        original=set(proof['baselineAssociationIDs']); added=set(proof['newLocationIDs'])
+        collections={
+            'sources':([s for s in catalog['sources'] if s['id'].startswith('g21-')],65,'c574f71d3fc41b442b5c102866c3cdb9f6df3a3cddd10eeb6024d723c4090cf9'),
+            'locations':([f for f in locations['features'] if f['id'] in added],648,'c6d5b244fa8045f6aab0cb278d83bb06ae251a46fd69b92cc1d78ce31e512358'),
+            'associations':([a for a in catalog['unitBuildingAssociations'] if a['id'] not in original],1092,'f6eab65c8d93af9c41581092b89082dec3ea3c49ccbb7bd61118b0fc2046f8f7'),
+            'communityPatches':([c for c in catalog['communities'] if c['id'] in proof['communityEnrichments']],20,'970af3c0e252bd327ffc8882f885bd7b85b2896c70380700a8bc5845713afefe'),
+            'associationPatches':([a for a in catalog['unitBuildingAssociations'] if a['id'] in proof['associationEnrichments']],961,'d6260df0afb667cab810de08b1fbf4336073c6bd62aeaa71836d07225c56e508'),
+            'floorOnly':(catalog['unitFloorReferences'],359,'51c1b883ba1bb6270b0a56ec273717e8baf53a609e3fdac2d31295376d2a55d0'),
+        }
+        for name,(values,count,digest) in collections.items():
+            with self.subTest(collection=name):
+                self.assertEqual(len(values),count)
+                self.assertEqual(fingerprint(sorted(values,key=lambda x:x['id'])),digest)
+
+    def test_frozen_proof_detects_old_coordinate_source_identity_and_unapproved_field_mutations(self):
+        for mutation in ('coordinate','source','identity','unapproved-field'):
+            values=resources(); catalog,locations,_=values
+            if mutation=='coordinate': locations['features'][0]['geometry']['coordinates'][0]+=0.001
+            if mutation=='source': catalog['sources'][0]['title']+=' changed'
+            if mutation=='identity': catalog['communities'][0]['address']='999 Other Street'
+            if mutation=='unapproved-field':
+                c=next(c for c in catalog['communities'] if c['id']=='southpark'); c['aliases'].append('Unapproved identity')
+            c,p,_=frozen_ea_resources(values)
+            if mutation=='coordinate':
+                self.assertNotEqual(fingerprint(sorted(p['features'],key=lambda x:x['id'])),'4bb7c11a9b3aa5c50c5855e455cd5b8b84fc614c9a4b6d85ca584ca7bf6ae484')
+            elif mutation=='source':
+                self.assertNotEqual(fingerprint(sorted(c['sources'],key=lambda x:x['id'])),'816a3a3bcdcec35a865b9646dca93cac2767579ffb5a800d36ea1ed7b1d59df4')
+            else:
+                self.assertNotEqual(fingerprint(sorted(c['communities'],key=lambda x:x['id'])),'23283b98146ffa68d49946c632f6001c5aa19a84eb48659cd8b1f7466cd3aefd')

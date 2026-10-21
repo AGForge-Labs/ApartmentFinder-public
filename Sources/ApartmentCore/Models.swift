@@ -52,7 +52,13 @@ public enum BuildingIdentifierKind: String, Codable, Hashable, Sendable {
     case municipalLegal, operatorMap
     public var label: String { self == .municipalLegal ? "Legal building" : "Operator map building" }
 }
-public enum BuildingReferenceKind: String, Codable, Hashable, Sendable { case assessorLegalBuildingPolygon }
+public enum BuildingReferenceKind: String, Codable, Hashable, Sendable {
+    case assessorLegalBuildingPolygon, operatorMapBuildingArea
+    public var identifierKind: BuildingIdentifierKind {
+        self == .assessorLegalBuildingPolygon ? .municipalLegal : .operatorMap
+    }
+}
+public enum HistoricalLegalFloor: String, Codable, Hashable, Sendable { case ground, second }
 public struct UnitBuildingAssociation: Codable, Identifiable, Hashable, Sendable {
     public var id: String
     public var communityID: String
@@ -61,9 +67,23 @@ public struct UnitBuildingAssociation: Codable, Identifiable, Hashable, Sendable
     public var building: String
     public var identifierKind: BuildingIdentifierKind
     public var sourceIDs: [String]
-    /// Optional legal-building reference; never a unit, entrance or door coordinate.
+    /// Optional source-qualified building area; never a unit, entrance or door coordinate.
     public var referencePlaceID: String?
     public var mapFloor: String? = nil
+    public var sourceUnitID: String? = nil
+    public var historicalLegalAlias: Bool? = nil
+    public var historicalFloor: HistoricalLegalFloor? = nil
+}
+
+/// An explicit dated county floor column with no supported building or point.
+public struct UnitFloorReference: Codable, Identifiable, Hashable, Sendable {
+    public var id: String
+    public var communityID: String
+    public var address: String
+    public var unit: String
+    public var floor: String
+    public var sourceIDs: [String]
+    public var sourceRevision: String? = nil
 }
 
 public struct Catalog: Codable, Sendable {
@@ -76,6 +96,7 @@ public struct Catalog: Codable, Sendable {
     public var communities: [Community]
     public var coverage: Coverage
     public var unitBuildingAssociations: [UnitBuildingAssociation]? = nil
+    public var unitFloorReferences: [UnitFloorReference]? = nil
     public struct Coverage: Codable, Sendable { public var inventoryComplete: Bool; public var notes: [String] }
 }
 public struct DeliveryAreaException: Codable, Sendable {
@@ -105,9 +126,33 @@ public struct Place: Codable, Identifiable, Hashable, Sendable {
     public var graphNodeID: String?
     public var identityUncertain: Bool?
     public var referenceKind: BuildingReferenceKind?
-    public init(id: String = UUID().uuidString, communityID: String, address: String, building: String = "", unit: String = "", floor: String = "", kind: LocationKind, verification: Verification, coordinate: Coordinate, sourceIDs: [String] = [], notes: String = "", approachID: String? = nil, graphNodeID: String? = nil, identityUncertain: Bool? = nil, referenceKind: BuildingReferenceKind? = nil) {
+    /// A working review allowance, not a guarantee of physical accuracy.
+    public var estimatedHorizontalUncertaintyM: Double?
+    /// Distinct roof lobes can share the same printed building badge.
+    public var mapLabelOccurrenceID: String?
+    public var sourceUnitID: String?
+    /// Explicit source-published alternate full streets for this building area.
+    public var referenceAddresses: [String]?
+    public init(id: String = UUID().uuidString, communityID: String, address: String, building: String = "", unit: String = "", floor: String = "", kind: LocationKind, verification: Verification, coordinate: Coordinate, sourceIDs: [String] = [], notes: String = "", approachID: String? = nil, graphNodeID: String? = nil, identityUncertain: Bool? = nil, referenceKind: BuildingReferenceKind? = nil, estimatedHorizontalUncertaintyM: Double? = nil, mapLabelOccurrenceID: String? = nil, sourceUnitID: String? = nil, referenceAddresses: [String]? = nil) {
         self.id = id; self.communityID = communityID; self.address = address; self.building = building; self.unit = unit; self.floor = floor; self.kind = kind; self.verification = verification; self.coordinate = coordinate; self.sourceIDs = sourceIDs; self.notes = notes; self.approachID = approachID; self.graphNodeID = graphNodeID
         self.identityUncertain = identityUncertain; self.referenceKind = referenceKind
+        self.estimatedHorizontalUncertaintyM = estimatedHorizontalUncertaintyM
+        self.mapLabelOccurrenceID = mapLabelOccurrenceID; self.sourceUnitID = sourceUnitID
+        self.referenceAddresses = referenceAddresses
+    }
+    public var isValidBuildingAreaReference: Bool {
+        guard let referenceKind, kind == .building, verification == .sourceMapped, coordinate.isValid,
+              unit.isEmpty, floor.isEmpty, !building.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        if referenceKind == .operatorMapBuildingArea {
+            guard let uncertainty = estimatedHorizontalUncertaintyM, uncertainty.isFinite, (1...100).contains(uncertainty),
+                  let occurrence = mapLabelOccurrenceID, !occurrence.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        }
+        return true
+    }
+    public func matchesBuildingAssociation(_ association: UnitBuildingAssociation) -> Bool {
+        isValidBuildingAreaReference && referenceKind?.identifierKind == association.identifierKind &&
+            id == association.referencePlaceID && communityID == association.communityID && building == association.building &&
+            ([address] + (referenceAddresses ?? [])).contains { LocalSearch.addressKey($0) == LocalSearch.addressKey(association.address) }
     }
 }
 public struct PathSegment: Codable, Identifiable, Hashable, Sendable {

@@ -341,6 +341,10 @@ final class AppStore: ObservableObject {
         if previous.doorSelections != personal.doorSelections { cachedDoorMatches.removeAll() }
     }
     func apartmentGroup(_ id: String) -> ApartmentGroup? { apartmentPlan.groups.first { $0.id == id } }
+    func buildingAreaReferences(groupID: String) -> [Place] {
+        let scoped = apartmentGroup(groupID)?.scopedPlaces(in: apartmentPlacesByCommunity) ?? apartmentPlacesByCommunity[groupID] ?? []
+        return scoped.filter(\.isValidBuildingAreaReference)
+    }
     func doorMatch(_ stop: DeliveryStop, groupID: String) -> ApartmentDoorMatch {
         var identity = stop; identity.completed = false
         let key = DoorMatchKey(groupID: groupID, stop: identity)
@@ -357,9 +361,14 @@ final class AppStore: ObservableObject {
             associations = apartmentGroup(groupID)?.scopedBuildingAssociations(in: buildingAssociationsByCommunity) ?? buildingAssociationsByCommunity[groupID] ?? []
             scopedBuildingAssociations[groupID] = associations
         }
+        let group = apartmentGroup(groupID)
+        let projectionIDs = Set([groupID, group?.directoryCommunityID, group?.legacyCommunityID].compactMap { $0 })
+        let floors = (pack?.catalog.unitFloorReferences ?? []).filter {
+            $0.communityID == groupID || projectionIDs.contains($0.communityID) && LocalSearch.addressKey($0.address) == LocalSearch.addressKey(group?.address ?? stop.address)
+        }.map { original in var value = original; value.communityID = groupID; return value }
         let match = ApartmentDoorMatch.resolve(stop: stop, communityID: groupID, places: scoped,
             selectedPlaceID: personal.doorSelections.first { $0.stopID == stop.id }?.placeID,
-            buildingAssociations: associations)
+            buildingAssociations: associations, floorReferences: floors)
         cachedDoorMatches[key] = match
         return match
     }

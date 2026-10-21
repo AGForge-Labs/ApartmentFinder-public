@@ -147,6 +147,45 @@ class PublicCatalogExportTests(unittest.TestCase):
             sourceIDs=['official-fixture'], referencePlaceID=feature['id'])]
         return feature
 
+    def test_operator_building_areas_retain_occurrence_precision_and_exact_unit_joins(self):
+        feature = self.configure_building_reference()
+        feature['properties'].update(referenceKind='operatorMapBuildingArea',
+            estimatedHorizontalUncertaintyM=20, mapLabelOccurrenceID='fictional-left-lobe')
+        self.catalog['unitBuildingAssociations'][0].update(identifierKind='operatorMap', mapFloor='Floor 2', sourceUnitID='synthetic-unit-2')
+        self.run_export(); self.run_validate()
+        point = json.loads((self.output / 'public-locations.geojson').read_bytes())['features'][0]
+        self.assertEqual(point['properties']['estimatedHorizontalUncertaintyM'], 20)
+        self.assertEqual(point['properties']['mapLabelOccurrenceID'], 'fictional-left-lobe')
+        self.assertIn('working uncertainty', point['properties']['notes'])
+        self.assertIn('not a unit position, entrance or exact door', point['properties']['notes'])
+        association = json.loads((self.output / 'public-catalog.json').read_bytes())['unitBuildingAssociations'][0]
+        self.assertEqual(association['sourceUnitID'], 'synthetic-unit-2')
+        self.assertEqual(association['referencePlaceID'], feature['id'])
+
+    def test_source_unit_identity_is_preserved_without_deduplicating_stacked_floors(self):
+        original = self.locations['features'][0]
+        original['properties']['sourceUnitID'] = 'synthetic-unit-first-floor'
+        upper = copy.deepcopy(original); upper['id'] = 'fictional-unit-101'
+        upper['properties'].update(unit='101', floor='2', sourceUnitID='synthetic-unit-second-floor')
+        self.locations['features'].append(upper)
+        self.run_export(); self.run_validate()
+        points = json.loads((self.output / 'public-locations.geojson').read_bytes())['features']
+        self.assertEqual([p['geometry']['coordinates'] for p in points], [[0, 0], [0, 0]])
+        self.assertEqual([p['properties']['sourceUnitID'] for p in points],
+            ['synthetic-unit-first-floor', 'synthetic-unit-second-floor'])
+
+    def test_historical_alias_and_floor_only_evidence_stay_separate_from_physical_pins(self):
+        self.configure_building_reference()
+        self.catalog['unitBuildingAssociations'][0].update(historicalLegalAlias=True, historicalFloor='second')
+        self.catalog['unitFloorReferences'] = [dict(id='fictional-floor-only', communityID='fictional',
+            address='100 Fictional Rd', unit='002', floor='5', sourceIDs=['official-fixture'], sourceRevision='2019-01-11')]
+        self.run_export(); self.run_validate()
+        catalog = json.loads((self.output / 'public-catalog.json').read_bytes())
+        self.assertTrue(catalog['unitBuildingAssociations'][0]['historicalLegalAlias'])
+        self.assertEqual(catalog['unitBuildingAssociations'][0]['historicalFloor'], 'second')
+        self.assertEqual(catalog['unitFloorReferences'], self.catalog['unitFloorReferences'])
+        self.assertEqual(len(json.loads((self.output / 'public-locations.geojson').read_bytes())['features']), 1)
+
     def test_typed_building_references_keep_associations_separate_from_unit_positions(self):
         self.configure_building_reference()
         self.run_export(); self.run_validate()
@@ -209,15 +248,16 @@ class PublicCatalogExportTests(unittest.TestCase):
         self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(11_500)]
         self.run_export(); self.run_validate()
         path = self.output / 'public-catalog.json'
-        self.assertLessEqual(path.stat().st_size, 2_100_000)
+        self.assertLessEqual(path.stat().st_size, 3_000_000)
         value = json.loads(path.read_bytes())
         self.assertEqual(value['communities'][0]['aliases'], self.catalog['communities'][0]['aliases'])
         self.output = self.directory / 'reviewed-public-growth'
-        self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(12_000)]
+        self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(17_000)]
         self.run_export(); self.run_validate()
         path = self.output / 'public-catalog.json'
         self.assertGreater(path.stat().st_size, 2_000_000)
-        self.assertLessEqual(path.stat().st_size, 2_100_000)
+        self.assertLessEqual(path.stat().st_size, 3_000_000)
+        self.assertNotIn(b'\n  "', path.read_bytes(), 'Reviewed growth must use compact JSON before increasing the bounded budget')
         self.assertEqual(json.loads(path.read_bytes())['communities'][0]['aliases'],
                          self.catalog['communities'][0]['aliases'])
         self.output = self.directory / 'oversized-catalog'
@@ -661,6 +701,20 @@ class PublicCatalogExportTests(unittest.TestCase):
         self.assertEqual(community['publicEvidence']['coordinate']['kind'], 'operatorPublishedPropertyPoint')
         self.assertTrue(any('operator publishes' in note for note in community['gapNotes']))
         self.assertTrue(any('outside the focused' in note for note in community['gapNotes']))
+
+    def test_county_and_hud_property_references_keep_distinct_lower_precision_lineage(self):
+        for index, kind in enumerate(('municipalBusinessLicensePropertyReference', 'hudApproximatePropertyReference',
+                                      'countyPublishedAddressPropertyReference', 'countyTestAddressPropertyReference')):
+            with self.subTest(kind=kind):
+                self.output = self.directory / ('property-reference-' + str(index))
+                self.evidence = [dict(communityID='fictional', communityType='apartment', areaScope='core',
+                    addressSourceIDs=['official-fixture'], coordinate=dict(kind=kind, sourceIDs=['official-fixture']))]
+                self.run_export(); self.run_validate()
+                community = json.loads((self.output / 'public-catalog.json').read_bytes())['communities'][0]
+                self.assertEqual(community['publicEvidence']['coordinate']['kind'], kind)
+                self.assertTrue(any('not a unit' in note for note in community['gapNotes']))
+                if kind == 'countyTestAddressPropertyReference':
+                    self.assertTrue(any('Test service' in note and 'lower confidence' in note for note in community['gapNotes']))
 
     def test_conflicting_source_city_labels_remain_qualified_without_fabricated_coordinates(self):
         self.evidence = [dict(communityID='fictional', communityType='apartment', areaScope='nearbyOutsideFocus',
