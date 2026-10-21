@@ -81,8 +81,19 @@ final class MapAppearanceTests: XCTestCase {
         waitForSettledPins([firstPin, secondPin])
         let originalTip = CGPoint(x: firstPin.frame.midX, y: firstPin.frame.maxY)
         let secondTip = CGPoint(x: secondPin.frame.midX, y: secondPin.frame.maxY)
-        XCTAssertGreaterThan(abs(originalTip.x - initialX), 5,
-                             "Exercise a panned map before changing styles; before=\(initialFrame), after=\(firstPin.frame), initial camera=\(initialCameraValue), camera=\(String(describing: app.buttons["mini.recenter"].value))")
+        let originalMovement = abs(originalTip.x - initialX)
+        var failedOriginalWitness = ""
+        if originalMovement <= 5 {
+            // Save the original result and witness before any diagnostic input.
+            failedOriginalWitness = "Exercise a panned map before changing styles; before=\(initialFrame), after=\(firstPin.frame), initial camera=\(initialCameraValue), camera=\(String(describing: app.buttons["mini.recenter"].value))"
+            if ProcessInfo.processInfo.environment["APARTMENTFINDER_PAN_INPUT_DIAGNOSTICS"] == "1" {
+                print("MAP-PAN-INPUT originalMovement=\(originalMovement);\(failedOriginalWitness)")
+                observeFailedPanInput(app: app, map: map, pins: [firstPin, secondPin],
+                    mapFrame: mapFrame, visibleMap: visibleMap, start: startOffset, end: endOffset,
+                    coverage: coverage, locationStatus: locationStatus)
+            }
+        }
+        XCTAssertGreaterThan(originalMovement, 5, failedOriginalWitness)
         capture(app, "Settled panned map before changing style")
         XCTAssertTrue(style.isHittable)
         style.tap()
@@ -146,6 +157,80 @@ final class MapAppearanceTests: XCTestCase {
         let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", name), object: control)
         XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 5), .completed,
                        "The visible map type must update to \(name)", file: file, line: line)
+    }
+
+    /// Additional real input is diagnostic only: the saved original guard still fails.
+    private func observeFailedPanInput(app: XCUIApplication, map: XCUIElement, pins: [XCUIElement],
+                                      mapFrame: CGRect, visibleMap: CGRect, start: CGVector, end: CGVector,
+                                      coverage: XCUIElement, locationStatus: XCUIElement) {
+        func finite(_ frame: CGRect) -> Bool {
+            !frame.isEmpty && [frame.minX, frame.minY, frame.maxX, frame.maxY].allSatisfy { $0.isFinite }
+        }
+        func cameraValue() -> String? {
+            guard let raw = app.buttons["mini.recenter"].value as? String, raw.count <= 400 else { return nil }
+            let number = #"-?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"#
+            let pattern = #"\A(?:Showing apartment pins|Paused|Following), map heading -?[0-9]+ degrees, map distance [0-9]+ meters(?:, direction unavailable)?, map center "# + number + "," + number + #", camera revision [0-9]+\z"#
+            return raw.range(of: pattern, options: .regularExpression) == nil ? nil : raw
+        }
+        func clearPath(to end: CGVector) -> Bool {
+            let currentMap = map.frame, next = app.staticTexts["mini.next"], navigation = app.navigationBars.firstMatch
+            guard next.exists, navigation.exists else { return false }
+            let nextFrame = next.frame, navigationFrame = navigation.frame
+            guard [currentMap, nextFrame, navigationFrame].allSatisfy(finite), currentMap == mapFrame else { return false }
+            let top = max(currentMap.minY, navigationFrame.maxY)
+            let bottom = min(currentMap.maxY, nextFrame.minY - 24)
+            let currentVisible = CGRect(x: currentMap.minX, y: top, width: currentMap.width, height: bottom - top)
+            guard currentVisible == visibleMap else { return false }
+            let origin = CGPoint(x: mapFrame.minX + mapFrame.width * start.dx, y: mapFrame.minY + mapFrame.height * start.dy)
+            let segment = CGRect(x: origin.x, y: origin.y - 1, width: mapFrame.width * (end.dx - start.dx), height: 2)
+            let required = [app.buttons["mini.mapStyle"], app.buttons["Show all stops"], app.buttons["mini.recenter"], coverage, locationStatus]
+            guard required.allSatisfy({ $0.exists }) else { return false }
+            let requiredFrames = required.map { $0.frame }
+            let buttonFrames = app.buttons.allElementsBoundByIndex.filter { $0.exists && $0.isHittable }.map { $0.frame }
+            guard (requiredFrames + buttonFrames).allSatisfy(finite) else { return false }
+            let clearance = (requiredFrames + buttonFrames).map { $0.insetBy(dx: -24, dy: -24) }
+            return visibleMap.contains(segment) && mapFrame.contains(segment) && origin.x > mapFrame.minX + 44 &&
+                !clearance.contains { $0.intersects(segment) } &&
+                origin.y > coverage.frame.maxY + 24 && origin.y < locationStatus.frame.minY - 24
+        }
+        func perform(_ end: CGVector, phase: String) -> Double? {
+            guard clearPath(to: end), pins[0].exists else {
+                print("MAP-PAN-INPUT phase=\(phase);clearPath=false"); return nil
+            }
+            let before = pins[0].frame
+            guard finite(before) else { print("MAP-PAN-INPUT phase=\(phase);firstPinFrame=false"); return nil }
+            guard let cameraBefore = cameraValue() else { print("MAP-PAN-INPUT phase=\(phase);cameraBefore=false"); return nil }
+            map.coordinate(withNormalizedOffset: start)
+                .press(forDuration: 0.2, thenDragTo: map.coordinate(withNormalizedOffset: end),
+                       withVelocity: .slow, thenHoldForDuration: 0.5)
+            var previous: [CGRect] = [], previousPresence: [Bool] = [], stableSince: Date?
+            let settled = NSPredicate { _, _ in
+                let presence = pins.map { $0.exists }
+                let frames = zip(pins, presence).compactMap { $0.1 ? $0.0.frame : nil }
+                let unchanged = presence == previousPresence && frames.count == previous.count && zip(frames, previous).allSatisfy {
+                    finite($0.0) && abs($0.0.midX - $0.1.midX) < 1 && abs($0.0.maxY - $0.1.maxY) < 1
+                }
+                stableSince = unchanged ? stableSince ?? Date() : nil
+                previous = frames; previousPresence = presence
+                return stableSince.map { Date().timeIntervalSince($0) >= 0.75 } ?? false
+            }
+            let result = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: settled, object: nil)], timeout: 8)
+            let presence = pins.map { $0.exists }
+            let after = presence[0] ? pins[0].frame : CGRect.null
+            let cameraAfter = cameraValue()
+            let delta: Double? = finite(after) ? Double(max(abs(after.midX - before.midX), abs(after.maxY - before.maxY))) : nil
+            let afterText = finite(after) ? String(describing: after) : "unavailable"
+            print("MAP-PAN-INPUT phase=\(phase);start=\(start);end=\(end);settled=\(result.rawValue);pinPresence=\(presence);movement=\(String(describing: delta));before=\(before);after=\(afterText);cameraBefore=\(cameraBefore);cameraAfter=\(cameraAfter ?? "unavailable");paused=\(cameraAfter?.hasPrefix("Paused") == true)")
+            // Do not issue more input with stale geometry after any observed change.
+            return result == .completed && cameraAfter != nil && cameraBefore == cameraAfter ? delta : nil
+        }
+        // One unchanged replay tests repeatability before changing input length.
+        guard let replayMovement = perform(end, phase: "sameInputReplay"), replayMovement <= 5 else { return }
+        let longerEnd = [CGFloat(0.85), 0.80, 0.78, 0.75].first { x in
+            (x - start.dx) >= 0.15 && clearPath(to: CGVector(dx: x, dy: start.dy))
+        }
+        guard let longerEnd else { print("MAP-PAN-INPUT phase=longerSameStart;clearPath=false"); return }
+        _ = perform(CGVector(dx: longerEnd, dy: start.dy), phase: "longerSameStart")
     }
 
     private func waitForSettledPins(_ pins: [XCUIElement], file: StaticString = #filePath, line: UInt = #line) {
