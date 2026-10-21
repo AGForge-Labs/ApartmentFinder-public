@@ -22,6 +22,7 @@ on:
           - community-area-controls-regression
           - map-pinch-diagnostics
           - map-style-diagnostics
+          - map-style-warm-diagnostics
           - priority-followup-diagnostics
           - reviewed-geography-only-regression
           - activation-diagnostics
@@ -119,6 +120,7 @@ jobs:
             BOUNDED_UI=1
             STYLE_DIAGNOSTICS=1
             export TEST_RUNNER_APARTMENTFINDER_STYLE_DIAGNOSTICS=1
+            export TEST_RUNNER_APARTMENTFINDER_PAN_INPUT_DIAGNOSTICS=1
             TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
           fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-regression || "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-only-regression ]]; then
