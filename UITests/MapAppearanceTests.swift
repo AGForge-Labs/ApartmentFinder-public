@@ -151,8 +151,24 @@ final class MapAppearanceTests: XCTestCase {
     private func waitForSettledPins(_ pins: [XCUIElement], file: StaticString = #filePath, line: UInt = #line) {
         var previous: [CGRect] = []
         var stableSince: Date?
+        let diagnostic = ProcessInfo.processInfo.environment["APARTMENTFINDER_STYLE_DIAGNOSTICS"] == "1"
+        let origin = ProcessInfo.processInfo.systemUptime
+        var samples = 0
         let settled = NSPredicate { _, _ in
+            let started = ProcessInfo.processInfo.systemUptime
+            if diagnostic && samples < 16 { print("MAP-STYLE-QUERY begin=\(started - origin);sample=\(samples)") }
             let frames = pins.map { $0.frame }
+            if diagnostic && samples < 16 {
+                let ended = ProcessInfo.processInfo.systemUptime
+                // The two existing frame reads only; no additional AX query.
+                let values = frames.map { frame in
+                    [frame.minX, frame.minY, frame.width, frame.height].map {
+                        $0.isFinite && abs($0) < 10000 ? String(format: "%.3f", Double($0)) : "invalid"
+                    }.joined(separator: ",")
+                }.joined(separator: "|")
+                print("MAP-STYLE-QUERY end=\(ended - origin);duration=\(ended - started);sample=\(samples);frames=\(values)")
+                samples += 1
+            }
             let unchanged = frames.count == previous.count && zip(frames, previous).allSatisfy { current, prior in
                 !current.isEmpty && abs(current.midX - prior.midX) < 1 && abs(current.maxY - prior.maxY) < 1
             }
@@ -165,7 +181,9 @@ final class MapAppearanceTests: XCTestCase {
             return stableSince.map { Date().timeIntervalSince($0) >= 0.75 } ?? false
         }
         let expectation = XCTNSPredicateExpectation(predicate: settled, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 8), .completed,
+        let originalResult = XCTWaiter.wait(for: [expectation], timeout: 8)
+        if diagnostic { print("MAP-STYLE-SETTLE result=\(originalResult.rawValue);samples=\(samples)") }
+        XCTAssertEqual(originalResult, .completed,
                        "Both map pins must stop moving before measuring style preservation", file: file, line: line)
     }
 

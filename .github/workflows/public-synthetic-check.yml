@@ -21,6 +21,7 @@ on:
           - map-interaction-regression
           - community-area-controls-regression
           - map-pinch-diagnostics
+          - map-style-diagnostics
           - activation-diagnostics
         default: regression
 permissions:
@@ -44,7 +45,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
+          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
           fi
@@ -105,6 +106,10 @@ jobs:
             export TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1
             TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
           fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+            export TEST_RUNNER_APARTMENTFINDER_STYLE_DIAGNOSTICS=1
+            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
+          fi
           "${WORK[@]}" bash -c 'command -v xcodegen >/dev/null || brew install xcodegen'
           "${WORK[@]}" xcodebuild -version
           "${WORK[@]}" xcodegen generate --spec project.yml
@@ -120,8 +125,8 @@ jobs:
             local original_status=$?
             local cleanup_status=0
             trap - EXIT
-            if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
-              if [[ "$DIAGNOSTICS_COLLECTED" == 0 ]]; then
+            if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+              if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics && "$DIAGNOSTICS_COLLECTED" == 0 ]]; then
                 python3 -B scripts/public-synthetic-diagnostics.py collect --device "$DEVICE" || true
               fi
               python3 -B - "$DEVICE" <<'PY' || cleanup_status=$?
@@ -179,6 +184,11 @@ jobs:
               for kind,folder,prefix in [('native','NativeTests','ApartmentFinderTests/'),('ui','UITests','ApartmentFinderUITests/')]:
                   assert all(item.removeprefix(prefix) in test_ids('.',folder) for item in focused[kind])
               selection=focused
+          elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-style-diagnostics':
+              selection={'native':[], 'ui':['ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch']}
+              sys.path.insert(0,'scripts')
+              from iterate import test_ids
+              assert selection['ui'][0].removeprefix('ApartmentFinderUITests/') in test_ids('.', 'UITests')
           elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-pinch-diagnostics':
               sys.path.insert(0,'scripts')
               from iterate import test_ids
@@ -205,7 +215,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'map-style-diagnostics':1,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -221,12 +231,36 @@ jobs:
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then EXPECTED_NATIVE_COUNT=1; fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then EXPECTED_NATIVE_COUNT=1; fi
           [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)
             DIAGNOSTICS_COLLECTED=1
           fi
           XCODE_STATUS=0
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+            xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
+              -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
+              -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/style-build.xcresult" \
+              -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+              -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
+              CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
+              "${FILTERS[@]}" build-for-testing
+            STYLE_LOG="$RUNNER_TEMP/map-style-diagnostic.log"
+            : > "$STYLE_LOG"
+            python3 -B scripts/public-map-style-watch.py --device "$DEVICE" --log "$STYLE_LOG" &
+            STYLE_WATCH=$!
+            RUN=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$(( $(date +%s) + 12 * 60 ))" --)
+            "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
+              -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
+              -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
+              -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+              -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
+              CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
+              "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test-without-building 2>&1 | tee "$STYLE_LOG" || XCODE_STATUS=$?
+            kill "$STYLE_WATCH" 2>/dev/null || true
+            wait "$STYLE_WATCH" || true
+          else
           "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
             -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
@@ -234,7 +268,12 @@ jobs:
             -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
             "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test || XCODE_STATUS=$?
+          fi
           MAP_GESTURE_STATUS=0
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+            # Bound both result readers even if the test driver has stalled.
+            WORK=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$(( $(date +%s) + 60 ))" --)
+          fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
             python3 -B scripts/public-map-gesture-diagnostics.py --device "$DEVICE" --run-nonce "$MAP_GESTURE_RUN_NONCE" || MAP_GESTURE_STATUS=$?
           fi
