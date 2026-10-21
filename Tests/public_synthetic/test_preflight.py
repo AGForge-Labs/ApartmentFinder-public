@@ -431,9 +431,9 @@ class PublicPreflightTests(unittest.TestCase):
 
     def test_reviewed_native_inventory_matches_current_source(self):
         artifact = module('public_preflight_artifact', ROOT / 'scripts/testflight-artifact.py')
-        self.assertEqual(artifact.expected_test_count(ROOT), 126)
+        self.assertEqual(artifact.expected_test_count(ROOT), 128)
         profile = json.loads((ROOT / 'scripts/iteration-profile.json').read_text())
-        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 40, 'original_pngs': 45})
+        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 42, 'original_pngs': 45})
 
 
     def test_public_selection_is_exact_and_excludes_private_acceptance(self):
