@@ -30,7 +30,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: apartmentfinder-public-synthetic
+  group: ${{ inputs.scope == 'ontrac-pan-observation' && 'apartmentfinder-public-ontrac-pan-observation' || 'apartmentfinder-public-synthetic' }}
   cancel-in-progress: false
 jobs:
   synthetic:
