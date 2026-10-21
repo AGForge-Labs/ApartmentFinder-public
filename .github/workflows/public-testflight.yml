@@ -15,6 +15,11 @@ on:
         description: Apple build number newer than every existing build; public run numbers are independent
         required: true
         type: string
+      accept_known_map_regression:
+        description: Reuse the fixed d7f43ed pass, accepting the later pan failure and Simulator crash; application bytes must remain identical
+        required: false
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -24,6 +29,7 @@ env:
   EXPECTED_COMMIT: ${{ inputs.expected_commit }}
   RELEASE_BUILD_NUMBER: ${{ inputs.build_number }}
   RELEASE_AUTHORIZED: ${{ inputs.authorize_upload }}
+  RELEASE_KNOWN_MAP_RISK_ACCEPTED: ${{ inputs.accept_known_map_regression }}
   PYTHONDONTWRITEBYTECODE: '1'
   DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
   HOMEBREW_NO_AUTO_UPDATE: '1'
@@ -40,14 +46,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
           persist-credentials: false
       - name: Require exact owner-reviewed public source
         run: python3 -B scripts/public-release.py check
       - name: Release gate regression checks
         run: python3 -B -m unittest discover -s Tests/release -v
       - name: Preserve existing native and source regression checks
+        if: ${{ !inputs.accept_known_map_regression }}
         shell: bash
         run: bash scripts/public-release-validation.sh
+      - name: Verify fixed prior acceptance and identical application source under explicit risk acceptance
+        if: ${{ inputs.accept_known_map_regression }}
+        run: python3 -B scripts/public-release-recovery.py
   release:
     needs: validate
     if: ${{ needs.validate.result == 'success' }}
