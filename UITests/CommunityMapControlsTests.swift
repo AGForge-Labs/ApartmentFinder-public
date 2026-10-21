@@ -41,6 +41,10 @@ final class CommunityMapControlsTests: XCTestCase {
         app.buttons["mini.mapStyle"].tap()
         XCTAssertTrue(app.buttons["Map"].waitForExistence(timeout: 5))
         app.buttons["Map"].tap()
+        let selectedMap = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Map"),
+                                                     object: app.buttons["mini.mapStyle"])
+        XCTAssertEqual(XCTWaiter.wait(for: [selectedMap], timeout: 5), .completed,
+                       "The visible map type must update to Map after its action")
         XCTAssertEqual(app.buttons["mini.mapStyle"].value as? String, "Map")
         assertCompactControls()
         app.buttons["mini.focus.3"].tap()

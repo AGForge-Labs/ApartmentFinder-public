@@ -242,6 +242,7 @@ class PublicPreflightTests(unittest.TestCase):
             'ui': [
                 'ApartmentFinderUITests/CommunityMapControlsTests/testPausedControlsStayCompactAndKeepTheirActions',
                 'ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors',
+                'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
                 'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch',
             ],
         }
@@ -252,8 +253,8 @@ class PublicPreflightTests(unittest.TestCase):
                 text=True, capture_output=True, timeout=10)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(json.loads(output.read_text()), expected)
-        self.assertIn("'community-area-controls-regression':5", workflow)
-        self.assertIn('if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi', workflow)
+        self.assertIn("'community-area-controls-regression':6", workflow)
+        self.assertIn('if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi', workflow)
 
     def test_workflow_optional_test_flags_are_nounset_safe_and_preserve_argument_boundaries(self):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
