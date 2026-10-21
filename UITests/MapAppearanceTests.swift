@@ -1,28 +1,11 @@
 import XCTest
 
 final class MapAppearanceTests: XCTestCase {
-    private struct PanFailureWitness {
-        let map: CGRect
-        let visibleMap: CGRect
-        let start: CGPoint
-        let end: CGPoint
-        let pinFrames: [CGRect]
-        let obstacleFrames: [CGRect]
-        let camera: [Double]
-    }
-    private var panFailureWitness: PanFailureWitness?
-
     func testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch() {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
                                "--reset-test-inbox", "--tuscano-manifest"]
-        let environment = ProcessInfo.processInfo.environment
-        if let nonce = environment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] ?? environment["TEST_RUNNER_APARTMENTFINDER_MAP_PAN_RUN_NONCE"],
-           UUID(uuidString: nonce) != nil {
-            app.launchArguments += ["--synthetic-map-pan-diagnostics", "--synthetic-map-pan-original"]
-            app.launchEnvironment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] = nonce
-        }
         app.launch()
         XCTAssertTrue(app.buttons["test.mixed"].waitForExistence(timeout: 20))
         app.buttons["test.mixed"].tap()
@@ -42,7 +25,6 @@ final class MapAppearanceTests: XCTestCase {
 
         waitForSettledPins([firstPin, secondPin])
         let initialFrame = firstPin.frame
-        let initialSecondFrame = secondPin.frame
         let initialX = initialFrame.midX
         let map = app.maps.firstMatch
         let mapFrame = map.frame
@@ -90,26 +72,17 @@ final class MapAppearanceTests: XCTestCase {
         XCTAssertGreaterThan(start.y, coverage.frame.maxY + 24, "Stay below the map's top overlay")
         XCTAssertLessThan(start.y, locationStatus.frame.minY - 24, "Stay above the map's bottom overlay")
         let initialCameraValue = String(describing: app.buttons["mini.recenter"].value)
-        let originalObstacleFrames = blocked.map { $0.frame } + [nextFrame, navigationFrame]
         print("MAP-APPEARANCE background drag map=\(mapFrame) visible=\(visibleMap) start=\(start) end=\(end), camera=\(initialCameraValue)")
-        let originalPanUptime = ProcessInfo.processInfo.systemUptime
         map.coordinate(withNormalizedOffset: startOffset)
             .press(forDuration: 0.2, thenDragTo: map.coordinate(withNormalizedOffset: endOffset),
                    withVelocity: .slow, thenHoldForDuration: 0.5)
-        print("MAP-APPEARANCE originalPanUptime=\(originalPanUptime), returnedUptime=\(ProcessInfo.processInfo.systemUptime)")
         // MapKit can keep moving after XCTest reports the drag complete. Measure
         // the settled pan, not a transient frame before the style menu opens.
         waitForSettledPins([firstPin, secondPin])
         let originalTip = CGPoint(x: firstPin.frame.midX, y: firstPin.frame.maxY)
         let secondTip = CGPoint(x: secondPin.frame.midX, y: secondPin.frame.maxY)
-        let originalAfterFrame = firstPin.frame
-        let originalAfterCamera = String(describing: app.buttons["mini.recenter"].value)
-        if abs(originalTip.x - initialX) <= 5, let camera = cameraSignature(initialCameraValue) {
-            panFailureWitness = PanFailureWitness(map: mapFrame, visibleMap: visibleMap, start: start, end: end,
-                pinFrames: [initialFrame, initialSecondFrame], obstacleFrames: originalObstacleFrames, camera: camera)
-        }
         XCTAssertGreaterThan(abs(originalTip.x - initialX), 5,
-                             "Exercise a panned map before changing styles; before=\(initialFrame), after=\(originalAfterFrame), initial camera=\(initialCameraValue), camera=\(originalAfterCamera)")
+                             "Exercise a panned map before changing styles; before=\(initialFrame), after=\(firstPin.frame), initial camera=\(initialCameraValue), camera=\(String(describing: app.buttons["mini.recenter"].value))")
         capture(app, "Settled panned map before changing style")
         XCTAssertTrue(style.isHittable)
         style.tap()
@@ -144,7 +117,7 @@ final class MapAppearanceTests: XCTestCase {
         expectStyle("Map", on: style)
         capture(app, "Standard map retains progress and the completed pin")
         app.terminate()
-        app.launchArguments.removeAll { $0 == "--reset-test-inbox" || $0 == "--synthetic-map-pan-diagnostics" || $0 == "--synthetic-map-pan-original" }
+        app.launchArguments.removeAll { $0 == "--reset-test-inbox" }
         app.launch()
         app.buttons["apartment.tuscano"].tap()
         app.buttons["mini.start"].tap()
@@ -165,94 +138,8 @@ final class MapAppearanceTests: XCTestCase {
             hierarchy.lifetime = .keepAlways
             add(hierarchy)
         }
-        if let witness = panFailureWitness { diagnosePanFailure(app, witness: witness) }
         app.terminate()
         super.tearDown()
-    }
-
-    private func cameraSignature(_ value: String) -> [Double]? {
-        let patterns = [#"map center (-?[0-9.]+),(-?[0-9.]+)"#, #"map distance ([0-9]+) meters"#, #"map heading ([0-9]+) degrees"#]
-        var values: [Double] = []
-        for pattern in patterns {
-            guard let expression = try? NSRegularExpression(pattern: pattern),
-                  let match = expression.firstMatch(in: value, range: NSRange(value.startIndex..., in: value)) else { return nil }
-            for index in 1..<match.numberOfRanges {
-                guard let range = Range(match.range(at: index), in: value), let number = Double(value[range]), number.isFinite else { return nil }
-                values.append(number)
-            }
-        }
-        return values.count == 4 ? values : nil
-    }
-
-    /// Runs only after the original assertion has failed and its screen is captured.
-    /// These launches never replace its cached result or execute another gesture path.
-    private func diagnosePanFailure(_ app: XCUIApplication, witness: PanFailureWitness) {
-        let environment = ProcessInfo.processInfo.environment
-        guard let nonce = environment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] ?? environment["TEST_RUNNER_APARTMENTFINDER_MAP_PAN_RUN_NONCE"],
-              UUID(uuidString: nonce) != nil,
-              let path = try? JSONEncoder().encode([[Double(witness.start.x), Double(witness.start.y)],
-                                                    [Double(witness.end.x), Double(witness.end.y)]]),
-              let pathValue = String(data: path, encoding: .utf8) else { return }
-        for mode in ["interactive", "disabled"] {
-            app.terminate()
-            app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
-                "--reset-test-inbox", "--tuscano-manifest", "--synthetic-map-pan-diagnostics"]
-            if mode == "disabled" { app.launchArguments.append("--synthetic-map-pan-disable-pin-hits") }
-            app.launchEnvironment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] = nonce
-            app.launchEnvironment["APARTMENTFINDER_MAP_PAN_PATH"] = pathValue
-            app.launch()
-            guard app.buttons["test.mixed"].waitForExistence(timeout: 20) else { print("MAP-PAN phase=\(mode), incomplete=mixed"); continue }
-            app.buttons["test.mixed"].tap()
-            guard app.buttons["manifest.import"].waitForExistence(timeout: 10) else { print("MAP-PAN phase=\(mode), incomplete=import"); continue }
-            app.buttons["manifest.import"].tap()
-            guard app.buttons["apartment.tuscano"].waitForExistence(timeout: 10) else { print("MAP-PAN phase=\(mode), incomplete=apartment"); continue }
-            app.buttons["apartment.tuscano"].tap()
-            guard app.buttons["mini.start"].waitForExistence(timeout: 5) else { print("MAP-PAN phase=\(mode), incomplete=start"); continue }
-            app.buttons["mini.start"].tap()
-            let map = app.maps.firstMatch, style = app.buttons["mini.mapStyle"]
-            let first = app.buttons["mini.pin.2.tuscano-unit-county-2187653-2066"]
-            let second = app.buttons["mini.pin.3.tuscano-unit-county-2187691-2137"]
-            guard style.waitForExistence(timeout: 5), first.waitForExistence(timeout: 5), second.exists,
-                  diagnosticSettle([first, second]) else { print("MAP-PAN phase=\(mode), incomplete=pins"); continue }
-            let frame = map.frame, before = first.frame
-            let obstacles = [first, second, style, app.buttons["Show all stops"], app.buttons["mini.recenter"],
-                app.staticTexts["mini.coverage"], app.staticTexts["mini.locationStatus"],
-                app.staticTexts["mini.next"], app.navigationBars.firstMatch].map { $0.frame }
-            let pinFrames = [before, second.frame]
-            let camera = cameraSignature(String(describing: app.buttons["mini.recenter"].value))
-            func same(_ a: CGRect, _ b: CGRect) -> Bool {
-                !a.isEmpty && !b.isEmpty && zip([a.minX, a.minY, a.width, a.height], [b.minX, b.minY, b.width, b.height])
-                    .allSatisfy { $0.isFinite && $1.isFinite && abs($0 - $1) <= 1 }
-            }
-            let matched = same(frame, witness.map) && obstacles.count == witness.obstacleFrames.count &&
-                zip(obstacles, witness.obstacleFrames).allSatisfy { same($0, $1) } &&
-                zip(pinFrames, witness.pinFrames).allSatisfy { same($0, $1) } && style.value as? String == "Satellite" &&
-                camera.map { values in zip(zip(values, witness.camera), [0.00001, 0.00001, 5, 1]).allSatisfy { abs($0.0 - $0.1) <= $1 } } == true
-            print("MAP-PAN phase=\(mode), matchedOriginalSetup=\(matched), map=\(frame), pinBefore=\(before), camera=\(camera ?? [])")
-            guard matched else { print("MAP-PAN phase=\(mode), incomplete=setupMismatch"); continue }
-            let start = CGVector(dx: (witness.start.x - frame.minX) / frame.width, dy: (witness.start.y - frame.minY) / frame.height)
-            let end = CGVector(dx: (witness.end.x - frame.minX) / frame.width, dy: (witness.end.y - frame.minY) / frame.height)
-            map.coordinate(withNormalizedOffset: start)
-                .press(forDuration: 0.2, thenDragTo: map.coordinate(withNormalizedOffset: end),
-                       withVelocity: .slow, thenHoldForDuration: 0.5)
-            let settled = diagnosticSettle([first, second])
-            let after = first.frame
-            print("MAP-PAN phase=\(mode), settled=\(settled), pinAfter=\(after), deltaX=\(abs(after.midX - before.midX)), camera=\(cameraSignature(String(describing: app.buttons["mini.recenter"].value)) ?? [])")
-            capture(app, "Failure-only pan comparison \(mode)")
-        }
-    }
-
-    private func diagnosticSettle(_ pins: [XCUIElement]) -> Bool {
-        var previous: [CGRect] = [], stableSince: Date?
-        let predicate = NSPredicate { _, _ in
-            let frames = pins.map { $0.frame }
-            if frames.count == previous.count && zip(frames, previous).allSatisfy({ a, b in
-                !a.isEmpty && abs(a.midX - b.midX) < 1 && abs(a.maxY - b.maxY) < 1
-            }) { stableSince = stableSince ?? Date() } else { stableSince = nil }
-            previous = frames
-            return stableSince.map { Date().timeIntervalSince($0) >= 0.75 } ?? false
-        }
-        return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: nil)], timeout: 8) == .completed
     }
 
     private func expectStyle(_ name: String, on control: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
@@ -283,7 +170,6 @@ final class MapAppearanceTests: XCTestCase {
     }
 
     private func capture(_ app: XCUIApplication, _ name: String) {
-        guard app.state == .runningForeground else { return }
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways

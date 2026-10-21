@@ -100,11 +100,6 @@ jobs:
             export TEST_RUNNER_APARTMENTFINDER_MAP_GESTURE_RUN_NONCE="$MAP_GESTURE_RUN_NONCE"
             TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
           fi
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then
-            MAP_PAN_RUN_NONCE=$(python3 -c 'import uuid; print(uuid.uuid4())')
-            export TEST_RUNNER_APARTMENTFINDER_MAP_PAN_RUN_NONCE="$MAP_PAN_RUN_NONCE"
-            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
-          fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             WORK=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --)
             export TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1
@@ -112,9 +107,6 @@ jobs:
           fi
           "${WORK[@]}" bash -c 'command -v xcodegen >/dev/null || brew install xcodegen'
           "${WORK[@]}" xcodebuild -version
-          BASELINE_STATUS=0
-          # Frozen PR4 comparison completed in run 39533707050. Do not rebuild it
-          # for original-gesture observation; all six PR5 cases remain required.
           "${WORK[@]}" xcodegen generate --spec project.yml
           LOCK=ApartmentFinder.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
           mkdir -p "$(dirname "$LOCK")"
@@ -245,10 +237,6 @@ jobs:
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
             python3 -B scripts/public-map-gesture-diagnostics.py --device "$DEVICE" --run-nonce "$MAP_GESTURE_RUN_NONCE" || MAP_GESTURE_STATUS=$?
           fi
-          MAP_PAN_STATUS=0
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then
-            python3 -B scripts/public-map-pan-diagnostics.py --device "$DEVICE" --run-nonce "$MAP_PAN_RUN_NONCE" || MAP_PAN_STATUS=$?
-          fi
           RESULT_STATUS=0
           if [[ -d "$RUNNER_TEMP/synthetic.xcresult" ]]; then
             "${WORK[@]}" xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json" || RESULT_STATUS=$?
@@ -257,8 +245,6 @@ jobs:
             RESULT_STATUS=1
           fi
           if [[ "$XCODE_STATUS" != 0 ]]; then exit "$XCODE_STATUS"; fi
-          if [[ "$BASELINE_STATUS" != 0 ]]; then exit "$BASELINE_STATUS"; fi
-          if [[ "$MAP_PAN_STATUS" != 0 ]]; then exit "$MAP_PAN_STATUS"; fi
           if [[ "$MAP_GESTURE_STATUS" != 0 ]]; then exit "$MAP_GESTURE_STATUS"; fi
           if [[ "$RESULT_STATUS" != 0 ]]; then exit "$RESULT_STATUS"; fi
           "${WORK[@]}" python3 -B - "$RUNNER_TEMP" <<'PY'

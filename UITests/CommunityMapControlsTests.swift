@@ -111,6 +111,7 @@ final class CommunityMapControlsTests: XCTestCase {
         }
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: centered, object: nil)], timeout: 10), .completed,
             "The map must frame the official community area instead of a distant synthetic driver: \(String(describing: control.value))", file: file, line: line)
+        print("COMMUNITY-MAP-CENTER expected=\(latitude),\(longitude), camera=\(String(describing: control.value))")
     }
 
     private func capture(_ name: String) {

@@ -133,12 +133,7 @@ struct ApartmentDeliveryMap: View {
                         }
                 }
             }
-            .onAppear {
-                followLocation()
-                #if DEBUG && targetEnvironment(simulator)
-                SyntheticMapPanProbe.startIfEnabled()
-                #endif
-            }
+            .onAppear { followLocation() }
             .onMapCameraChange(frequency: .continuous) { context in
                 mapHeading = context.camera.heading
                 mapDistance = context.camera.distance
@@ -170,18 +165,7 @@ struct ApartmentDeliveryMap: View {
         }
     }
 
-    @ViewBuilder private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
-        #if DEBUG && targetEnvironment(simulator)
-        if SyntheticMapPanProbe.enabled && SyntheticMapPanProbe.pinsDisabled {
-            projectedPinContents(pins, proxy: proxy, revision: revision)
-                .allowsHitTesting(false)
-        } else { projectedPinContents(pins, proxy: proxy, revision: revision) }
-        #else
-        projectedPinContents(pins, proxy: proxy, revision: revision)
-        #endif
-    }
-
-    private func projectedPinContents(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
+    private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
         GeometryReader { geometry in
             ForEach(pins) { pin in
                 if let point = proxy.convert(pin.place.coordinate.cl, to: .local),
