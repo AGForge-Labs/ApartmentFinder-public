@@ -43,6 +43,15 @@ class PriorityUIDiagnosticTests(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 UI.verify_warm_order('\n'.join(altered))
 
+    def test_geography_fallback_keeps_all_three_original_bodies_and_full_profile(self):
+        profile = json.loads((ROOT / 'scripts/public-synthetic-tests.json').read_text())
+        before = json.dumps(profile, sort_keys=True)
+        cases = UI.selected_cases('reviewed-geography-only-regression', profile)
+        self.assertEqual(cases['native'], [])
+        self.assertEqual(len(cases['ui']), 3)
+        self.assertEqual(set(cases['ui']), {identity for identity in profile['ui'] if '/Reviewed89123GeographyUITests/' in identity})
+        self.assertEqual(json.dumps(profile, sort_keys=True), before)
+
     def test_cleanup_reports_only_selected_state_and_rejects_ambiguous_malformed_input(self):
         selected = {'udid': 'selected', 'state': 'Shutdown', 'name': 'PRIVATE_MARKER'}
         unrelated = {'udid': 'other', 'state': 'Booted', 'name': 'OTHER_PRIVATE'}
