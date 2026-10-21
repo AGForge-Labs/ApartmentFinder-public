@@ -28,7 +28,21 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         guard originalPreviewFound else { return }
         print("REVIEWED_IMPORT_SETUP originalPreview=true;requestToPreviewMilliseconds=\(Date().timeIntervalSince(requestStart) * 1000)")
         app.buttons["manifest.import"].tap()
-        XCTAssertTrue(app.buttons["apartment.\(id)"].waitForExistence(timeout: 10)); app.buttons["apartment.\(id)"].tap()
+        XCTAssertTrue(app.staticTexts["5 apartments"].waitForExistence(timeout: 10))
+        let apartment = app.buttons["apartment.\(id)"]
+        let initiallyExists = apartment.exists
+        var scrolls = 0
+        // SwiftUI's List can leave the fifth group outside the accessibility
+        // tree until it scrolls into view. Navigate the real list before
+        // asserting the exact group; do not substitute a different fixture.
+        for _ in 0..<5 where !apartment.exists || !apartment.isHittable {
+            app.swipeUp()
+            scrolls += 1
+        }
+        print("REVIEWED_APARTMENT_NAVIGATION id=\(id);initiallyExists=\(initiallyExists);scrolls=\(scrolls);exists=\(apartment.exists);hittable=\(apartment.isHittable)")
+        XCTAssertTrue(apartment.waitForExistence(timeout: 10))
+        XCTAssertTrue(apartment.isHittable)
+        apartment.tap()
         app.buttons["mini.start"].tap()
         XCTAssertTrue(app.maps.firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["mini.recenter"].waitForExistence(timeout: 10))
