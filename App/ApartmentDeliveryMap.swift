@@ -16,7 +16,6 @@ struct ApartmentDeliveryMap: View {
     @State private var followedHeading: Double = 0
     @State private var viewport: CGSize = .zero
     @State private var pinProjectionRevision: UInt64 = 0
-    @State private var pinHitSizes: [String: CGSize] = [:]
     @State private var showingPropertyForDistantUser = false
     #if DEBUG && targetEnvironment(simulator)
     @State private var pinHostSnapshot = ""
@@ -134,7 +133,12 @@ struct ApartmentDeliveryMap: View {
                         }
                 }
             }
-            .onAppear { followLocation() }
+            .onAppear {
+                followLocation()
+                #if DEBUG && targetEnvironment(simulator)
+                SyntheticMapPanProbe.startIfEnabled()
+                #endif
+            }
             .onMapCameraChange(frequency: .continuous) { context in
                 mapHeading = context.camera.heading
                 mapDistance = context.camera.distance
@@ -166,13 +170,24 @@ struct ApartmentDeliveryMap: View {
         }
     }
 
-    private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
+    @ViewBuilder private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
+        #if DEBUG && targetEnvironment(simulator)
+        if SyntheticMapPanProbe.enabled {
+            projectedPinContents(pins, proxy: proxy, revision: revision)
+                .allowsHitTesting(!SyntheticMapPanProbe.pinsDisabled)
+        } else { projectedPinContents(pins, proxy: proxy, revision: revision) }
+        #else
+        projectedPinContents(pins, proxy: proxy, revision: revision)
+        #endif
+    }
+
+    private func projectedPinContents(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
         GeometryReader { geometry in
             ForEach(pins) { pin in
                 if let point = proxy.convert(pin.place.coordinate.cl, to: .local),
                    point.x.isFinite, point.y.isFinite,
                    CGRect(origin: .zero, size: geometry.size).contains(point) {
-                    ProjectedDeliveryPinPosition(pinID: pin.id, point: point, cameraRevision: revision) {
+                    ProjectedDeliveryPinPosition(point: point, cameraRevision: revision) {
                         #if DEBUG && targetEnvironment(simulator)
                         if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
                             group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
@@ -185,22 +200,7 @@ struct ApartmentDeliveryMap: View {
                     }
                 }
             }
-        }
-        .contentShape(.interaction, ProjectedPinOverlayHitRegion(rectangles: pinHitRectangles(pins, proxy: proxy)))
-        .onPreferenceChange(ProjectedPinSizesKey.self) { sizes in
-            if pinHitSizes != sizes { pinHitSizes = sizes }
-        }
-        .clipped()
-    }
-
-    private func pinHitRectangles(_ pins: [Pin], proxy: MapProxy) -> [CGRect] {
-        pins.compactMap { pin in
-            guard let size = pinHitSizes[pin.id],
-                  let point = proxy.convert(pin.place.coordinate.cl, to: .local),
-                  point.x.isFinite, point.y.isFinite else { return nil }
-            return CGRect(x: point.x - size.width / 2, y: point.y - size.height,
-                          width: size.width, height: size.height)
-        }
+        }.clipped()
     }
 
     @ViewBuilder private func coverageLabel(_ pins: [Pin]) -> some View {
@@ -325,43 +325,16 @@ private struct ProjectedDeliveryPinHitRegion: Shape {
     }
 }
 
-/// The overlay owns only measured pin footprints. Its full-size layout must not
-/// turn clear map background into a SwiftUI interaction region.
-private struct ProjectedPinOverlayHitRegion: Shape {
-    let rectangles: [CGRect]
-
-    func path(in bounds: CGRect) -> Path {
-        Path { path in
-            for rectangle in rectangles {
-                // Match the renderer's tip containment using this layout's
-                // current bounds, including during viewport changes.
-                guard bounds.contains(CGPoint(x: rectangle.midX, y: rectangle.maxY)) else { continue }
-                let visible = rectangle.intersection(bounds)
-                if !visible.isNull && !visible.isEmpty { path.addRect(visible) }
-            }
-        }
-    }
-}
-
-private struct ProjectedPinSizesKey: PreferenceKey {
-    static var defaultValue: [String: CGSize] { [:] }
-    static func reduce(value: inout [String: CGSize], nextValue: () -> [String: CGSize]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, current in current })
-    }
-}
-
 /// Place the actual visible button's tip at its map coordinate. Keeping the
 /// control in the map overlay avoids MapKit's custom-annotation hosting path.
 private struct ProjectedDeliveryPinPosition<Content: View>: View {
-    let pinID: String
     let point: CGPoint
     // A pure pan must invalidate this view even when heading and distance stay equal.
     let cameraRevision: UInt64
     private let content: Content
     @State private var measuredSize: CGSize?
 
-    init(pinID: String, point: CGPoint, cameraRevision: UInt64, @ViewBuilder content: () -> Content) {
-        self.pinID = pinID
+    init(point: CGPoint, cameraRevision: UInt64, @ViewBuilder content: () -> Content) {
         self.point = point
         self.cameraRevision = cameraRevision
         self.content = content()
@@ -382,7 +355,6 @@ private struct ProjectedDeliveryPinPosition<Content: View>: View {
             .opacity(measuredSize == nil ? 0 : 1)
             .allowsHitTesting(measuredSize != nil)
             .accessibilityHidden(measuredSize == nil)
-            .preference(key: ProjectedPinSizesKey.self, value: measuredSize.map { [pinID: $0] } ?? [:])
     }
 
     private func recordSize(_ size: CGSize) {
