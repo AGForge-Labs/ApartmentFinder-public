@@ -20,14 +20,17 @@ NONCE = '12345678-1234-1234-1234-123456789abc'
 
 
 def packet(mode='interactive'):
-    return dict(schemaVersion=1, mode=mode, runNonce=NONCE, samples=100, armed=True,
+    return dict(schemaVersion=2, mode=mode, runNonce=NONCE, samples=100, armed=True,
         mapAcquisitions=1, maxVisibleMaps=1, discoveryTruncated=False, maxSampleGap=0.06,
         mapWindowFrame=[0, 0, 402, 874], safeInsets=[116, 0, 397, 0],
         initialCamera=[36.069320249007106, -115.24893638491625, 650, 0, 0, 650],
         lastCamera=[36.069320249007106, -115.24893638491625, 650, 0, 0, 650],
         scrollEnabled=True, interactionEnabled=True, panRecognizerCount=1,
-        path=[[241.2, 296.5], [281.4, 296.5]], hitPath=[[241.2, 296.5, 1, 0], [281.4, 296.5, 1, 0]],
-        recognizers=[dict(enabled=True, states=[0], maxTouches=0, maxTranslation=[0, 0], points=[])])
+        path=[] if mode == 'original' else [[241.2, 296.5], [281.4, 296.5]],
+        hitPath=[] if mode == 'original' else [[241.2, 296.5, 1, 0], [281.4, 296.5, 1, 0]],
+        observationFrozen=False, terminalPanObserved=False,
+        firstCallbackUptime=0, lastCallbackUptime=0, freezeUptime=0,
+        recognizers=[dict(enabled=True, states=[0], callbacks=0, maxTouches=0, maxTranslation=[0, 0], points=[])])
 
 
 class MapPanDiagnosticsTests(unittest.TestCase):
@@ -79,7 +82,7 @@ class MapPanDiagnosticsTests(unittest.TestCase):
         b = packet('disabled'); b['runNonce'] = 'ffffffff-1234-1234-1234-123456789abc'
         output = io.StringIO()
         with patch.object(diagnostics.subprocess, 'run', return_value=SimpleNamespace(stdout=b'/synthetic/container\n')), \
-             patch.object(diagnostics, 'read_packet', side_effect=[packet(), b]), contextlib.redirect_stdout(output):
+             patch.object(diagnostics, 'read_packet', side_effect=[packet('original'), packet(), b]), contextlib.redirect_stdout(output):
             status = diagnostics.main(['--device', NONCE, '--run-nonce', NONCE])
         self.assertEqual(status, 1)
         self.assertEqual(output.getvalue(), 'syntheticMapPan=unavailableOrInvalid\n')
@@ -115,12 +118,55 @@ class MapPanDiagnosticsTests(unittest.TestCase):
         for gate in ('#if DEBUG && targetEnvironment(simulator)', 'UITestSupport.storeURL() != nil',
                      '--tuscano-manifest', '--synthetic-map-pan-diagnostics', 'UUID(uuidString:'):
             self.assertIn(gate, source)
-        for forbidden in ('addGestureRecognizer', 'addTarget', '.delegate =', '.camera =',
+        for forbidden in ('addGestureRecognizer', '.delegate =', '.camera =',
                           'debugDescription', 'accessibilityLabel', 'store.personal', 'print(', 'NSLog('):
             self.assertNotIn(forbidden, source)
         overlay = (ROOT / 'App/ApartmentDeliveryMap.swift').read_text(encoding='utf-8')
-        self.assertIn('projectedPinContents(pins, proxy: proxy, revision: revision)\n                .allowsHitTesting(!SyntheticMapPanProbe.pinsDisabled)', overlay)
+        self.assertIn('if SyntheticMapPanProbe.enabled && SyntheticMapPanProbe.pinsDisabled {', overlay)
+        self.assertIn('projectedPinContents(pins, proxy: proxy, revision: revision)\n                .allowsHitTesting(false)', overlay)
+        self.assertNotIn('.allowsHitTesting(true)', overlay)
         self.assertIn('} else { projectedPinContents(pins, proxy: proxy, revision: revision) }', overlay)
+
+    def test_original_observation_does_not_guess_a_gesture_path_or_replace_the_assertion(self):
+        self.assertIn('original', diagnostics.MODES)
+        original = packet('original')
+        self.assertEqual(diagnostics.validate(original, 'original'), original)
+        original['path'] = [[241.2, 296.5], [281.4, 296.5]]
+        with self.assertRaises(ValueError): diagnostics.validate(original, 'original')
+        source = (ROOT / 'UITests/MapAppearanceTests.swift').read_text(encoding='utf-8')
+        self.assertIn('--synthetic-map-pan-original', source)
+        self.assertIn('originalPanUptime', source)
+        self.assertEqual(source.count('XCTAssertGreaterThan(abs(originalTip.x - initialX), 5,'), 1)
+
+    def test_original_pan_callbacks_are_bounded_numeric_observations_only(self):
+        source = (ROOT / 'App/SyntheticMapPanProbe.swift').read_text(encoding='utf-8')
+        self.assertIn('pan.addTarget(self, action: #selector(observePan(_:)))', source)
+        self.assertIn('receipt.recognizers[index].callbacks + 1', source)
+        self.assertIn('receipt.observationFrozen = true', source)
+        self.assertIn('ProcessInfo.processInfo.systemUptime >= deadline', source)
+        self.assertIn('pan.removeTarget(self, action: #selector(observePan(_:)))', source)
+        callback = source.split('@objc private func observePan(', 1)[1].split('private func record(', 1)[0]
+        self.assertNotIn('write()', callback)
+        self.assertIn('receipt.mode == "original"', source)
+        for callbacks in (-1, 10001, 'private'):
+            value = packet('original'); value['recognizers'][0]['callbacks'] = callbacks
+            with self.assertRaises(ValueError): diagnostics.validate(value, 'original')
+
+    def test_original_receipt_does_not_require_failure_replays_or_claim_negative_delivery(self):
+        output = io.StringIO()
+        with patch.object(diagnostics.subprocess, 'run', return_value=SimpleNamespace(stdout=b'/synthetic/container\n')), \
+             patch.object(diagnostics, 'read_packet', side_effect=[packet('original'), FileNotFoundError(), FileNotFoundError()]), \
+             contextlib.redirect_stdout(output):
+            status = diagnostics.main(['--device', NONCE, '--run-nonce', NONCE])
+        self.assertEqual(status, 0)
+        lines = output.getvalue().splitlines()
+        self.assertEqual(len(lines), 2)
+        summary = json.loads(lines[1].split('=', 1)[1])
+        self.assertFalse(summary['positivePanCallback'])
+        self.assertTrue(summary['absentCallbacksDoNotProveAbsentDelivery'])
+        self.assertTrue(summary['incompleteWithoutTerminalPan'])
+        self.assertFalse(summary['observationComplete'])
+        self.assertFalse(summary['releaseEligible'])
 
     def test_baseline_is_frozen_and_does_not_replace_the_six_acceptance_cases(self):
         baseline = (ROOT / 'scripts/public-map-pan-baseline.sh').read_text(encoding='utf-8')

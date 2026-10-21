@@ -2,14 +2,16 @@
 import UIKit
 import MapKit
 
-/// Failure-only observation of existing recognizers. No view or recognizer is installed.
+/// Opt-in public-fixture observation. No view, recognizer or delegate is installed.
 @MainActor enum SyntheticMapPanProbe {
     static var enabled: Bool {
         let args = ProcessInfo.processInfo.arguments
         return UITestSupport.enabled && UITestSupport.storeURL() != nil &&
             UUID(uuidString: ProcessInfo.processInfo.environment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] ?? "") != nil &&
-            ["--tuscano-manifest", "--synthetic-map-pan-diagnostics"].allSatisfy { args.contains($0) } && path != nil
+            ["--tuscano-manifest", "--synthetic-map-pan-diagnostics"].allSatisfy { args.contains($0) } &&
+            !(original && pinsDisabled) && (original || path != nil)
     }
+    private static var original: Bool { ProcessInfo.processInfo.arguments.contains("--synthetic-map-pan-original") }
     static var pinsDisabled: Bool { ProcessInfo.processInfo.arguments.contains("--synthetic-map-pan-disable-pin-hits") }
     private static var observer: Observer?
     private static var path: [CGPoint]? {
@@ -19,22 +21,23 @@ import MapKit
         return values.map { CGPoint(x: $0[0], y: $0[1]) }
     }
     static func startIfEnabled() {
-        guard enabled, observer == nil, let path else { return }
-        let value = Observer(path: path)
+        guard enabled, observer == nil else { return }
+        let value = Observer(path: original ? [] : path ?? [])
         observer = value
         value.sample()
     }
 
-    @MainActor private final class Observer {
+    @MainActor private final class Observer: NSObject {
         private struct Pan: Encodable {
             var enabled: Bool
             var states: [Int] = []
+            var callbacks = 0
             var maxTouches = 0
             var maxTranslation: [Double] = [0, 0]
             var points: [[Double]] = []
         }
         private struct Receipt: Encodable {
-            let schemaVersion = 1
+            let schemaVersion = 2
             let mode: String
             let runNonce: String
             var samples = 0
@@ -43,6 +46,11 @@ import MapKit
             var maxVisibleMaps = 0
             var discoveryTruncated = false
             var maxSampleGap: Double = 0
+            var observationFrozen = false
+            var terminalPanObserved = false
+            var firstCallbackUptime: Double = 0
+            var lastCallbackUptime: Double = 0
+            var freezeUptime: Double = 0
             var mapWindowFrame: [Double] = []
             var safeInsets: [Double] = []
             var initialCamera: [Double] = []
@@ -58,10 +66,13 @@ import MapKit
         private weak var map: MKMapView?
         private var observed: [UIPanGestureRecognizer] = []
         private var previousSample: TimeInterval?
+        private var freezeAfter: TimeInterval?
+        private let deadline = ProcessInfo.processInfo.systemUptime + 240
         init(path: [CGPoint]) {
-            receipt = Receipt(mode: pinsDisabled ? "disabled" : "interactive",
+            receipt = Receipt(mode: original ? "original" : pinsDisabled ? "disabled" : "interactive",
                 runNonce: ProcessInfo.processInfo.environment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] ?? "",
                 path: path.map { [Double($0.x), Double($0.y)] })
+            super.init()
         }
         private func findMaps(_ window: UIWindow) -> [MKMapView] {
             var queue: [UIView] = [window], index = 0, found: [MKMapView] = []
@@ -85,6 +96,7 @@ import MapKit
                     guard !observed.contains(where: { $0 === pan }) else { continue }
                     guard observed.count < 16 else { receipt.discoveryTruncated = true; continue }
                     observed.append(pan); receipt.recognizers.append(Pan(enabled: pan.isEnabled))
+                    pan.addTarget(self, action: #selector(observePan(_:)))
                 }
                 let remaining = max(0, 256 - queue.count)
                 if view.subviews.count > remaining { receipt.discoveryTruncated = true }
@@ -92,8 +104,47 @@ import MapKit
             }
             receipt.panRecognizerCount = observed.count
         }
+        /// Diagnostic instrumentation adds one target to each existing pan. It
+        /// never sets recognizer state, delegate, dependencies, camera or input.
+        /// Absent callbacks alone never prove absent touch delivery.
+        @objc private func observePan(_ pan: UIPanGestureRecognizer) {
+            guard !receipt.observationFrozen, receipt.armed,
+                  let index = observed.firstIndex(where: { $0 === pan }), let window = map?.window else { return }
+            receipt.recognizers[index].callbacks = min(10000, receipt.recognizers[index].callbacks + 1)
+            let now = ProcessInfo.processInfo.systemUptime
+            if receipt.firstCallbackUptime == 0 { receipt.firstCallbackUptime = now }
+            receipt.lastCallbackUptime = now
+            record(pan, index: index, window: window)
+            if pan.state == .ended || pan.state == .cancelled {
+                receipt.terminalPanObserved = true
+                if receipt.mode == "original", freezeAfter == nil {
+                    freezeAfter = now + 2
+                }
+            }
+        }
+        private func record(_ pan: UIPanGestureRecognizer, index: Int, window: UIWindow) {
+            let state = pan.state.rawValue
+            if !receipt.recognizers[index].states.contains(state) { receipt.recognizers[index].states.append(state) }
+            receipt.recognizers[index].enabled = pan.isEnabled
+            receipt.recognizers[index].maxTouches = max(receipt.recognizers[index].maxTouches, min(8, pan.numberOfTouches))
+            let translation = pan.translation(in: window)
+            for (axis, value) in [Double(translation.x), Double(translation.y)].enumerated() where value.isFinite && abs(value) < 10000 {
+                if abs(value) > abs(receipt.recognizers[index].maxTranslation[axis]) {
+                    receipt.recognizers[index].maxTranslation[axis] = value
+                }
+            }
+            for touch in 0..<min(8, pan.numberOfTouches) where receipt.recognizers[index].points.count < 8 {
+                let point = pan.location(ofTouch: touch, in: window)
+                if point.x.isFinite, point.y.isFinite, abs(point.x) < 10000, abs(point.y) < 10000 {
+                    receipt.recognizers[index].points.append([Double(point.x), Double(point.y)])
+                }
+            }
+        }
         func sample() {
-            guard SyntheticMapPanProbe.enabled, receipt.samples < 3000 else { return }
+            guard SyntheticMapPanProbe.enabled, !receipt.observationFrozen else { return }
+            if receipt.samples >= 3000 || ProcessInfo.processInfo.systemUptime >= deadline {
+                freeze(); return
+            }
             receipt.samples += 1
             let now = ProcessInfo.processInfo.systemUptime
             if receipt.armed, let previousSample { receipt.maxSampleGap = max(receipt.maxSampleGap, now - previousSample) }
@@ -128,22 +179,7 @@ import MapKit
                     }
                     if receipt.armed {
                         for (index, pan) in observed.enumerated() {
-                            let state = pan.state.rawValue
-                            if !receipt.recognizers[index].states.contains(state) { receipt.recognizers[index].states.append(state) }
-                            receipt.recognizers[index].enabled = pan.isEnabled
-                            receipt.recognizers[index].maxTouches = max(receipt.recognizers[index].maxTouches, min(8, pan.numberOfTouches))
-                            let translation = pan.translation(in: window)
-                            for (axis, value) in [Double(translation.x), Double(translation.y)].enumerated() where value.isFinite && abs(value) < 10000 {
-                                if abs(value) > abs(receipt.recognizers[index].maxTranslation[axis]) {
-                                    receipt.recognizers[index].maxTranslation[axis] = value
-                                }
-                            }
-                            for touch in 0..<min(8, pan.numberOfTouches) where receipt.recognizers[index].points.count < 8 {
-                                let point = pan.location(ofTouch: touch, in: window)
-                                if point.x.isFinite, point.y.isFinite, abs(point.x) < 10000, abs(point.y) < 10000 {
-                                    receipt.recognizers[index].points.append([Double(point.x), Double(point.y)])
-                                }
-                            }
+                            record(pan, index: index, window: window)
                         }
                         if receipt.hitPath.isEmpty {
                             receipt.hitPath = receipt.path.map { values in
@@ -160,11 +196,20 @@ import MapKit
                     }
                 }
             }
+            if let freezeAfter, now >= freezeAfter { freeze(); return }
             if receipt.samples % 10 == 0 { write() }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in self?.sample() }
         }
+        private func freeze() {
+            receipt.observationFrozen = true
+            receipt.freezeUptime = ProcessInfo.processInfo.systemUptime
+            stopObserving(); write()
+        }
+        private func stopObserving() {
+            for pan in observed { pan.removeTarget(self, action: #selector(observePan(_:))) }
+        }
         private func write() {
-            guard SyntheticMapPanProbe.enabled, ["interactive", "disabled"].contains(receipt.mode),
+            guard SyntheticMapPanProbe.enabled, ["original", "interactive", "disabled"].contains(receipt.mode),
                   let data = try? JSONEncoder().encode(receipt), data.count <= 16384 else { return }
             let directory = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
                 .appendingPathComponent("Library/Caches/SyntheticUIDiagnostics", isDirectory: true)

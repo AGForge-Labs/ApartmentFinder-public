@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read two fixed, nonce-bound public-fixture receipts; no uploads or enumeration."""
+"""Read fixed, nonce-bound public-fixture receipts; no uploads or enumeration."""
 import contextlib
 import json
 import math
@@ -11,12 +11,13 @@ import subprocess
 import sys
 
 BUNDLE = 'dev.galaxybigbird.ApartmentFinder'
-MODES = ('interactive', 'disabled')
+MODES = ('original', 'interactive', 'disabled')
 UUID_PATTERN = r'[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}'
 FIELDS = {'schemaVersion', 'mode', 'runNonce', 'samples', 'armed', 'mapAcquisitions',
           'maxVisibleMaps', 'discoveryTruncated', 'maxSampleGap', 'mapWindowFrame', 'safeInsets',
           'initialCamera', 'lastCamera', 'scrollEnabled', 'interactionEnabled',
-          'panRecognizerCount', 'path', 'hitPath', 'recognizers'}
+          'panRecognizerCount', 'path', 'hitPath', 'recognizers', 'observationFrozen', 'terminalPanObserved',
+          'firstCallbackUptime', 'lastCallbackUptime', 'freezeUptime'}
 
 
 def require(value):
@@ -50,14 +51,19 @@ def validate(packet, mode):
     require(mode in MODES and type(packet) is dict and set(packet) == FIELDS)
     require(packet['mode'] == mode and type(packet['runNonce']) is str and
             re.fullmatch(UUID_PATTERN, packet['runNonce']))
-    integer(packet['schemaVersion'], 1, 1)
+    integer(packet['schemaVersion'], 2, 2)
     integer(packet['samples'], 1, 3000)
     integer(packet['mapAcquisitions'], 1, 64)
     integer(packet['maxVisibleMaps'], 1, 64)
     integer(packet['panRecognizerCount'], 0, 16)
     number(packet['maxSampleGap'], 300)
     require(packet['maxSampleGap'] >= 0)
-    for key in ('armed', 'scrollEnabled', 'interactionEnabled', 'discoveryTruncated'):
+    for key in ('firstCallbackUptime', 'lastCallbackUptime', 'freezeUptime'):
+        number(packet[key], 1_000_000_000)
+        require(packet[key] >= 0)
+    require(packet['firstCallbackUptime'] <= packet['lastCallbackUptime'])
+    require(packet['freezeUptime'] == 0 or packet['lastCallbackUptime'] <= packet['freezeUptime'])
+    for key in ('armed', 'scrollEnabled', 'interactionEnabled', 'discoveryTruncated', 'observationFrozen', 'terminalPanObserved'):
         require(type(packet[key]) is bool)
     for key in ('mapWindowFrame', 'safeInsets'):
         numbers(packet[key], 4, 10000)
@@ -68,10 +74,11 @@ def validate(packet, mode):
             camera = packet[key]
             require(abs(camera[0]) <= 90 and abs(camera[1]) <= 180 and
                     0 < camera[2] <= 40_000_000 and -360 <= camera[3] <= 720 and abs(camera[4]) <= 90)
-    require(type(packet['path']) is list and len(packet['path']) == 2)
+    require(type(packet['path']) is list and len(packet['path']) == (0 if mode == 'original' else 2))
     for point in packet['path']:
         numbers(point, 2, 10000)
     require(type(packet['hitPath']) is list and len(packet['hitPath']) in (0, 2))
+    require(mode != 'original' or packet['hitPath'] == [])
     for point in packet['hitPath']:
         numbers(point, 4, 10000)
         require(point[2] in (0, 1) and point[3] in (0, 1))
@@ -79,8 +86,9 @@ def validate(packet, mode):
     require(packet['panRecognizerCount'] == len(packet['recognizers']))
     for recognizer in packet['recognizers']:
         require(type(recognizer) is dict and set(recognizer) ==
-                {'enabled', 'states', 'maxTouches', 'maxTranslation', 'points'})
+                {'enabled', 'states', 'callbacks', 'maxTouches', 'maxTranslation', 'points'})
         require(type(recognizer['enabled']) is bool)
+        integer(recognizer['callbacks'], 0, 10000)
         integer(recognizer['maxTouches'], 0, 8)
         require(type(recognizer['states']) is list and len(recognizer['states']) <= 6 and
                 len(recognizer['states']) == len(set(recognizer['states'])))
@@ -140,11 +148,26 @@ def main(arguments=None):
         result = subprocess.run(['xcrun', 'simctl', 'get_app_container', args[1], BUNDLE, 'data'],
                                 capture_output=True, timeout=15, check=True)
         require(len(result.stdout) <= 4096)
-        packets = {mode: read_packet(result.stdout.decode('utf-8').strip(), mode) for mode in MODES}
+        container = result.stdout.decode('utf-8').strip()
+        packets = {'original': read_packet(container, 'original')}
+        for mode in ('interactive', 'disabled'):
+            try: packets[mode] = read_packet(container, mode)
+            except FileNotFoundError: pass
         require(all(p['runNonce'] == args[3] for p in packets.values()))
-        for mode in MODES:
+        for mode in packets:
             print('syntheticMapPan=' + json.dumps(packets[mode], separators=(',', ':'), sort_keys=True))
-        print('syntheticMapPanComparison=' + json.dumps(comparison(*packets.values()), separators=(',', ':'), sort_keys=True))
+        original = packets['original']
+        print('syntheticMapPanOriginal=' + json.dumps(dict(
+            positivePanCallback=any(r['callbacks'] > 0 for r in original['recognizers']),
+            positiveTouchSample=any(r['maxTouches'] > 0 for r in original['recognizers']),
+            nativeCenterChanged=original['armed'] and any(abs(x-y) > 0.00001 for x, y in
+                zip(original['initialCamera'][:2], original['lastCamera'][:2])),
+            terminalPanObserved=original['terminalPanObserved'],
+            incompleteWithoutTerminalPan=not original['terminalPanObserved'],
+            observationComplete=original['armed'] and original['terminalPanObserved'] and original['observationFrozen'],
+            absentCallbacksDoNotProveAbsentDelivery=True, diagnosticOnly=True, releaseEligible=False), sort_keys=True))
+        if all(mode in packets for mode in ('interactive', 'disabled')):
+            print('syntheticMapPanComparison=' + json.dumps(comparison(packets['interactive'], packets['disabled']), separators=(',', ':'), sort_keys=True))
         return 0
     except Exception:
         print('syntheticMapPan=unavailableOrInvalid'); return 1

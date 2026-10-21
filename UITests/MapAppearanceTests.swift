@@ -17,6 +17,12 @@ final class MapAppearanceTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
                                "--reset-test-inbox", "--tuscano-manifest"]
+        let environment = ProcessInfo.processInfo.environment
+        if let nonce = environment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] ?? environment["TEST_RUNNER_APARTMENTFINDER_MAP_PAN_RUN_NONCE"],
+           UUID(uuidString: nonce) != nil {
+            app.launchArguments += ["--synthetic-map-pan-diagnostics", "--synthetic-map-pan-original"]
+            app.launchEnvironment["APARTMENTFINDER_MAP_PAN_RUN_NONCE"] = nonce
+        }
         app.launch()
         XCTAssertTrue(app.buttons["test.mixed"].waitForExistence(timeout: 20))
         app.buttons["test.mixed"].tap()
@@ -86,9 +92,11 @@ final class MapAppearanceTests: XCTestCase {
         let initialCameraValue = String(describing: app.buttons["mini.recenter"].value)
         let originalObstacleFrames = blocked.map { $0.frame } + [nextFrame, navigationFrame]
         print("MAP-APPEARANCE background drag map=\(mapFrame) visible=\(visibleMap) start=\(start) end=\(end), camera=\(initialCameraValue)")
+        let originalPanUptime = ProcessInfo.processInfo.systemUptime
         map.coordinate(withNormalizedOffset: startOffset)
             .press(forDuration: 0.2, thenDragTo: map.coordinate(withNormalizedOffset: endOffset),
                    withVelocity: .slow, thenHoldForDuration: 0.5)
+        print("MAP-APPEARANCE originalPanUptime=\(originalPanUptime), returnedUptime=\(ProcessInfo.processInfo.systemUptime)")
         // MapKit can keep moving after XCTest reports the drag complete. Measure
         // the settled pan, not a transient frame before the style menu opens.
         waitForSettledPins([firstPin, secondPin])
@@ -136,7 +144,7 @@ final class MapAppearanceTests: XCTestCase {
         expectStyle("Map", on: style)
         capture(app, "Standard map retains progress and the completed pin")
         app.terminate()
-        app.launchArguments.removeAll { $0 == "--reset-test-inbox" }
+        app.launchArguments.removeAll { $0 == "--reset-test-inbox" || $0 == "--synthetic-map-pan-diagnostics" || $0 == "--synthetic-map-pan-original" }
         app.launch()
         app.buttons["apartment.tuscano"].tap()
         app.buttons["mini.start"].tap()

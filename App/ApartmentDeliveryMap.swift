@@ -172,9 +172,9 @@ struct ApartmentDeliveryMap: View {
 
     @ViewBuilder private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
         #if DEBUG && targetEnvironment(simulator)
-        if SyntheticMapPanProbe.enabled {
+        if SyntheticMapPanProbe.enabled && SyntheticMapPanProbe.pinsDisabled {
             projectedPinContents(pins, proxy: proxy, revision: revision)
-                .allowsHitTesting(!SyntheticMapPanProbe.pinsDisabled)
+                .allowsHitTesting(false)
         } else { projectedPinContents(pins, proxy: proxy, revision: revision) }
         #else
         projectedPinContents(pins, proxy: proxy, revision: revision)
