@@ -1,6 +1,11 @@
 import importlib.util
+import json
+import os
 from pathlib import Path
+import subprocess
+import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location('style_watch', ROOT / 'scripts/public-map-style-watch.py')
@@ -32,3 +37,16 @@ class MapStyleWatchTests(unittest.TestCase):
         raw += ' + 100 AG::Graph::update() (in AttributeGraph) + 32\n'
         frames = MODULE.safe_frames(raw)
         self.assertEqual([frame['thread'] for frame in frames], ['main', 'other'])
+
+    def test_failed_sampling_reports_fixed_phase_and_duration_without_exception_details(self):
+        device = '12345678-1234-1234-1234-123456789012'
+        path = '/coresimulator/devices/' + device + '/data/ApartmentFinder.app/ApartmentFinder'
+        results = [subprocess.CompletedProcess([], 0, '42 ' + path),
+                   subprocess.CompletedProcess([], 0, '24.9'),
+                   subprocess.TimeoutExpired('PRIVATE_MARKER', 8)]
+        with tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, RUNNER_TEMP=folder), patch.object(MODULE.subprocess, 'run', side_effect=results):
+            packet = MODULE.capture(device, 'afterDrag25', 'app', MODULE.TARGETS['app'])
+        self.assertEqual(packet['status'], 'commandTimedOut')
+        self.assertEqual(packet['failurePhase'], 'sample')
+        self.assertGreaterEqual(packet['durationMilliseconds'], 0)
+        self.assertNotIn('PRIVATE_MARKER', json.dumps(packet))

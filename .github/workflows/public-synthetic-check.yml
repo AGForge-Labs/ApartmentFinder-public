@@ -22,6 +22,7 @@ on:
           - community-area-controls-regression
           - map-pinch-diagnostics
           - map-style-diagnostics
+          - priority-followup-diagnostics
           - activation-diagnostics
         default: regression
 permissions:
@@ -34,9 +35,13 @@ jobs:
     if: ${{ inputs.approve_runner && github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.event.repository.private == false }}
     runs-on: macos-15-intel
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        scope: ${{ fromJSON(inputs.scope == 'priority-followup-diagnostics' && '["map-style-warm-diagnostics","reviewed-geography-regression","unsigned-release-only"]' || format('["{0}"]', inputs.scope)) }}
     env:
       EXPECTED_COMMIT: ${{ inputs.expected_commit }}
-      PUBLIC_SYNTHETIC_SCOPE: ${{ inputs.scope }}
+      PUBLIC_SYNTHETIC_SCOPE: ${{ matrix.scope }}
       HOMEBREW_NO_AUTO_UPDATE: '1'
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
     steps:
@@ -45,7 +50,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]
+          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-warm-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-regression || "$PUBLIC_SYNTHETIC_SCOPE" == unsigned-release-only ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
           fi
@@ -89,12 +94,15 @@ jobs:
           assert len(verify_core_ids(body,expected)) == test_counts('core',body)['passed']
           PY
       - name: Compile production targets and run only synthetic native and UI tests
+        if: ${{ matrix.scope != 'unsigned-release-only' }}
         shell: bash
         run: |
           set -euo pipefail
           WORK=(env)
           RUN=(env)
           TEST_LIMITS=()
+          BOUNDED_UI=0
+          STYLE_DIAGNOSTICS=0
           DIAGNOSTICS_COLLECTED=0
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
             MAP_GESTURE_RUN_NONCE=$(python3 -c 'import uuid; print(uuid.uuid4())')
@@ -106,8 +114,14 @@ jobs:
             export TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1
             TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
           fi
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-warm-diagnostics ]]; then
+            BOUNDED_UI=1
+            STYLE_DIAGNOSTICS=1
             export TEST_RUNNER_APARTMENTFINDER_STYLE_DIAGNOSTICS=1
+            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
+          fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-regression ]]; then
+            BOUNDED_UI=1
             TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
           fi
           "${WORK[@]}" bash -c 'command -v xcodegen >/dev/null || brew install xcodegen'
@@ -125,7 +139,9 @@ jobs:
             local original_status=$?
             local cleanup_status=0
             trap - EXIT
-            if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+            if [[ "${BOUNDED_UI:-0}" == 1 ]]; then
+              python3 -B scripts/public-map-style-cleanup.py --device "$DEVICE" || cleanup_status=$?
+            elif [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
               if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics && "$DIAGNOSTICS_COLLECTED" == 0 ]]; then
                 python3 -B scripts/public-synthetic-diagnostics.py collect --device "$DEVICE" || true
               fi
@@ -163,7 +179,11 @@ jobs:
           "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<'PY'
           import json,os,sys
           selection=json.load(open('scripts/public-synthetic-tests.json'))
-          if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
+          if os.environ['PUBLIC_SYNTHETIC_SCOPE'] in ('map-style-warm-diagnostics','reviewed-geography-regression'):
+              sys.path.insert(0,'scripts')
+              from public_priority_ui import selected_cases
+              selection=selected_cases(os.environ['PUBLIC_SYNTHETIC_SCOPE'],selection)
+          elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
               focused={'native':['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
                                  'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport'],
                        'ui':['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
@@ -215,7 +235,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'map-style-diagnostics':1,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'map-style-diagnostics':1,'map-style-warm-diagnostics':3,'reviewed-geography-regression':5,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -232,13 +252,15 @@ jobs:
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then EXPECTED_NATIVE_COUNT=1; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then EXPECTED_NATIVE_COUNT=1; fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-warm-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
           [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)
             DIAGNOSTICS_COLLECTED=1
           fi
           XCODE_STATUS=0
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+          if [[ "${BOUNDED_UI:-0}" == 1 ]]; then
             xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
               -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
               -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/style-build.xcresult" \
@@ -248,9 +270,13 @@ jobs:
               "${FILTERS[@]}" build-for-testing
             STYLE_LOG="$RUNNER_TEMP/map-style-diagnostic.log"
             : > "$STYLE_LOG"
-            python3 -B scripts/public-map-style-watch.py --device "$DEVICE" --log "$STYLE_LOG" &
-            STYLE_WATCH=$!
-            RUN=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$(( $(date +%s) + 12 * 60 ))" --)
+            STYLE_WATCH=''
+            if [[ "$STYLE_DIAGNOSTICS" == 1 ]]; then
+              python3 -B scripts/public-map-style-watch.py --device "$DEVICE" --log "$STYLE_LOG" --case-count "$EXPECTED_NATIVE_COUNT" &
+              STYLE_WATCH=$!
+            fi
+            # Six hundred seconds per selected case plus two minutes for the driver.
+            RUN=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$(( $(date +%s) + EXPECTED_NATIVE_COUNT * 600 + 120 ))" --)
             "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
               -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
               -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
@@ -258,8 +284,10 @@ jobs:
               -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
               CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
               "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test-without-building 2>&1 | tee "$STYLE_LOG" || XCODE_STATUS=$?
-            kill "$STYLE_WATCH" 2>/dev/null || true
-            wait "$STYLE_WATCH" || true
+            if [[ -n "$STYLE_WATCH" ]]; then
+              kill "$STYLE_WATCH" 2>/dev/null || true
+              wait "$STYLE_WATCH" || true
+            fi
           else
           "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
             -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
@@ -270,7 +298,7 @@ jobs:
             "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test || XCODE_STATUS=$?
           fi
           MAP_GESTURE_STATUS=0
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics ]]; then
+          if [[ "${BOUNDED_UI:-0}" == 1 ]]; then
             # Bound both result readers even if the test driver has stalled.
             WORK=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$(( $(date +%s) + 60 ))" --)
           fi
@@ -295,15 +323,25 @@ jobs:
           root=Path(sys.argv[1]); selection=json.load(open(root/'selected-tests.json'))
           expected=selection['native']+selection['ui']
           assert len(verify_native_ids(json.loads((root/'tests.json').read_text()),expected)) == test_counts('native',(root/'summary.json').read_text())['passed']
+          if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-style-warm-diagnostics':
+              from public_priority_ui import verify_warm_order
+              verify_warm_order((root/'map-style-diagnostic.log').read_text())
           print(json.dumps(dict(scope='public-synthetic-'+os.environ['PUBLIC_SYNTHETIC_SCOPE'],passed=len(expected),full_acceptance=False,release_eligible=False)))
           PY
           "${WORK[@]}" python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/checkout-validation"
       - name: Build unsigned Release app and embedded Share extension
-        if: ${{ inputs.scope == 'regression' }}
+        if: ${{ matrix.scope == 'regression' || matrix.scope == 'unsigned-release-only' }}
         shell: bash
         run: |
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_COMMIT" ]]
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == unsigned-release-only ]]; then
+            command -v xcodegen >/dev/null || brew install xcodegen
+            xcodegen generate --spec project.yml
+            LOCK=ApartmentFinder.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+            mkdir -p "$(dirname "$LOCK")"
+            cp Config/Iteration-Package.resolved "$LOCK"
+          fi
           xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Release \
             -sdk iphoneos -destination 'generic/platform=iOS' -jobs 1 \
             -derivedDataPath "$RUNNER_TEMP/UnsignedRelease" \

@@ -61,6 +61,8 @@ def bounded_log_tail(path):
 
 def capture(device, phase, target, suffix):
     packet = {'phase': phase, 'target': target, 'status': 'unavailable'}
+    started = time.monotonic()
+    stage = 'processLookup'
     try:
         listing = subprocess.run(['ps', '-axww', '-o', 'pid=,comm='],
                                  capture_output=True, text=True, timeout=5, check=True)
@@ -78,6 +80,7 @@ def capture(device, phase, target, suffix):
             return packet
         pid = matches[0]
         packet['pid'] = pid
+        stage = 'cpuRead'
         cpu = subprocess.run(['ps', '-p', str(pid), '-o', '%cpu='],
                              capture_output=True, text=True, timeout=5, check=True)
         value = float(cpu.stdout.strip())
@@ -85,15 +88,35 @@ def capture(device, phase, target, suffix):
             packet['cpuPercent'] = value
         with tempfile.TemporaryDirectory(prefix='finder-style-sample-', dir=os.environ['RUNNER_TEMP']) as folder:
             output = Path(folder) / 'stack.txt'
+            stage = 'sample'
             sample = subprocess.run(['sample', str(pid), '2', '-file', str(output)],
                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=8)
-            if sample.returncode or not output.is_file() or output.stat().st_size > 512000:
-                packet['status'] = 'sampleUnavailable'
+            packet['exitStatus'] = sample.returncode
+            if sample.returncode:
+                packet['status'] = 'sampleExit'
                 return packet
+            stage = 'output'
+            if not output.is_file():
+                packet['status'] = 'outputMissing'
+                return packet
+            if output.stat().st_size > 512000:
+                packet['status'] = 'outputOversize'
+                return packet
+            stage = 'parsing'
             packet['frames'] = safe_frames(output.read_text(errors='replace'))
             packet['status'] = 'sampled' if packet['frames'] else 'noKnownFrames'
+    except subprocess.TimeoutExpired:
+        packet['status'] = 'commandTimedOut'
+        packet['failurePhase'] = stage
+    except subprocess.CalledProcessError as error:
+        packet['status'] = 'commandExit'
+        packet['failurePhase'] = stage
+        packet['exitStatus'] = error.returncode
     except (OSError, ValueError, subprocess.SubprocessError):
         packet['status'] = 'unavailable'
+        packet['failurePhase'] = stage
+    finally:
+        packet['durationMilliseconds'] = round((time.monotonic() - started) * 1000, 3)
     return packet
 
 
@@ -101,13 +124,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--device', required=True)
     parser.add_argument('--log', type=Path, required=True)
+    parser.add_argument('--case-count', type=int, choices=(1, 3), default=1)
     args = parser.parse_args()
     if not re.fullmatch(r'[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}', args.device):
         return 2
     root = Path(os.environ['RUNNER_TEMP']).resolve()
     if args.log.name != 'map-style-diagnostic.log' or args.log.resolve().parent != root:
         return 2
-    deadline = time.monotonic() + 14 * 60
+    deadline = time.monotonic() + args.case_count * 600 + 180
     drag = None
     completed = 0
     # Beyond the original eight-second deadline; an AX query may still be blocked.
