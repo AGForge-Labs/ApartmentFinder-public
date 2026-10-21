@@ -18,6 +18,7 @@ GEOGRAPHY = (
 def selected_cases(scope, profile):
     assert len(profile['ui']) == 8 and set(profile['ui']) == set(WARM + GEOGRAPHY)
     cases = {'map-style-warm-diagnostics': WARM, 'reviewed-geography-regression': GEOGRAPHY,
+             'ontrac-pan-observation': GEOGRAPHY[:1],
              'reviewed-geography-only-regression': GEOGRAPHY[2:]}[scope]
     return {'native': [], 'ui': list(cases)}
 
