@@ -284,11 +284,30 @@ final class OnTracFlowTests: XCTestCase {
         }
         guard let blankX else { XCTFail("No unobstructed map gesture path"); return }
         let start = CGVector(dx: blankX, dy: startY), end = CGVector(dx: blankX, dy: endY)
+        let observePan = ProcessInfo.processInfo.environment["APARTMENTFINDER_ONTRAC_PAN_OBSERVATION"] == "1"
         map.coordinate(withNormalizedOffset: start)
             .press(forDuration: 0.1, thenDragTo: map.coordinate(withNormalizedOffset: end))
         let paused = NSPredicate(format: "value BEGINSWITH %@", "Paused")
-        expectation(for: paused, evaluatedWith: app.buttons["mini.recenter"])
-        waitForExpectations(timeout: 5)
+        if observePan {
+            let waitStarted = ProcessInfo.processInfo.systemUptime
+            let originalPausedResult = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: paused,
+                object: app.buttons["mini.recenter"])], timeout: 5)
+            let originalResultSaved = ProcessInfo.processInfo.systemUptime
+            if originalPausedResult != .completed {
+                let exists = pin.exists
+                let frame = exists ? pin.frame : CGRect.null
+                let pinReadFinished = ProcessInfo.processInfo.systemUptime
+                let finite = !frame.isEmpty && [frame.minX, frame.minY, frame.maxX, frame.maxY].allSatisfy { $0.isFinite }
+                let verticalMovement = finite ? Double(abs(frame.midY - beforePan)) : nil
+                let cameraAfter = observedPanCamera()
+                let cameraReadFinished = ProcessInfo.processInfo.systemUptime
+                print("ONTRAC-PAN-OBSERVATION originalPausedResult=\(originalPausedResult.rawValue);waitMilliseconds=\((originalResultSaved - waitStarted) * 1000);pinReadAfterResultMilliseconds=\((pinReadFinished - originalResultSaved) * 1000);cameraReadAfterResultMilliseconds=\((cameraReadFinished - originalResultSaved) * 1000);map=\(mapFrame);visible=\(gestureBounds);start=\(start);end=\(end);before=\(beforePanFrame);pinExists=\(exists);after=\(finite ? String(describing: frame) : "unavailable");verticalMovement=\(String(describing: verticalMovement));cameraBefore=unobserved;cameraAfter=\(cameraAfter)")
+            }
+            XCTAssertEqual(originalPausedResult, .completed, "The original map drag must pause following within five seconds")
+        } else {
+            expectation(for: paused, evaluatedWith: app.buttons["mini.recenter"])
+            waitForExpectations(timeout: 5)
+        }
         let moved = NSPredicate { _, _ in pin.exists && abs(pin.frame.midY - beforePan) > 20 }
         let movement = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: moved, object: pin)], timeout: 5)
         XCTAssertEqual(movement, .completed,
@@ -306,6 +325,12 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertTrue(app.maps.firstMatch.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         capture("Cancelling pin review preserves the active map")
+    }
+    private func observedPanCamera() -> String {
+        guard let raw = app.buttons["mini.recenter"].value as? String, raw.count <= 400 else { return "unavailable" }
+        let number = #"-?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?"#
+        let pattern = #"\A(?:Showing apartment pins|Paused|Following), map heading -?[0-9]+ degrees, map distance [0-9]+ meters(?:, direction unavailable)?, map center "# + number + "," + number + #", camera revision [0-9]+\z"#
+        return raw.range(of: pattern, options: .regularExpression) == nil ? "unavailable" : raw
     }
     func testZIPPreviewCancellationEmptyDayAndApartmentNavigation() {
         tapTestImport()

@@ -24,12 +24,13 @@ on:
           - map-style-diagnostics
           - priority-followup-diagnostics
           - reviewed-geography-only-regression
+          - ontrac-pan-observation
           - activation-diagnostics
         default: regression
 permissions:
   contents: read
 concurrency:
-  group: apartmentfinder-public-synthetic
+  group: ${{ inputs.scope == 'ontrac-pan-observation' && 'apartmentfinder-public-ontrac-pan-observation' || 'apartmentfinder-public-synthetic' }}
   cancel-in-progress: false
 jobs:
   synthetic:
@@ -51,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-warm-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-regression || "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-only-regression || "$PUBLIC_SYNTHETIC_SCOPE" == unsigned-release-only ]]
+          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == map-style-warm-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-regression || "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-only-regression || "$PUBLIC_SYNTHETIC_SCOPE" == ontrac-pan-observation || "$PUBLIC_SYNTHETIC_SCOPE" == unsigned-release-only ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
           fi
@@ -125,6 +126,11 @@ jobs:
             BOUNDED_UI=1
             TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
           fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == ontrac-pan-observation ]]; then
+            BOUNDED_UI=1
+            export TEST_RUNNER_APARTMENTFINDER_ONTRAC_PAN_OBSERVATION=1
+            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
+          fi
           "${WORK[@]}" bash -c 'command -v xcodegen >/dev/null || brew install xcodegen'
           "${WORK[@]}" xcodebuild -version
           "${WORK[@]}" xcodegen generate --spec project.yml
@@ -180,7 +186,7 @@ jobs:
           "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<'PY'
           import json,os,sys
           selection=json.load(open('scripts/public-synthetic-tests.json'))
-          if os.environ['PUBLIC_SYNTHETIC_SCOPE'] in ('map-style-warm-diagnostics','reviewed-geography-regression','reviewed-geography-only-regression'):
+          if os.environ['PUBLIC_SYNTHETIC_SCOPE'] in ('map-style-warm-diagnostics','reviewed-geography-regression','reviewed-geography-only-regression','ontrac-pan-observation'):
               sys.path.insert(0,'scripts')
               from public_priority_ui import selected_cases
               selection=selected_cases(os.environ['PUBLIC_SYNTHETIC_SCOPE'],selection)
@@ -236,7 +242,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'map-style-diagnostics':1,'map-style-warm-diagnostics':3,'reviewed-geography-regression':5,'reviewed-geography-only-regression':3,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'map-style-diagnostics':1,'map-style-warm-diagnostics':3,'reviewed-geography-regression':5,'reviewed-geography-only-regression':3,'ontrac-pan-observation':1,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -256,6 +262,7 @@ jobs:
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-style-warm-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == reviewed-geography-only-regression ]]; then EXPECTED_NATIVE_COUNT=3; fi
+          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == ontrac-pan-observation ]]; then EXPECTED_NATIVE_COUNT=1; fi
           [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)

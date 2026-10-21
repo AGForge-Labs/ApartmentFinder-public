@@ -52,6 +52,15 @@ class PriorityUIDiagnosticTests(unittest.TestCase):
         self.assertEqual(set(cases['ui']), {identity for identity in profile['ui'] if '/Reviewed89123GeographyUITests/' in identity})
         self.assertEqual(json.dumps(profile, sort_keys=True), before)
 
+    def test_ontrac_observation_selects_only_original_source_pin_case_without_changing_full_gate(self):
+        profile = json.loads((ROOT / 'scripts/public-synthetic-tests.json').read_text())
+        before = json.dumps(profile, sort_keys=True)
+        cases = UI.selected_cases('ontrac-pan-observation', profile)
+        self.assertEqual(cases, {'native': [], 'ui': [
+            'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']})
+        self.assertEqual(json.dumps(profile, sort_keys=True), before)
+        self.assertEqual((len(profile['core']), len(profile['native']), len(profile['ui'])), (143, 71, 8))
+
     def test_cleanup_reports_only_selected_state_and_rejects_ambiguous_malformed_input(self):
         selected = {'udid': 'selected', 'state': 'Shutdown', 'name': 'PRIVATE_MARKER'}
         unrelated = {'udid': 'other', 'state': 'Booted', 'name': 'OTHER_PRIVATE'}
