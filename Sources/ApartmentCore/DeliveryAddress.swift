@@ -24,12 +24,15 @@ public struct DeliveryAddress: Equatable, Sendable {
         }
         let key = LocalSearch.addressKey((embedded.isEmpty ? withoutLocality : street).replacingOccurrences(of: ",", with: " "), stripPostalCode: !hadLocality)
         // Longest exact street prefix wins: "100 Road" must not swallow "100 Road North".
-        let known = Set(knownAddresses).sorted {
-            let a = LocalSearch.addressKey($0), b = LocalSearch.addressKey($1)
-            return a.count == b.count ? $0 < $1 : a.count > b.count
+        let indexed: [(address: String, key: String, length: Int)] = Set(knownAddresses).map { address in
+            let key = LocalSearch.addressKey(address)
+            return (address: address, key: key, length: key.count)
         }
-        for candidate in known {
-            let candidateKey = LocalSearch.addressKey(candidate)
+        let known = indexed.sorted {
+            $0.length == $1.length ? $0.address < $1.address : $0.length > $1.length
+        }
+        for entry in known {
+            let candidate = entry.address, candidateKey = entry.key
             guard !candidateKey.isEmpty else { continue }
             if key == candidateKey { street = candidate; break }
             if embedded.isEmpty && key.hasPrefix(candidateKey + " ") {

@@ -137,6 +137,7 @@
     "Reviewed89123GeographyTests/testOneLasVegasFloorOnlyEvidenceDoesNotGuessATower",
     "Reviewed89123GeographyTests/testParksideRepeatedBadgesAndParamountExistingJoinsRetainExactAreas",
     "Reviewed89123GeographyTests/testPebble416LiteralUnitsResolveTenApproximateAreasWithoutUnitOrDoorCoordinates",
+    "Reviewed89123GeographyTests/testReviewedManifestPreservesNineFullStreetUnitsAcrossFiveCommunities",
     "Reviewed89123GeographyTests/testSourceUnitReferencesKeepEveryFloorAndExplicitUnknownBuilding",
     "Stop44ImportTests/testConflictingRepeatedAddressUnitIsRejectedInsteadOfSilentlyReassigned",
     "Stop44ImportTests/testDifferentTrailingUnitsRemainUnresolvedRatherThanInventingAContact",

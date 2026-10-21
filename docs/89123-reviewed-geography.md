@@ -20,6 +20,8 @@ Parkside's 25 roof lobes retain distinct occurrence IDs despite only 14 printed 
 
 The map displays source unit references and qualified building areas separately from checked personal doors. One marker represents each linked building area. Stacked floors retain their coordinates and independent IDs; the focused marker is drawn above its siblings. Properties with only contextual areas still show those areas without inventing a unit destination.
 
+Manifest import and preview use the same full-street resolver. It now computes each known address's normalized key and length once before sorting, retaining exact-string deduplication, longest-prefix ordering, original-address tie-breaking and unit conflict rules. This removes repeated normalization inside sort comparisons without changing address identity. The nine-stop/five-community import has its own exact-identity regression and separate parse/preview timing. UI setup retains its original ten-second assertion; failure diagnostics run only after preserving that result and cannot convert a late preview into a pass.
+
 ## Preservation and resource boundaries
 
 All original 14,772 location objects (including 14,517 unit positions), 687 source objects and 17 paths are preserved. All 6,923 prior associations retain their full identity and prior sources; 961 gain previously absent, reviewed metadata. Existing community names, addresses, ZIPs and aliases are preserved. Personal door precedence, imported generation selection and stored personal bytes are tested with invented local fixtures. Public supplements do not rewrite the private import or personal store.
@@ -30,7 +32,7 @@ The resulting resources contain 162 communities, 15,420 locations (15,019 unit p
 
 ## Validation scope
 
-The exact-source public suite selects 142 Core, 71 native and eight UI cases, retaining all original public selectors and adding geography checks. UI acceptance covers actual Pebble camera/marker behavior, stacked-floor marker taps, recovered Summer Winds units, historical aliases, floor-only tower uncertainty, Lyric/Trend community centers, compact controls and the original map interaction case. The manual regression also builds the unsigned Release app and embedded Share extension, verifies identifiers, executables and every reviewed resource hash, and rejects signature bundles.
+The exact-source public suite selects 143 Core, 71 native and eight UI cases, retaining all original public selectors and adding geography checks. UI acceptance covers actual Pebble camera/marker behavior, stacked-floor marker taps, recovered Summer Winds units, historical aliases, floor-only tower uncertainty, Lyric/Trend community centers, compact controls and the original map interaction case. The manual regression also builds the unsigned Release app and embedded Share extension, verifies identifiers, executables and every reviewed resource hash, and rejects signature bundles.
 
 The original full inventory remains 86 native and 45 UI tests with the original 45-screenshot minimum. Private-fixture and installed-device coverage are separate and are not claimed by public-synthetic results. Load reports expose read/decode/validation and supplement medians separately. `processCumulativePeakRSSBytes` means process-wide cumulative peak RSS, not isolated dataset memory.
 

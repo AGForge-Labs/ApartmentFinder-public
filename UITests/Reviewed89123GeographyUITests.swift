@@ -12,8 +12,22 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString, "--reset-test-inbox",
             "--reviewed-89123-manifest", "--synthetic-map-location", "--synthetic-map-direction"]
         app.launch()
-        XCTAssertTrue(app.buttons["test.mixed"].waitForExistence(timeout: 25)); app.buttons["test.mixed"].tap()
-        XCTAssertTrue(app.buttons["manifest.import"].waitForExistence(timeout: 10)); app.buttons["manifest.import"].tap()
+        XCTAssertTrue(app.buttons["test.mixed"].waitForExistence(timeout: 25))
+        let requestStart = Date()
+        app.buttons["test.mixed"].tap()
+        let originalPreviewFound = app.buttons["manifest.import"].waitForExistence(timeout: 10)
+        if !originalPreviewFound {
+            // Observe only after saving the original result; diagnostics cannot
+            // convert a late preview into a successful setup assertion.
+            let raw = app.buttons["test.import"].value as? String ?? ""
+            let pattern = #"\AmixedAttempts=[0-9]+;importAttempts=[0-9]+;shareAttempts=[0-9]+;lastAction=(none|mixed|manifestImport|share|productionImport);fixtureReady=(true|false);loading=(true|false);documents=[0-9]+;errorPresent=(true|false)\z"#
+            let status = raw.count <= 300 && raw.range(of: pattern, options: .regularExpression) != nil ? raw : "unavailable"
+            print("REVIEWED_IMPORT_SETUP originalPreview=false;\(status);previewSheet=\(app.navigationBars["Preview manifest"].exists);alert=\(app.alerts["ApartmentFinder"].exists)")
+        }
+        XCTAssertTrue(originalPreviewFound)
+        guard originalPreviewFound else { return }
+        print("REVIEWED_IMPORT_SETUP originalPreview=true;requestToPreviewMilliseconds=\(Date().timeIntervalSince(requestStart) * 1000)")
+        app.buttons["manifest.import"].tap()
         XCTAssertTrue(app.buttons["apartment.\(id)"].waitForExistence(timeout: 10)); app.buttons["apartment.\(id)"].tap()
         app.buttons["mini.start"].tap()
         XCTAssertTrue(app.maps.firstMatch.waitForExistence(timeout: 10))

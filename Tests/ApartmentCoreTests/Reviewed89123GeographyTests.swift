@@ -11,6 +11,24 @@ final class Reviewed89123GeographyTests: XCTestCase {
             paths: DataPackPayload.readPathsFile(directory.appendingPathComponent("public-paths.geojson")))
     }
 
+    func testReviewedManifestPreservesNineFullStreetUnitsAcrossFiveCommunities() throws {
+        let data = try pack()
+        let csv = "sequence,address,unit,notes\n1,1450 E Pebble Rd,1000,Synthetic regression\n2,1450 E Pebble Rd,1001,Synthetic regression\n3,1450 E Pebble Rd,1159,Synthetic regression\n4,8680 Ensworth St,101,Synthetic regression\n5,8680 Ensworth St,201,Synthetic regression\n6,2725 W Wigwam Ave,1041,Synthetic regression\n7,2725 W Wigwam Ave,1044,Synthetic regression\n8,2750 W Wigwam Ave,1101,Synthetic regression\n9,8255 S Las Vegas Blvd,101,Synthetic regression\n"
+        let known = data.catalog.communities.flatMap(\.matchingAddresses)
+        let start = Date()
+        let documents = try ManifestReader.read(Data(csv.utf8), filename: "Synthetic-review.csv", knownAddresses: known)
+        let parsed = Date()
+        let result = try XCTUnwrap(documents.first?.result)
+        XCTAssertTrue(result.canImport); XCTAssertEqual(result.stops.count, 9)
+        let plan = ApartmentRoutePlan.make(stops: result.stops, communities: data.catalog.communities)
+        let grouped = Date()
+        XCTAssertTrue(plan.unmatched.isEmpty)
+        XCTAssertEqual(Dictionary(uniqueKeysWithValues: plan.groups.map { ($0.id, $0.stops.map(\.unit)) }), [
+            "destinations-pebble":["1000","1001","1159"], "prosper-150":["101","201"],
+            "summer-winds":["1041","1044"], "octave-apartments":["1101"], "one-las-vegas":["101"]])
+        print("REVIEWED_MANIFEST_TIMING known=\(known.count);parseMilliseconds=\(parsed.timeIntervalSince(start) * 1000);previewPlanMilliseconds=\(grouped.timeIntervalSince(parsed) * 1000)")
+    }
+
     func testPebble416LiteralUnitsResolveTenApproximateAreasWithoutUnitOrDoorCoordinates() throws {
         let data = try pack()
         let associations = (data.catalog.unitBuildingAssociations ?? []).filter { $0.communityID == "destinations-pebble" }

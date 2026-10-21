@@ -444,7 +444,7 @@ class PublicPreflightTests(unittest.TestCase):
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 142),
+            ('core', 'Tests/ApartmentCoreTests', '', 143),
             ('native', 'NativeTests', 'ApartmentFinderTests/', 71),
             ('ui', 'UITests', 'ApartmentFinderUITests/', 8),
         ):
