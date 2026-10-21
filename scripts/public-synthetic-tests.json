@@ -2,6 +2,12 @@
   "schema_version": 1,
   "purpose": "Public synthetic regression and sanitized public-catalog compatibility subset. Installed-upgrade and signed-release gates remain separate.",
   "core": [
+    "AddressLookupTests/testBuildingPrefixedUnitRemainsDistinctWithoutAnExplicitCrosswalk",
+    "AddressLookupTests/testCommunitySearchWithKnownAddressAndUnitRetainsStreetAndZIP",
+    "AddressLookupTests/testGluedUnitAfterKnownStreetSuffixPreservesLeadingZeros",
+    "AddressLookupTests/testGluedUnitCannotOverrideConflictingExplicitUnit",
+    "AddressLookupTests/testReportedStreetFormatsRemainVisibleInApartmentRoute",
+    "AddressLookupTests/testUnknownStreetAndExactLongerStreetAreNeverReassigned",
     "BuildingReferenceTests/testExactStreetAndLeadingZeroUnitAreRequiredEvenWhenOnlyOneBuildingExists",
     "BuildingReferenceTests/testExistingUnitPositionAndCheckedDoorTakePriorityOverBuildingFallback",
     "BuildingReferenceTests/testLegalBuildingFallbackIsSeparateFromDoorCandidatesAndDoesNotPrefillPhysicalIdentity",

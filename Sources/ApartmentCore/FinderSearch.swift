@@ -18,7 +18,11 @@ public enum FinderSearch {
         return display
     }
     public static func communities(matching query: String, in communities: [Community]) -> [Community] {
-        let query = Query(query)
+        let addresses = communities.flatMap(\.matchingAddresses)
+        let parsed = DeliveryAddress.resolve(query, knownAddresses: addresses)
+        let knownStreet = !parsed.unit.isEmpty && !parsed.hasConflictingUnit &&
+            addresses.contains { LocalSearch.addressKey($0) == LocalSearch.addressKey(parsed.address) }
+        let query = Query(knownStreet ? parsed.address : query, postalCode: Query(query).postalCode)
         return communities.filter { community in
             query.acceptsZIPs(community.searchableZIPs) && query.matches(
                 [community.name] + community.searchableZIPs + community.matchingAddresses + community.aliases)

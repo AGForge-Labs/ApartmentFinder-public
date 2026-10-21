@@ -7,6 +7,9 @@ public struct DeliveryAddress: Equatable, Sendable {
     public var unit: String
     public var hasConflictingUnit: Bool
 
+    private static let fullStreetSuffixes = ["rd": "road", "st": "street", "ave": "avenue",
+        "dr": "drive", "ln": "lane", "blvd": "boulevard", "ct": "court", "wy": "way", "pkwy": "parkway"]
+
     public static func resolve(_ input: String, unit supplied: String = "", knownAddresses: [String]) -> Self {
         var street = input.trimmingCharacters(in: .whitespacesAndNewlines)
         var embedded = ""
@@ -43,6 +46,19 @@ public struct DeliveryAddress: Equatable, Sendable {
                 if let unit = units.first, units.allSatisfy({ $0 == unit }),
                    String(unit).range(of: #"^[a-z0-9]*[0-9][a-z0-9]*$"#, options: .regularExpression) != nil {
                     street = candidate; embedded = unit.uppercased(); break
+                }
+            }
+            // Some exports join a numeric unit directly to a known street suffix
+            // ("Bermuda RD255"). Require the complete known street and digits only;
+            // never split an unknown street name or discard a building prefix.
+            if embedded.isEmpty, let ending = candidateKey.split(separator: " ").last,
+               let fullSuffix = fullStreetSuffixes[String(ending)] {
+                let fullKey = String(candidateKey.dropLast(ending.count)) + fullSuffix
+                if let prefix = [candidateKey, fullKey].first(where: { prefix in
+                    guard key.hasPrefix(prefix) else { return false }
+                    return String(key.dropFirst(prefix.count)).range(of: #"^[0-9]+$"#, options: .regularExpression) != nil
+                }) {
+                    street = candidate; embedded = String(key.dropFirst(prefix.count)); break
                 }
             }
         }
