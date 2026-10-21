@@ -2,7 +2,7 @@
 name: Public release infrastructure checks
 on:
   pull_request:
-    branches: [main]
+    branches: [main, codex/89123-reviewed-data]
     paths:
       - .github/workflows/public-release-preflight.yml
       - .github/workflows/public-testflight.yml
