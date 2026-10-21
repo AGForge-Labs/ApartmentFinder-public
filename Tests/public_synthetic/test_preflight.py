@@ -507,7 +507,7 @@ class WorkflowResultProcessingTests(unittest.TestCase):
     ]
 
     def run_result_block(self, build_status=0, result_exists=True,
-                         summary_status=0, tests_status=0, summary=None, tree=None):
+                         summary_status=0, tests_status=0, summary=None, tree=None, baseline_status=0):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
         block = workflow.split('            DIAGNOSTICS_COLLECTED=1\n          fi\n', 1)[1]
         summary = summary if summary is not None else {
@@ -530,6 +530,7 @@ WORK=(bounded_work)
 RUN=(run_build)
 FILTERS=("-only-testing:synthetic")
 TEST_LIMITS=()
+BASELINE_STATUS="$BASELINE_FIXTURE_STATUS"
 DEVICE=synthetic-only
 bounded_work() {
   printf 'work:%s\n' "$*" >> "$CALLS"
@@ -566,6 +567,7 @@ python3() {
                 env={**os.environ, 'RUNNER_TEMP': str(root), 'CALLS': str(root / 'calls'),
                      'REAL_PYTHON': sys.executable, 'PUBLIC_SYNTHETIC_SCOPE': 'activation-diagnostics',
                      'BUILD_STATUS': str(build_status), 'RESULT_EXISTS': str(int(result_exists)),
+                     'BASELINE_FIXTURE_STATUS': str(baseline_status),
                      'SUMMARY_STATUS': str(summary_status), 'TESTS_STATUS': str(tests_status)})
             calls = (root / 'calls').read_text().splitlines()
             extracted = {name: json.loads((root / (name + '.json')).read_text())
@@ -593,6 +595,16 @@ python3() {
         self.assertEqual(set(extracted), {'summary', 'tests'})
         self.assertNotIn('identity-and-count-gates', calls)
         self.assertNotIn('checkout-validation', calls)
+
+    def test_incomplete_baseline_cannot_pass_or_replace_the_original_xcodebuild_failure(self):
+        for build_status, expected in ((0, 17), (65, 65), (124, 124)):
+            with self.subTest(build_status=build_status):
+                result, calls, extracted = self.run_result_block(build_status=build_status, baseline_status=17)
+                self.assertEqual(result.returncode, expected, result.stderr)
+                self.assertEqual(set(extracted), {'summary', 'tests'})
+                self.assertNotIn('identity-and-count-gates', calls)
+                self.assertNotIn('checkout-validation', calls)
+                self.assertNotIn('"passed":', result.stdout)
 
     def test_missing_result_keeps_failure_and_cannot_pass_a_successful_build(self):
         for build_status in (0, 65, 124):
