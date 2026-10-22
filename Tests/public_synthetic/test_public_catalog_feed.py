@@ -26,7 +26,9 @@ def encoded(value):
 
 class PublicCatalogFeedTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
+        # macOS temp paths can traverse /var -> /private/var. Keep the controlled
+        # fixture on its real path; deliberately linked input files stay linked.
+        self.temp = tempfile.TemporaryDirectory(dir=Path(tempfile.gettempdir()).resolve())
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name)
         self.source = self.directory / 'input'
