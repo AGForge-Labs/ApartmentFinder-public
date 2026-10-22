@@ -80,10 +80,10 @@ final class PublicCatalogResourceTests: XCTestCase {
         XCTAssertFalse(originalPlaces.contains { expected.contains($0.communityID) && $0.kind != .building })
         XCTAssertEqual(originalPlaces.filter { expected.contains($0.communityID) }.count, 302)
         XCTAssertEqual(data.places.filter { expected.contains($0.communityID) && $0.kind == .building }.count, 302)
-        XCTAssertEqual(data.places.filter { expected.contains($0.communityID) }.count, 943)
+        XCTAssertEqual(data.places.filter { expected.contains($0.communityID) }.count, 946)
         let entryEstimates = data.places.filter { expected.contains($0.communityID) && $0.entranceSideEstimate != nil }
         XCTAssertEqual(Dictionary(grouping: entryEstimates, by: \.communityID).mapValues(\.count),
-                       ["copper-creek": 608, "destinations-pebble": 27, "trend": 5, "lyric": 1])
+                       ["copper-creek": 608, "destinations-pebble": 30, "trend": 5, "lyric": 1])
         XCTAssertTrue(entryEstimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.verification == .estimated })
         for (id, count) in [("prosper-150", 150), ("summer-winds", 352)] {
             let published = originalPlaces.filter { $0.communityID == id && $0.kind == .unitPosition }

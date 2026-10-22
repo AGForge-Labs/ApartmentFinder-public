@@ -21,13 +21,27 @@ public enum PersonalCommunityDirectory {
     public static func applying(places: [Place], rules: [ApartmentAddressRule], to directory: [Community]) -> [Community] {
         var addresses: [String: Set<String>] = [:]
         var names: [String: String] = [:]
+        // Match route classification: both the original and corrected street use
+        // the last explicit saved rule, ahead of ownership derived from a pin.
+        let rulesByAddress = Dictionary(rules.flatMap { [($0.id, $0), (LocalSearch.addressKey($0.address), $0)] },
+            uniquingKeysWith: { _, last in last })
         for place in places where !place.communityID.isEmpty && !LocalSearch.addressKey(place.address).isEmpty {
+            if let rule = rulesByAddress[LocalSearch.addressKey(place.address)] {
+                if rule.kind == .nonApartment { continue }
+                if let selectedID = rule.communityID, !selectedID.isEmpty, selectedID != place.communityID { continue }
+            }
             addresses[place.communityID, default: []].insert(place.address)
         }
         for rule in rules where rule.kind == .apartment {
             guard let id = rule.communityID, !id.isEmpty, !LocalSearch.addressKey(rule.address).isEmpty else { continue }
-            addresses[id, default: []].insert(rule.address)
-            if !rule.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { names[id] = rule.name }
+            var effective = false
+            if rulesByAddress[LocalSearch.addressKey(rule.address)] == rule {
+                addresses[id, default: []].insert(rule.address); effective = true
+            }
+            if let original = rule.matchingAddress, !LocalSearch.addressKey(original).isEmpty, rulesByAddress[rule.id] == rule {
+                addresses[id, default: []].insert(original); effective = true
+            }
+            if effective, !rule.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { names[id] = rule.name }
         }
         let ownerClaims = Dictionary(grouping: addresses.flatMap { id, streets in
             streets.map { (LocalSearch.addressKey($0), id) }
@@ -36,13 +50,17 @@ public enum PersonalCommunityDirectory {
             guard let owners = ownerClaims[LocalSearch.addressKey(street)], owners.count == 1 else { return false }
             return !owners.contains(id)
         }
-        // Hold a conflicting directory identity locally rather than move an
-        // existing delivery group to a new ID. The stored public pack is intact.
+        // Remove only conflicting streets. An existing unclaimed published alias
+        // can retain the same directory identity and metadata in this local view.
         var result = directory.compactMap { original -> Community? in
-            guard !claimedByAnotherOwner(original.address, id: original.id) else { return nil }
+            let available = original.matchingAddresses.filter { !claimedByAnotherOwner($0, id: original.id) }
+            guard let address = available.first else { return nil }
             var community = original
+            community.address = address
             if let aliases = community.deliveryAddresses {
-                community.deliveryAddresses = aliases.filter { !claimedByAnotherOwner($0, id: community.id) }
+                community.deliveryAddresses = aliases.filter {
+                    LocalSearch.addressKey($0) != LocalSearch.addressKey(address) && !claimedByAnotherOwner($0, id: community.id)
+                }
             }
             return community
         }
