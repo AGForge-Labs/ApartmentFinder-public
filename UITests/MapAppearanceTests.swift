@@ -47,7 +47,7 @@ final class MapAppearanceTests: XCTestCase {
         guard visibleMap.height > 0 else { XCTFail("No visible map above the stop card"); return }
         let clearance = (app.buttons.allElementsBoundByIndex + [coverage, locationStatus])
             .filter { $0.exists && $0.isHittable }.map { $0.frame.insetBy(dx: -24, dy: -24) }
-        let startX = mapFrame.minX + mapFrame.width * 0.60
+        let startX = mapFrame.minX + mapFrame.width * 0.50
         let endX = mapFrame.minX + mapFrame.width * 0.70
         let candidateY = [0.5, 0.35, 0.65].map { visibleMap.minY + visibleMap.height * $0 }
         guard let y = candidateY.first(where: { y in
@@ -55,7 +55,7 @@ final class MapAppearanceTests: XCTestCase {
             return visibleMap.contains(path) && !clearance.contains { $0.intersects(path) } &&
                 y > coverage.frame.maxY + 24 && y < locationStatus.frame.minY - 24
         }) else { XCTFail("No unobstructed style-test pan inside visible map \(visibleMap)"); return }
-        let startOffset = CGVector(dx: 0.60, dy: (y - mapFrame.minY) / mapFrame.height)
+        let startOffset = CGVector(dx: 0.50, dy: (y - mapFrame.minY) / mapFrame.height)
         let endOffset = CGVector(dx: 0.70, dy: startOffset.dy)
         let start = CGPoint(x: startX, y: y), end = CGPoint(x: endX, y: y)
         let segment = CGRect(x: start.x, y: start.y - 1, width: end.x - start.x, height: 2)
@@ -81,6 +81,7 @@ final class MapAppearanceTests: XCTestCase {
         waitForSettledPins([firstPin, secondPin])
         let originalTip = CGPoint(x: firstPin.frame.midX, y: firstPin.frame.maxY)
         let secondTip = CGPoint(x: secondPin.frame.midX, y: secondPin.frame.maxY)
+        print("MAP-APPEARANCE settled pan before=\(initialFrame) after=\(firstPin.frame), second=\(secondPin.frame), camera=\(String(describing: app.buttons["mini.recenter"].value))")
         XCTAssertGreaterThan(abs(originalTip.x - initialX), 5,
                              "Exercise a panned map before changing styles; before=\(initialFrame), after=\(firstPin.frame), initial camera=\(initialCameraValue), camera=\(String(describing: app.buttons["mini.recenter"].value))")
         capture(app, "Settled panned map before changing style")
