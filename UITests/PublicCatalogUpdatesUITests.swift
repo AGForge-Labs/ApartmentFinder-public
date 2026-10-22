@@ -32,7 +32,10 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         app.buttons["finder.community"].tap()
         XCTAssertTrue(app.navigationBars["Communities"].waitForExistence(timeout: 5))
         let tuscano = app.buttons["finder.community.tuscano"]
-        for _ in 0..<16 where !tuscano.exists || !tuscano.isHittable { app.swipeUp() }
+        for _ in 0..<16 {
+            if tuscano.exists && tuscano.isHittable { break }
+            app.swipeUp()
+        }
         XCTAssertTrue(tuscano.waitForExistence(timeout: 5))
         XCTAssertTrue(tuscano.isHittable)
         tuscano.tap()
@@ -48,6 +51,11 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertFalse(app.navigationBars["Communities"].exists)
         XCTAssertTrue(app.buttons["finder.community"].label.contains("Tuscano"))
         XCTAssertEqual(app.textFields["finder.address"].value as? String, "7255 W Sunset Rd")
+        // Reveal the search card through its production toolbar control. The
+        // community button can be visible while the fields above it are not.
+        let editSearch = app.buttons["finder.editSearch"]
+        expectHittable(editSearch)
+        editSearch.tap()
         let unit = app.textFields["finder.unit"]
         expectHittable(unit)
         let initialUnit = unit.value as? String
@@ -72,7 +80,6 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertEqual(unit.value as? String, "2066")
         // Use the production control to end editing and reveal the search card
         // before requiring a hit point for its Search button.
-        let editSearch = app.buttons["finder.editSearch"]
         expectHittable(editSearch)
         editSearch.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5),
