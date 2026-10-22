@@ -265,6 +265,49 @@ jobs:
           print(json.dumps(dict(scope='public-synthetic-'+os.environ['PUBLIC_SYNTHETIC_SCOPE'],passed=len(expected),full_acceptance=False,release_eligible=False)))
           PY
           "${WORK[@]}" python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/checkout-validation"
+      - name: Preserve bounded public synthetic screenshots
+        if: ${{ always() && inputs.scope == 'catalog-input-diagnostics' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$RUNNER_TEMP/synthetic.xcresult"
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/synthetic.xcresult" --output-path "$RUNNER_TEMP/catalog-input-export"
+          python3 -B - "$RUNNER_TEMP/catalog-input-export" "$RUNNER_TEMP/catalog-input-evidence" <<'PY'
+          import hashlib,json,os,shutil,sys
+          from pathlib import Path
+          source,destination=map(Path,sys.argv[1:])
+          staging=destination.with_name(destination.name+'.staging')
+          assert source.is_dir() and not source.is_symlink() and not destination.exists() and not staging.exists()
+          files=[]
+          for path in source.rglob('*'):
+              assert not path.is_symlink()
+              if path.is_file() and (path.suffix.lower() in ('.png','.jpg','.jpeg') or path.name=='manifest.json'):
+                  files.append(path)
+          images=[p for p in files if p.suffix.lower() in ('.png','.jpg','.jpeg')]
+          index=[dict(path=p.relative_to(source).as_posix(),bytes=p.stat().st_size,sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in files]
+          metadata=(json.dumps(dict(source=os.environ['GITHUB_SHA'],run=os.environ['GITHUB_RUN_ID'],scope='public-synthetic-catalog-input-diagnostics',images=len(images),files=index),indent=2)+'\n').encode()
+          total=sum(p['bytes'] for p in index)+len(metadata)
+          assert images and len(files)+1<=400 and total<=64*1024*1024
+          staging.mkdir()
+          for path,entry in zip(files,index):
+              target=staging/entry['path']
+              target.parent.mkdir(parents=True,exist_ok=True)
+              shutil.copyfile(path,target)
+              assert target.stat().st_size==entry['bytes'] and hashlib.sha256(target.read_bytes()).hexdigest()==entry['sha256']
+          (staging/'evidence-index.json').write_bytes(metadata)
+          staging.rename(destination)
+          print(json.dumps(dict(publicSyntheticImages=len(images),files=len(files)+1,bytes=total)))
+          PY
+      - name: Upload only public synthetic screenshots
+        if: ${{ always() && inputs.scope == 'catalog-input-diagnostics' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: catalog-input-${{ github.sha }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/catalog-input-evidence
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          include-hidden-files: false
       - name: Build unsigned Release app and embedded Share extension
         if: ${{ inputs.scope == 'regression' }}
         shell: bash

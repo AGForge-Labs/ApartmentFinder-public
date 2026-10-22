@@ -36,6 +36,14 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(tuscano.waitForExistence(timeout: 5))
         XCTAssertTrue(tuscano.isHittable)
         tuscano.tap()
+        // The Finder button also exists behind this sheet; its existence is not
+        // a dismissal signal. Wait for the actual presentation boundary.
+        let picker = app.navigationBars["Communities"]
+        let pickerClosed = picker.waitForNonExistence(timeout: 5)
+        if !pickerClosed {
+            print("PublicCatalogPickerFailure pickerExists=\(picker.exists) selectedCommunity=\(app.buttons["finder.community"].label) address=\(String(reflecting: app.textFields["finder.address"].value as? String))")
+        }
+        XCTAssertTrue(pickerClosed, "Selecting the community must dismiss its picker before entering a unit")
         XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["Communities"].exists)
         XCTAssertTrue(app.buttons["finder.community"].label.contains("Tuscano"))
