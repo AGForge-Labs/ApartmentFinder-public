@@ -49,7 +49,18 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         unit.tap()
         unit.typeText("2066")
         let entered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "2066"), object: unit)
-        XCTAssertEqual(XCTWaiter.wait(for: [entered], timeout: 3), .completed)
+        let entryWaitResult = XCTWaiter.wait(for: [entered], timeout: 3)
+        if entryWaitResult != .completed {
+            // Observe only after the original wait has failed. A late value must
+            // never turn this failed setup into a passing acceptance result.
+            let observedAt = ProcessInfo.processInfo.systemUptime
+            let observedValue = unit.value as? String
+            let valueQuerySeconds = ProcessInfo.processInfo.systemUptime - observedAt
+            print("PublicCatalogInputFailure wait=\(entryWaitResult.rawValue) value=\(String(reflecting: observedValue)) valueQuerySeconds=\(valueQuerySeconds)")
+            print("PublicCatalogInputFailure placeholder=\(String(reflecting: unit.placeholderValue)) exists=\(unit.exists) hittable=\(unit.isHittable) keyboardExists=\(app.keyboards.firstMatch.exists)")
+            print("PublicCatalogInputFailure field=\(unit.debugDescription)")
+        }
+        XCTAssertEqual(entryWaitResult, .completed)
         XCTAssertEqual(unit.value as? String, "2066")
         expectHittable(app.buttons["finder.search"])
         app.buttons["finder.search"].tap()
