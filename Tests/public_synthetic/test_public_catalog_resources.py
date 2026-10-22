@@ -46,6 +46,12 @@ def frozen_ea_resources(current=None):
     catalog, locations, paths = json.loads(json.dumps(current)) if current is not None else resources()
     entrance_proof = json.loads((ROOT/'docs/estimated-entrance-side-preservation.json').read_bytes())
     entrance_ids = set(entrance_proof['newFeatureIDs'])
+    refresh_proof = json.loads((ROOT/'docs/public-data-refresh-preservation.json').read_bytes())
+    refresh_ids = set(refresh_proof['newFeatureIDs'])
+    if refresh_ids != {'entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-' + unit
+                       for unit in ('2047', '2096', '3031')}:
+        raise AssertionError('Unreviewed public refresh delta')
+    entrance_ids |= refresh_ids
     entrance_sources = set(entrance_proof['newSourceIDs'])
     locations['features'] = [f for f in locations['features'] if f['id'] not in entrance_ids]
     catalog['sources'] = [s for s in catalog['sources'] if s['id'] not in entrance_sources]
@@ -241,7 +247,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
         current,points,_ = resources()
         self.assertEqual(len(current['unitBuildingAssociations']),8015)
         self.assertEqual(len(current['unitFloorReferences']),359)
-        self.assertEqual(len(points['features']),16061)
+        self.assertEqual(len(points['features']),16064)
         self.assertEqual(sum(p['properties'].get('referenceKind')=='operatorMapBuildingArea' for p in points['features']),62)
         self.assertEqual(sum(p['properties'].get('referenceKind')=='assessorLegalBuildingPolygon' for p in points['features']),339)
         self.assertEqual(sum(p['properties'].get('sourceUnitID') is not None for p in points['features']),502)
@@ -257,9 +263,15 @@ class PublicCatalogResourceTests(unittest.TestCase):
         self.assertEqual(fingerprint(index['entries']),
                          'cbd6de3d52dea4312711e953c1317d457499341442707688ff2c33122abcadab')
         ids, source_ids = set(proof['newFeatureIDs']), set(proof['newSourceIDs'])
+        later = set(json.loads((ROOT/'docs/public-data-refresh-preservation.json').read_bytes())['newFeatureIDs'])
+        self.assertEqual(later, {
+            'entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2047',
+            'entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2096',
+            'entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-3031',
+        })
         self.assertEqual((len(ids), len(source_ids)), (641, 26))
         new = [f for f in locations['features'] if f['id'] in ids]
-        old = [f for f in locations['features'] if f['id'] not in ids]
+        old = [f for f in locations['features'] if f['id'] not in ids | later]
         self.assertEqual(len(old), 15420)
         self.assertEqual(fingerprint(old), '7766b818fb8aaa59387d785f1a8178ad0e47c8ee739908822c1dc234b1984ad0')
         self.assertEqual(fingerprint(sorted(new, key=lambda f: f['id'])),
@@ -280,7 +292,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
             with self.subTest(collection=name):
                 self.assertEqual(len(values), count)
                 self.assertEqual(fingerprint(values), digest)
-        self.assertEqual({f['id'] for f in locations['features'] if f['properties'].get('entranceSideEstimate')}, ids)
+        self.assertEqual({f['id'] for f in locations['features'] if f['properties'].get('entranceSideEstimate')}, ids | later)
         counts = {}
         for feature in new:
             p = feature['properties']; e = p['entranceSideEstimate']

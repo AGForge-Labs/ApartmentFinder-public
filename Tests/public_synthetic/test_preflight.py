@@ -434,9 +434,9 @@ class PublicPreflightTests(unittest.TestCase):
 
     def test_reviewed_native_inventory_matches_current_source(self):
         artifact = module('public_preflight_artifact', ROOT / 'scripts/testflight-artifact.py')
-        self.assertEqual(artifact.expected_test_count(ROOT), 132)
+        self.assertEqual(artifact.expected_test_count(ROOT), 137)
         profile = json.loads((ROOT / 'scripts/iteration-profile.json').read_text())
-        self.assertEqual(profile['full_acceptance'], {'native': 86, 'ui': 46, 'original_pngs': 47})
+        self.assertEqual(profile['full_acceptance'], {'native': 90, 'ui': 47, 'original_pngs': 48})
 
 
     def test_public_selection_is_exact_and_excludes_private_acceptance(self):
@@ -444,9 +444,9 @@ class PublicPreflightTests(unittest.TestCase):
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 161),
-            ('native', 'NativeTests', 'ApartmentFinderTests/', 71),
-            ('ui', 'UITests', 'ApartmentFinderUITests/', 9),
+            ('core', 'Tests/ApartmentCoreTests', '', 180),
+            ('native', 'NativeTests', 'ApartmentFinderTests/', 75),
+            ('ui', 'UITests', 'ApartmentFinderUITests/', 10),
         ):
             values = selection[key]
             self.assertEqual(len(values), count)
@@ -461,6 +461,7 @@ class PublicPreflightTests(unittest.TestCase):
         })
         self.assertEqual(set(selection['ui']), {
             'ApartmentFinderUITests/EstimatedEntranceSideUITests/testEstimatedEntryRegionsKeepStreetFloorAndSharedDoorUncertaintyVisible',
+            'ApartmentFinderUITests/PublicCatalogUpdatesUITests/testOfflineRefreshKeepsCatalogSelectionAndPinEditingAvailable',
             'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
             'ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation',
             'ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors',

@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "baseSource": "d5960d764db299238ab68e3bcf655edc5a354f09",
+  "basePackVersion": "2026.10.22.1-public-estimated-entrance",
+  "packVersion": "2026.10.22.2-public-data-refresh",
+  "scope": "Three Springsteen model-derived possible entrance-side search regions at the exact public address 1450 E PEBBLE RD; not observed thresholds or verified doors.",
+  "allowedWrapperChanges": [
+    "packVersion",
+    "generatedAt"
+  ],
+  "newFeatureIDs": [
+    "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2047",
+    "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2096",
+    "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-3031"
+  ],
+  "newSourceIDs": [],
+  "newFeaturesSHA256": "e561cbf2d8c8afd37ea957437152c02bfbb1857aeb21ea55089ea07f06f595cb",
+  "newEstimateMetadataSHA256": "2374b6cefe6b0076c7dd79ce42e14740da7409af9889649039560101dd325a85",
+  "baselineCollectionHashes": {
+    "catalogBody": "bd79a23daad999334fd3db2e5375d247fa6ce3d3a7954c82f060ac19e40da44b",
+    "sources": "6a06a9d0a9081e1af140341c4a35b13cbafc2f8adb8af4db92238119a68f6f20",
+    "communities": "ea51ba622170eb07b7276b55f406e3b97539a28af1f32b84d7f90d07430c3818",
+    "associations": "4b7551ff7d577284a350855569a238718615a1cdeed50275cca1561e9aa4c600",
+    "floorReferences": "51c1b883ba1bb6270b0a56ec273717e8baf53a609e3fdac2d31295376d2a55d0",
+    "locations": "f545bceb5604b1201e2db8a6a0e057e8a4b9d0ec2a47e7049639d62e3545c7d3",
+    "paths": "5f601eba93b5bd25d7a624e40d3e5231c0ecea98dd3faa42b2d7ef73af8280ff",
+    "addressIndex": "cbd6de3d52dea4312711e953c1317d457499341442707688ff2c33122abcadab"
+  },
+  "baselineResourceSHA256": {
+    "public-catalog.json": "41049413e1c67e48dda975dff864c5ad7edea4d26a02ee4429e0ee929ad2297b",
+    "public-locations.geojson": "025d417d44d75739759bd13851f77428da79f663f4bdccbc8bd341218cc51a85",
+    "public-paths.geojson": "320aefee8e26413606a4b9a145bbdd8dbc5d7791c2f2084f79387999854ec5e4",
+    "known-addresses.json": "033891c222fdef588411b489c9d72ee3f9f4cf873708154346a0b6873247e0c0",
+    "public-catalog-review.json": "6761d88e30313df7b51cef02fb3d48fbaf4660d2f5e3d8a86fbfbd3c3e4675c9"
+  },
+  "resourceSHA256": {
+    "public-catalog.json": "4f118d7940ff714e12e7e5dad9540b8ca2f0a593c8b229143cbed04602676acb",
+    "public-locations.geojson": "cc3d07347bc9cd794584848bbd3f066ca41a2c3457b3da6474be6c18ff61400d",
+    "public-paths.geojson": "ba5db4d8a4a20894a5b75989dc2121060669d84594c1f25a4e7b7b5730c4d326",
+    "known-addresses.json": "a35b2d40bb91216e8b45891ac6af2d489033145b06e857aeb5edd120803989e8",
+    "public-catalog-review.json": "656ca00862f504dececc60b284e1abb1b09cedb442749caa07203c96916b85aa"
+  },
+  "unchangedPriorProof": {
+    "path": "docs/estimated-entrance-side-preservation.json",
+    "sha256": "1c5d362d342889b93e8e3f9814591ffc49f6072abc2d199963042910c5696f6f"
+  },
+  "counts": {
+    "baselinePositions": 16061,
+    "positions": 16064,
+    "newEstimatedEntranceSideReferences": 3,
+    "sources": 778,
+    "communities": 162,
+    "unitBuildingAssociations": 8015,
+    "unitFloorReferences": 359,
+    "paths": 17,
+    "knownAddressEntries": 162
+  },
+  "newVerifiedDoorCount": 0,
+  "newVerifiedEntranceCount": 0,
+  "newUnitBuildingAssociationCount": 0,
+  "inventoryComplete": false,
+  "sourceArtworkIncluded": false,
+  "hypotheses": [
+    {
+      "featureID": "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2047",
+      "address": "1450 E PEBBLE RD",
+      "unit": "2047",
+      "building": "3",
+      "dwellingFloor": "2",
+      "sourceUnitID": "1864911",
+      "model": "Springsteen",
+      "modelSourceID": "638283",
+      "sourceIDs": [
+        "entry-estimate-20261022-eaa93109896be0db",
+        "g21-destinations-pebble-cea3731da114",
+        "entry-estimate-20261022-44fb1bed427854e2",
+        "g21-destinations-pebble-992128acb471",
+        "g21-destinations-pebble-16b0c68dacfa"
+      ],
+      "coordinates": [
+        -115.13329588,
+        36.03011498
+      ],
+      "workingAllowanceMeters": 20,
+      "uncertaintyCalibrated": false,
+      "doorCoordinatesVerified": false,
+      "entranceCoordinatesVerified": false,
+      "physicalSignageVerified": false,
+      "entryElevation": null,
+      "sharedEntranceAsserted": false,
+      "neighborUnitAmbiguity": "2046",
+      "caveat": "Generic-model 64-72% entry interval overlaps the neighboring-unit corner near 64.89%. A 68% side hypothesis does not establish physical entry, access, floor-specific entrance geometry or a shared doorway. Coarse roof-body registration and opposite-facade uncertainty remain; the 20 m uncalibrated working allowance may be exceeded."
+    },
+    {
+      "featureID": "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2096",
+      "address": "1450 E PEBBLE RD",
+      "unit": "2096",
+      "building": "7",
+      "dwellingFloor": "2",
+      "sourceUnitID": "1864960",
+      "model": "Springsteen",
+      "modelSourceID": "638283",
+      "sourceIDs": [
+        "entry-estimate-20261022-eaa93109896be0db",
+        "g21-destinations-pebble-cea3731da114",
+        "entry-estimate-20261022-44fb1bed427854e2",
+        "g21-destinations-pebble-992128acb471",
+        "g21-destinations-pebble-16b0c68dacfa"
+      ],
+      "coordinates": [
+        -115.13322462,
+        36.02960726
+      ],
+      "workingAllowanceMeters": 20,
+      "uncertaintyCalibrated": false,
+      "doorCoordinatesVerified": false,
+      "entranceCoordinatesVerified": false,
+      "physicalSignageVerified": false,
+      "entryElevation": null,
+      "sharedEntranceAsserted": false,
+      "neighborUnitAmbiguity": "2097",
+      "caveat": "Generic-model 64-72% entry interval overlaps the neighboring-unit corner near 64.89%. A 68% side hypothesis does not establish physical entry, access, floor-specific entrance geometry or a shared doorway. Coarse roof-body registration and opposite-facade uncertainty remain; the 20 m uncalibrated working allowance may be exceeded."
+    },
+    {
+      "featureID": "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-3031",
+      "address": "1450 E PEBBLE RD",
+      "unit": "3031",
+      "building": "2",
+      "dwellingFloor": "3",
+      "sourceUnitID": "1865055",
+      "model": "Springsteen",
+      "modelSourceID": "638283",
+      "sourceIDs": [
+        "entry-estimate-20261022-eaa93109896be0db",
+        "g21-destinations-pebble-cea3731da114",
+        "entry-estimate-20261022-44fb1bed427854e2",
+        "g21-destinations-pebble-992128acb471",
+        "g21-destinations-pebble-16b0c68dacfa"
+      ],
+      "coordinates": [
+        -115.13242291,
+        36.02922668
+      ],
+      "workingAllowanceMeters": 20,
+      "uncertaintyCalibrated": false,
+      "doorCoordinatesVerified": false,
+      "entranceCoordinatesVerified": false,
+      "physicalSignageVerified": false,
+      "entryElevation": null,
+      "sharedEntranceAsserted": false,
+      "neighborUnitAmbiguity": "3030",
+      "caveat": "Generic-model 64-72% entry interval overlaps the neighboring-unit corner near 64.89%. A 68% side hypothesis does not establish physical entry, access, floor-specific entrance geometry or a shared doorway. Coarse roof-body registration and opposite-facade uncertainty remain; the 20 m uncalibrated working allowance may be exceeded."
+    }
+  ]
+}

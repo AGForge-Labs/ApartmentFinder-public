@@ -14,20 +14,20 @@ final class PublicCatalogResourceTests: XCTestCase {
     }
     func testPublicPackDecodesQualifiedPositionsAndKeepsRileyAndRussellStreetsSeparate() throws {
         let data = try pack()
-        XCTAssertEqual(data.catalog.packVersion, "2026.10.22.1-public-estimated-entrance")
+        XCTAssertEqual(data.catalog.packVersion, "2026.10.22.2-public-data-refresh")
         XCTAssertEqual(data.catalog.communities.count, 162)
-        XCTAssertEqual(data.places.count, 16_061)
-        XCTAssertEqual(Set(data.places.map(\.id)).count, 16_061)
+        XCTAssertEqual(data.places.count, 16_064)
+        XCTAssertEqual(Set(data.places.map(\.id)).count, 16_064)
         XCTAssertEqual(data.places.filter { $0.verification == .sourceMapped }.count, 14_678)
-        XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 1_383)
-        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 15_660)
+        XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 1_386)
+        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 15_663)
         let originalPlaces = data.places.filter { $0.entranceSideEstimate == nil }
         XCTAssertEqual(originalPlaces.count, 15_420, "The frozen b09 catalog remains separate from new estimates")
         XCTAssertEqual(originalPlaces.filter { $0.verification == .sourceMapped }.count, 14_678)
         XCTAssertEqual(originalPlaces.filter { $0.verification == .estimated }.count, 742)
         XCTAssertEqual(originalPlaces.filter { $0.kind == .unitPosition }.count, 15_019)
         let entryEstimates = data.places.filter { $0.entranceSideEstimate != nil }
-        XCTAssertEqual(entryEstimates.count, 641)
+        XCTAssertEqual(entryEstimates.count, 644)
         XCTAssertTrue(entryEstimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.kind == .unitPosition && $0.verification == .estimated })
         XCTAssertFalse(data.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified },
                        "Neither published unit references nor entrance-side estimates certify a physical door")

@@ -14,6 +14,9 @@ SPEC = importlib.util.spec_from_file_location("testflight", ROOT / "scripts/test
 TESTFLIGHT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(TESTFLIGHT)
 REQUIRED_SCREENSHOTS = {
+    "PublicCatalogUpdatesUITests/testOfflineRefreshKeepsCatalogSelectionAndPinEditingAvailable()": (
+        "Offline pin data refresh retains installed revision",
+    ),
     "HeadingUpNavigationTests/testStartsHeadingUpAndResumePreservesChosenStop()": (
         "Initial heading-up frame includes user and apartment pins above the stop card",
         "Mini-route starts facing synthetic west with blue direction arrow",
@@ -123,7 +126,7 @@ def expected_test_count(root):
             tests.extend(re.findall(r"(?m)^\s*func\s+(test[A-Za-z0-9_]*)\s*\(",
                                     path.read_text(encoding="utf-8")))
         counts[directory] = len(tests)
-    require(counts == {"NativeTests": 86, "UITests": 46}, "Reviewed native test inventory changed")
+    require(counts == {"NativeTests": 90, "UITests": 47}, "Reviewed native test inventory changed")
     return sum(counts.values())
 
 

@@ -8,6 +8,7 @@ struct ApartmentRoutesView: View {
     @ObservedObject var location: LocationService
     @State private var importing = false
     @State private var settings = false
+    @State private var publicCatalogUpdates = false
     @State private var path: [Destination] = []
     @State private var apartmentSwitchGate = NextApartmentRoute.SwitchGate()
     @AppStorage("offlineMap") private var offline = true
@@ -131,11 +132,17 @@ struct ApartmentRoutesView: View {
                     Button("Settings", systemImage: "gearshape") { settings = true }
                         .accessibilityIdentifier("apartments.settings")
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Pin data", systemImage: "arrow.triangle.2.circlepath") { publicCatalogUpdates = true }
+                        .labelStyle(.iconOnly)
+                        .accessibilityIdentifier("catalogUpdates.open")
+                }
                 #if DEBUG
                 if UITestSupport.enabled && path.isEmpty { UITestManifestControls(imports: imports, store: store) }
                 #endif
             }
             .sheet(isPresented: $settings) { LibraryView(store: store, location: location, offline: $offline) }
+            .sheet(isPresented: $publicCatalogUpdates) { PublicCatalogUpdatesView(store: store) }
             .fileImporter(isPresented: $importing, allowedContentTypes: [.zip, .commaSeparatedText, .plainText]) { result in
                 do { imports.open(try result.get(), addresses: store.knownApartmentAddresses) }
                 catch { imports.error = error.localizedDescription }
@@ -155,6 +162,15 @@ struct ApartmentRoutesView: View {
                 }
             }
             apartmentSwitchGate = NextApartmentRoute.SwitchGate()
+        }
+        .onChange(of: store.publicCatalogDataRevision) { _, _ in
+            // Keep the active delivery stack and switch gate when its apartment still exists.
+            path.removeAll { destination in
+                switch destination {
+                case .miniRoute(let id), .activeMiniRoute(let id): return store.apartmentGroup(id) == nil
+                case .review: return false
+                }
+            }
         }
     }
 }

@@ -45,6 +45,7 @@ struct RootView: View {
         }
         .onOpenURL { url in imports.open(url, addresses: store.knownApartmentAddresses) }
         .task { imports.refresh(store: store) }
+        .task(id: scenePhase) { await checkPublicCatalogWhileActive() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { imports.refresh(store: store) } }
         .onChange(of: store.packRevision) { _, _ in finderNavigation.clearPreview(); location.endNavigation() }
         .onChange(of: imports.error) { _, message in if let message { store.errorMessage = message; imports.error = nil } }
@@ -65,6 +66,15 @@ struct RootView: View {
             Button("OK") { store.errorMessage = nil }
         } message: { Text(store.errorMessage ?? "") }
     }
+    private func checkPublicCatalogWhileActive() async {
+        // Acceptance fixtures use controlled manual refreshes and never contact the live feed.
+        guard scenePhase == .active, !ProcessInfo.processInfo.arguments.contains("--uitesting") else { return }
+        while !Task.isCancelled {
+            await store.refreshPublicCatalogIfDue()
+            do { try await Task.sleep(for: .seconds(300)) }
+            catch { return }
+        }
+    }
 }
 
 private struct FinderView: View {
@@ -74,6 +84,9 @@ private struct FinderView: View {
     @Binding var offline: Bool
     @State private var initialized = false
     @State private var appliedPackRevision: UInt64 = 0
+    @State private var appliedPublicDataRevision: UInt64 = 0
+    @State private var appliedPublicPaths: [PathSegment] = []
+    @State private var selectedApproach: Place?
     @State private var communityID: String?
     @State private var address = ""
     @State private var unit = ""
@@ -87,6 +100,7 @@ private struct FinderView: View {
     @State private var routeDestination: Place?
     @State private var publicDestination: Place?
     @State private var onlineLookup = false
+    @State private var publicCatalogUpdates = false
     private enum RevealTarget: Hashable { case search, results, selectedLocation }
     private struct RevealRequest: Equatable {
         let id = UUID()
@@ -165,6 +179,7 @@ private struct FinderView: View {
                                 }
                                 pinEditor = Place(communityID: community.id,address: community.address,unit: unit,kind: .unitPosition,verification: .sourceMapped,coordinate: coordinate)
                             }
+                            .accessibilityIdentifier("finder.addPin")
                             Spacer()
                             Button(location.recordingNeedsFinish ? "Finish / save section" : "Record path",systemImage: location.recordingNeedsFinish ? "stop.circle.fill" : "record.circle") {
                                 if location.recordingNeedsFinish {
@@ -207,6 +222,11 @@ private struct FinderView: View {
             }
             .navigationTitle("ApartmentFinder").navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Pin data", systemImage: "arrow.triangle.2.circlepath") { publicCatalogUpdates = true }
+                        .labelStyle(.iconOnly)
+                        .accessibilityIdentifier("catalogUpdates.open")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Edit search", systemImage: "magnifyingglass") {
                         focusedField = nil
@@ -227,6 +247,7 @@ private struct FinderView: View {
             .sheet(item: $routeDestination) { LocalRoutePlanner(store: store,location: location,navigation: navigation,destination: $0) }
             .fullScreenCover(item: $publicDestination) { PublicRoadView(destination: $0,store: store) }
             .sheet(isPresented: $onlineLookup) { OnlineLookup(store: store,address: address) }
+            .sheet(isPresented: $publicCatalogUpdates) { PublicCatalogUpdatesView(store: store) }
             .onAppear {
                 if !initialized {
                     initialized = true
@@ -235,9 +256,12 @@ private struct FinderView: View {
                     communityID = initial?.id; address = initial?.address ?? ""
                 }
                 if appliedPackRevision != store.packRevision { refreshAfterPackReplacement() }
+                if appliedPublicDataRevision != store.publicCatalogDataRevision { refreshAfterPublicCatalogUpdate() }
+                else { rememberPublicNavigationInputs() }
             }
             .onChange(of: store.packRevision) { _, _ in refreshAfterPackReplacement() }
-            .onChange(of: selected?.id) { _,_ in navigation.clearPreview() }
+            .onChange(of: store.publicCatalogDataRevision) { _, _ in refreshAfterPublicCatalogUpdate() }
+            .onChange(of: selected?.id) { _,_ in navigation.clearPreview(); rememberPublicNavigationInputs() }
             .onChange(of: store.personal.places) { _,_ in
                 let selectedID = selected?.id
                 if searched { refreshMatches() }
@@ -247,9 +271,57 @@ private struct FinderView: View {
                 }
                 // Moving a pin can invalidate its graph connection; an old route must not stay active.
                 navigation.clearPreview()
+                rememberPublicNavigationInputs()
             }
-            .onChange(of: store.personal.paths) { _,_ in navigation.clearPreview() }
+            .onChange(of: store.personal.paths) { _,_ in navigation.clearPreview(); rememberPublicNavigationInputs() }
         }
+    }
+    private func refreshAfterPublicCatalogUpdate() {
+        let previousSelection = selected
+        let currentSelection = previousSelection.flatMap { previous in store.places.first { $0.id == previous.id } }
+        let currentApproach = currentSelection?.approachID.flatMap { id in store.places.first { $0.id == id } }
+        let targetChanged = !sameNavigationTarget(previousSelection, currentSelection) ||
+            !sameNavigationTarget(selectedApproach, currentApproach)
+        let usedPathChanged = navigation.route?.edgeIDs.contains { id in
+            !sameNavigationPath(appliedPublicPaths.first { $0.id == id }, store.paths.first { $0.id == id })
+        } ?? false
+
+        // Rebuild results without rerunning selection or replacing the owner's query.
+        if searched { matches = store.search(address: address, unit: unit, building: building) }
+        selected = currentSelection
+        if let selected { communityID = selected.communityID }
+        else if !store.communities.contains(where: { $0.id == communityID }) { communityID = nil }
+
+        if targetChanged || usedPathChanged {
+            let wasNavigating = navigation.active
+            navigation.clearPreview()
+            if wasNavigating { location.endNavigation() }
+            routeDestination = nil
+            if targetChanged { publicDestination = nil }
+        }
+        appliedPublicDataRevision = store.publicCatalogDataRevision
+        rememberPublicNavigationInputs()
+    }
+    private func rememberPublicNavigationInputs() {
+        appliedPublicPaths = store.paths
+        selectedApproach = selected?.approachID.flatMap { id in store.places.first { $0.id == id } }
+    }
+    private func sameNavigationTarget(_ previous: Place?, _ current: Place?) -> Bool {
+        guard let previous, let current else { return previous == nil && current == nil }
+        return previous.id == current.id && previous.communityID == current.communityID &&
+            LocalSearch.addressKey(previous.address) == LocalSearch.addressKey(current.address) &&
+            previous.unit == current.unit && previous.building == current.building && previous.floor == current.floor &&
+            previous.coordinate == current.coordinate && previous.kind == current.kind &&
+            previous.verification == current.verification && previous.identityUncertain == current.identityUncertain &&
+            previous.graphNodeID == current.graphNodeID && previous.approachID == current.approachID
+    }
+    private func sameNavigationPath(_ previous: PathSegment?, _ current: PathSegment?) -> Bool {
+        guard let previous, let current else { return false }
+        return previous.id == current.id && previous.communityID == current.communityID &&
+            previous.fromNode == current.fromNode && previous.toNode == current.toNode &&
+            previous.coordinates == current.coordinates && previous.mode == current.mode &&
+            previous.oneWay == current.oneWay && previous.blocked == current.blocked &&
+            previous.stairs == current.stairs && previous.confirmed == current.confirmed
     }
     private func refreshAfterPackReplacement() {
         let selectedID = selected?.id, previousCommunity = communityID
@@ -267,6 +339,7 @@ private struct FinderView: View {
         if let pathEditor, !store.personal.paths.contains(where: { $0.id == pathEditor.id }) { self.pathEditor = nil }
         revealRequest = nil
         appliedPackRevision = store.packRevision
+        rememberPublicNavigationInputs()
     }
     private var searchCard: some View {
         VStack(spacing: 10) {

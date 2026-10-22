@@ -3,14 +3,14 @@
     "buildingAreaReferences": 401,
     "communities": 162,
     "communitiesWithBuildingAreas": 19,
-    "estimatedEntranceSideRegions": 641,
+    "estimatedEntranceSideRegions": 644,
     "fieldVerifiedPublicDoors": 0,
     "mappedCommunityAreas": 96,
     "missingCommunityAreas": 66,
     "unitBuildingAssociations": 8015,
-    "unitPositions": 15660
+    "unitPositions": 15663
   },
-  "catalogPackVersion": "2026.10.22.1-public-estimated-entrance",
+  "catalogPackVersion": "2026.10.22.2-public-data-refresh",
   "communities": [
     {
       "address": "2312 North Green Valley Parkway",
@@ -1808,7 +1808,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
-      "estimatedEntranceSideRegions": 27,
+      "estimatedEntranceSideRegions": 30,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -1826,10 +1826,10 @@
         "total": 416
       },
       "unitPositions": {
-        "estimated": 27,
+        "estimated": 30,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 27
+        "total": 30
       }
     },
     {
@@ -7475,12 +7475,12 @@
     "buildingAreaReferences": 401,
     "communities": 97,
     "communitiesWithBuildingAreas": 19,
-    "estimatedEntranceSideRegions": 641,
+    "estimatedEntranceSideRegions": 644,
     "fieldVerifiedPublicDoors": 0,
     "mappedCommunityAreas": 36,
     "missingCommunityAreas": 61,
     "unitBuildingAssociations": 8015,
-    "unitPositions": 1143
+    "unitPositions": 1146
   },
   "priorityZIPs": [
     "89123",

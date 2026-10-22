@@ -13,6 +13,14 @@ enum UITestSupport {
         guard UUID(uuidString: id) != nil else { return nil }
         return FileManager.default.temporaryDirectory.appendingPathComponent("UITest-\(id).store")
     }
+    static var publicCatalogClient: PublicCatalogUpdateClient {
+        #if targetEnvironment(simulator)
+        if enabled, storeURL() != nil, ProcessInfo.processInfo.arguments.contains("--catalog-refresh-offline") {
+            return PublicCatalogUpdateClient { _, _ in throw URLError(.notConnectedToInternet) }
+        }
+        #endif
+        return PublicCatalogUpdateClient()
+    }
     // Keep the original no-pack UI regression explicit after shipping a public bundle.
     static var loadPublicCatalog: Bool {
         #if targetEnvironment(simulator)

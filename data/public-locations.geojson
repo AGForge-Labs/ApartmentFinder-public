@@ -1,7 +1,7 @@
 {
   "type": "FeatureCollection",
   "schemaVersion": 1,
-  "packVersion": "2026.10.22.1-public-estimated-entrance",
+  "packVersion": "2026.10.22.2-public-data-refresh",
   "features": [
     {
       "type": "Feature",
@@ -435918,6 +435918,165 @@
           "sourceUnitID": null,
           "evidenceNotes": "Shared approximate entry area for the 1013/1014 pair in building 2. Historical 2014/2015 street imagery shows an entry recess in the matching facade section, but no readable plaque distinguishes 1014 from 1013. Exact threshold, floor, entrance elevation, current signs and approach are unknown. Manual aerial registration has unknown absolute error. At least 10 m uncalibrated working allowance reaches adjacent frontage and is not guaranteed accuracy. No specific 1014 door is identified.",
           "sourceDate": "2014/2015 historical street imagery; map reviewed2026-10-22"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2047",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.13329588,
+          36.03011498
+        ]
+      },
+      "properties": {
+        "communityID": "destinations-pebble",
+        "address": "1450 E PEBBLE RD",
+        "building": "3",
+        "unit": "2047",
+        "floor": "2",
+        "kind": "unitPosition",
+        "verification": "estimated",
+        "identityUncertain": true,
+        "sourceIDs": [
+          "entry-estimate-20261022-eaa93109896be0db",
+          "g21-destinations-pebble-cea3731da114",
+          "entry-estimate-20261022-44fb1bed427854e2",
+          "g21-destinations-pebble-992128acb471",
+          "g21-destinations-pebble-16b0c68dacfa"
+        ],
+        "notes": "Estimated entrance-side search region; not a verified entrance or exact door. Representative point only; working allowance 20 m is uncalibrated, not guaranteed accuracy. Physical signage remains unverified. Possible Springsteen entry side for unit 2047; saved operator unit/model/floor IDs match. The generic-model 64-72% doorway interval overlaps neighbor 2046 at about 64.89%; the selected 68% hypothesis does not establish a unit-specific entrance. Neighboring doors, shared-boundary ambiguity and opposite-facade error remain. Roof-body affine registration is coarse, not wall or ground registration; source marketing schematics may differ from the physical unit. Dwelling floor is source-published, but entry elevation, landing, stairs, signage and accessible approach are unknown. At least 20 m uncalibrated working allowance is not a guaranteed bound and may be exceeded.",
+        "entranceSideEstimate": {
+          "frontage": [
+            {
+              "latitude": 36.03003295,
+              "longitude": -115.13327839
+            },
+            {
+              "latitude": 36.03015358,
+              "longitude": -115.13330411
+            }
+          ],
+          "workingAllowanceMeters": 20,
+          "uncertaintyCalibrated": false,
+          "doorCoordinatesVerified": false,
+          "entranceCoordinatesVerified": false,
+          "physicalSignageVerified": false,
+          "dwellingFloorEvidence": "currentExplicit",
+          "dwellingFloor": "2",
+          "entryLevelDescription": "Unknown entrance elevation, landing, stairs and accessible approach; source-published dwelling floor does not establish entry level.",
+          "sharedUnits": [],
+          "sourceUnitID": "1864911",
+          "evidenceNotes": "Possible Springsteen entry side for unit 2047; saved operator unit/model/floor IDs match. The generic-model 64-72% doorway interval overlaps neighbor 2046 at about 64.89%; the selected 68% hypothesis does not establish a unit-specific entrance. Neighboring doors, shared-boundary ambiguity and opposite-facade error remain. Roof-body affine registration is coarse, not wall or ground registration; source marketing schematics may differ from the physical unit. Dwelling floor is source-published, but entry elevation, landing, stairs, signage and accessible approach are unknown. At least 20 m uncalibrated working allowance is not a guaranteed bound and may be exceeded.",
+          "sourceDate": "2026-10-22"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-2096",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.13322462,
+          36.02960726
+        ]
+      },
+      "properties": {
+        "communityID": "destinations-pebble",
+        "address": "1450 E PEBBLE RD",
+        "building": "7",
+        "unit": "2096",
+        "floor": "2",
+        "kind": "unitPosition",
+        "verification": "estimated",
+        "identityUncertain": true,
+        "sourceIDs": [
+          "entry-estimate-20261022-eaa93109896be0db",
+          "g21-destinations-pebble-cea3731da114",
+          "entry-estimate-20261022-44fb1bed427854e2",
+          "g21-destinations-pebble-992128acb471",
+          "g21-destinations-pebble-16b0c68dacfa"
+        ],
+        "notes": "Estimated entrance-side search region; not a verified entrance or exact door. Representative point only; working allowance 20 m is uncalibrated, not guaranteed accuracy. Physical signage remains unverified. Possible Springsteen entry side for unit 2096; saved operator unit/model/floor IDs match. The generic-model 64-72% doorway interval overlaps neighbor 2097 at about 64.89%; the selected 68% hypothesis does not establish a unit-specific entrance. Neighboring doors, shared-boundary ambiguity and opposite-facade error remain. Roof-body affine registration is coarse, not wall or ground registration; source marketing schematics may differ from the physical unit. Dwelling floor is source-published, but entry elevation, landing, stairs, signage and accessible approach are unknown. At least 20 m uncalibrated working allowance is not a guaranteed bound and may be exceeded.",
+        "entranceSideEstimate": {
+          "frontage": [
+            {
+              "latitude": 36.02961488,
+              "longitude": -115.13311894
+            },
+            {
+              "latitude": 36.02960368,
+              "longitude": -115.13327435
+            }
+          ],
+          "workingAllowanceMeters": 20,
+          "uncertaintyCalibrated": false,
+          "doorCoordinatesVerified": false,
+          "entranceCoordinatesVerified": false,
+          "physicalSignageVerified": false,
+          "dwellingFloorEvidence": "currentExplicit",
+          "dwellingFloor": "2",
+          "entryLevelDescription": "Unknown entrance elevation, landing, stairs and accessible approach; source-published dwelling floor does not establish entry level.",
+          "sharedUnits": [],
+          "sourceUnitID": "1864960",
+          "evidenceNotes": "Possible Springsteen entry side for unit 2096; saved operator unit/model/floor IDs match. The generic-model 64-72% doorway interval overlaps neighbor 2097 at about 64.89%; the selected 68% hypothesis does not establish a unit-specific entrance. Neighboring doors, shared-boundary ambiguity and opposite-facade error remain. Roof-body affine registration is coarse, not wall or ground registration; source marketing schematics may differ from the physical unit. Dwelling floor is source-published, but entry elevation, landing, stairs, signage and accessible approach are unknown. At least 20 m uncalibrated working allowance is not a guaranteed bound and may be exceeded.",
+          "sourceDate": "2026-10-22"
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "entrance-estimate:destinations-pebble:1450-e-pebble-rd:unit-3031",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -115.13242291,
+          36.02922668
+        ]
+      },
+      "properties": {
+        "communityID": "destinations-pebble",
+        "address": "1450 E PEBBLE RD",
+        "building": "2",
+        "unit": "3031",
+        "floor": "3",
+        "kind": "unitPosition",
+        "verification": "estimated",
+        "identityUncertain": true,
+        "sourceIDs": [
+          "entry-estimate-20261022-eaa93109896be0db",
+          "g21-destinations-pebble-cea3731da114",
+          "entry-estimate-20261022-44fb1bed427854e2",
+          "g21-destinations-pebble-992128acb471",
+          "g21-destinations-pebble-16b0c68dacfa"
+        ],
+        "notes": "Estimated entrance-side search region; not a verified entrance or exact door. Representative point only; working allowance 20 m is uncalibrated, not guaranteed accuracy. Physical signage remains unverified. Possible Springsteen entry side for unit 3031; saved operator unit/model/floor IDs match. The generic-model 64-72% doorway interval overlaps neighbor 3030 at about 64.89%; the selected 68% hypothesis does not establish a unit-specific entrance. Neighboring doors, shared-boundary ambiguity and opposite-facade error remain. Roof-body affine registration is coarse, not wall or ground registration; source marketing schematics may differ from the physical unit. Dwelling floor is source-published, but entry elevation, landing, stairs, signage and accessible approach are unknown. At least 20 m uncalibrated working allowance is not a guaranteed bound and may be exceeded.",
+        "entranceSideEstimate": {
+          "frontage": [
+            {
+              "latitude": 36.02925215,
+              "longitude": -115.13232278
+            },
+            {
+              "latitude": 36.02921469,
+              "longitude": -115.13247003
+            }
+          ],
+          "workingAllowanceMeters": 20,
+          "uncertaintyCalibrated": false,
+          "doorCoordinatesVerified": false,
+          "entranceCoordinatesVerified": false,
+          "physicalSignageVerified": false,
+          "dwellingFloorEvidence": "currentExplicit",
+          "dwellingFloor": "3",
+          "entryLevelDescription": "Unknown entrance elevation, landing, stairs and accessible approach; source-published dwelling floor does not establish entry level.",
+          "sharedUnits": [],
+          "sourceUnitID": "1865055",
+          "evidenceNotes": "Possible Springsteen entry side for unit 3031; saved operator unit/model/floor IDs match. The generic-model 64-72% doorway interval overlaps neighbor 3030 at about 64.89%; the selected 68% hypothesis does not establish a unit-specific entrance. Neighboring doors, shared-boundary ambiguity and opposite-facade error remain. Roof-body affine registration is coarse, not wall or ground registration; source marketing schematics may differ from the physical unit. Dwelling floor is source-published, but entry elevation, landing, stairs, signage and accessible approach are unknown. At least 20 m uncalibrated working allowance is not a guaranteed bound and may be exceeded.",
+          "sourceDate": "2026-10-22"
         }
       }
     }

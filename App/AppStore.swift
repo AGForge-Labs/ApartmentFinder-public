@@ -17,6 +17,11 @@ final class AppStore: ObservableObject {
     @Published private(set) var packStatus = "Private map pack not installed"
     @Published private(set) var packRevision: UInt64 = 0
     @Published private(set) var privatePackImportPending = false
+    @Published private(set) var catalogRefreshPending = false
+    @Published private(set) var publicCatalogRevisionLabel = "Bundled pin data"
+    @Published private(set) var publicCatalogUpdateStatus = "Pin data is available offline."
+    @Published private(set) var canRollbackPublicCatalog = false
+    @Published private(set) var publicCatalogDataRevision: UInt64 = 0
     @Published private(set) var personal = PersonalBackup()
     @Published private(set) var apartmentPlan = ApartmentRoutePlan.make(stops: [], communities: [])
     @Published var errorMessage: String?
@@ -36,9 +41,16 @@ final class AppStore: ObservableObject {
     private var privatePackStore: PrivateDataPackStore?
     private var publicCatalogSupplement: LocalDataPack?
     private var loadedBasePack: LocalDataPack?
+    private var publicCatalogStore: PublicCatalogUpdateStore?
+    private let publicCatalogClient: PublicCatalogUpdateClient
+    private let publicCatalogUpdatesEnabled: Bool
+    private var lastPublicCatalogCheck: Date?
     var requiresPrivatePack: Bool { pack == nil }
 
-    var communities: [Community] { pack?.catalog.communities ?? [] }
+    var communities: [Community] {
+        PersonalCommunityDirectory.applying(places: personal.places, rules: personal.apartmentRules,
+            to: pack?.catalog.communities ?? [])
+    }
     var knownApartmentAddresses: [String] { communities.flatMap(\.matchingAddresses) + personal.apartmentRules.map(\.address) + personal.apartmentRules.compactMap(\.matchingAddress) }
     var places: [Place] { mergedPlaces }
     var paths: [PathSegment] {
@@ -50,7 +62,14 @@ final class AppStore: ObservableObject {
     var communityPlaces: [Place] { places.filter { $0.communityID == selectedCommunityID && $0.referenceKind == nil } }
     var communityPaths: [PathSegment] { paths.filter { $0.communityID == selectedCommunityID } }
 
-    init(storeURL: URL? = nil, resourceBundle: Bundle = .main, packDirectory: URL? = nil, loadPublicCatalog: Bool = true) {
+    init(storeURL: URL? = nil, resourceBundle: Bundle = .main, packDirectory: URL? = nil, loadPublicCatalog: Bool = true,
+         publicCatalogStore: PublicCatalogUpdateStore? = nil, publicCatalogClient: PublicCatalogUpdateClient = PublicCatalogUpdateClient()) {
+        self.publicCatalogClient = publicCatalogClient
+        publicCatalogUpdatesEnabled = loadPublicCatalog
+        if let publicCatalogStore { self.publicCatalogStore = publicCatalogStore }
+        else if let storeURL {
+            self.publicCatalogStore = PublicCatalogUpdateStore(directory: storeURL.appendingPathExtension("public-catalog"))
+        } else { self.publicCatalogStore = try? SharedManifestContainer.publicCatalogUpdates() }
         if let directory = packDirectory ?? storeURL?.appendingPathExtension("private-packs") {
             privatePackStore = PrivateDataPackStore(directory: directory)
         } else { privatePackStore = try? SharedManifestContainer.privatePacks() }
@@ -82,15 +101,14 @@ final class AppStore: ObservableObject {
     }
     private func loadPack(resourceBundle: Bundle, loadPublicCatalog: Bool) throws {
         if loadPublicCatalog {
-            do { publicCatalogSupplement = try PublicCatalogSupplement.read(from: resourceBundle) }
-            catch { errorMessage = "The bundled public catalog could not be verified. Existing saved data was preserved." }
+            loadPublicSupplement(resourceBundle: resourceBundle)
         }
         defer {
             loadedBasePack = pack
             if let publicCatalogSupplement {
                 let publicFallback = pack == nil
                 pack = supplementedPack(pack, with: publicCatalogSupplement)
-                if publicFallback { packStatus = "Bundled public map catalog loaded" }
+                if publicFallback { packStatus = "Public map catalog loaded" }
             }
         }
         var unreadableSavedPack = false
@@ -130,6 +148,99 @@ final class AppStore: ObservableObject {
             return
         }
         if unreadableSavedPack { throw CoreError("The saved map pack could not be verified. Its original files are preserved. Import a complete private map pack to recover.") }
+    }
+    private func loadPublicSupplement(resourceBundle: Bundle) {
+        do {
+            if let selected = try publicCatalogStore?.load() {
+                publicCatalogSupplement = selected.pack
+                publicCatalogRevisionLabel = selected.manifest.revision
+                canRollbackPublicCatalog = selected.canRollback
+                publicCatalogUpdateStatus = selected.recoveredPrevious
+                    ? "Using the previous verified pin data. The latest copy could not be verified."
+                    : "Saved pin data is available offline."
+                return
+            }
+        } catch {
+            publicCatalogUpdateStatus = "Saved pin data could not be verified. Using the bundled copy."
+        }
+        do {
+            publicCatalogSupplement = try PublicCatalogSupplement.read(from: resourceBundle)
+            if let publicCatalogSupplement {
+                publicCatalogRevisionLabel = "Bundled · \(publicCatalogSupplement.catalog.packVersion)"
+            }
+        } catch {
+            errorMessage = "The bundled public catalog could not be verified. Existing saved data was preserved."
+        }
+    }
+    func refreshPublicCatalogIfDue() async { await refreshPublicCatalog(manual: false) }
+    func refreshPublicCatalog(manual: Bool = true) async {
+        guard publicCatalogUpdatesEnabled, !catalogRefreshPending else { return }
+        if !manual, let lastPublicCatalogCheck, Date.now.timeIntervalSince(lastPublicCatalogCheck) < 300 { return }
+        guard let publicCatalogStore else {
+            publicCatalogUpdateStatus = "Shared pin-data storage is unavailable. The installed map remains usable."
+            return
+        }
+        catalogRefreshPending = true
+        lastPublicCatalogCheck = .now
+        publicCatalogUpdateStatus = "Checking public pin data…"
+        defer { catalogRefreshPending = false }
+        let client = publicCatalogClient
+        let worker = Task.detached(priority: manual ? .userInitiated : .utility) { () async throws -> PublicCatalogUpdateSelection? in
+            try Task.checkCancellation()
+            let manifestData = try await client.latestManifest()
+            let manifest = try PublicCatalogUpdateManifest.read(manifestData)
+            try Task.checkCancellation()
+            guard try publicCatalogStore.shouldInstall(manifest) else { return nil }
+            let payload = try await client.payload(manifestData: manifestData)
+            try Task.checkCancellation()
+            return try publicCatalogStore.install(payload)
+        }
+        do {
+            let selected = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
+            // A returned selection has committed. Publish it even after late cancellation.
+            if let selected {
+                applyPublicCatalog(selected)
+                publicCatalogUpdateStatus = "Pin data updated. Your personal pins and deliveries were preserved."
+            } else { publicCatalogUpdateStatus = "Pin data is up to date. The saved copy remains available offline." }
+        } catch is CancellationError {
+            publicCatalogUpdateStatus = "Refresh cancelled. The installed pin data remains available offline."
+        } catch let error as URLError where error.code == .cancelled {
+            publicCatalogUpdateStatus = "Refresh cancelled. The installed pin data remains available offline."
+        } catch let error as URLError where [.notConnectedToInternet, .networkConnectionLost, .cannotFindHost,
+                .cannotConnectToHost, .timedOut].contains(error.code) {
+            publicCatalogUpdateStatus = "Offline or unable to connect. The installed pin data remains available."
+        } catch {
+            publicCatalogUpdateStatus = "The update could not be verified or is older than your saved selection. The installed pin data remains available offline."
+        }
+    }
+    func rollbackPublicCatalog() async {
+        guard publicCatalogUpdatesEnabled, !catalogRefreshPending, let publicCatalogStore else { return }
+        catalogRefreshPending = true
+        publicCatalogUpdateStatus = "Restoring the previous verified pin data…"
+        defer { catalogRefreshPending = false }
+        let worker = Task.detached(priority: .userInitiated) {
+            try Task.checkCancellation()
+            return try publicCatalogStore.rollback()
+        }
+        do {
+            let selected = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
+            applyPublicCatalog(selected)
+            publicCatalogUpdateStatus = "Previous pin data restored. Personal pins and deliveries were preserved."
+        } catch {
+            publicCatalogUpdateStatus = "The previous pin data could not be restored. The installed map remains available offline."
+        }
+    }
+    private func applyPublicCatalog(_ selected: PublicCatalogUpdateSelection) {
+        publicCatalogSupplement = selected.pack
+        publicCatalogRevisionLabel = selected.manifest.revision
+        canRollbackPublicCatalog = selected.canRollback
+        // Reproject over the latest private/personal state, never a pre-download snapshot.
+        pack = supplementedPack(loadedBasePack, with: selected.pack)
+        if loadedBasePack == nil { packStatus = "Public map catalog loaded" }
+        rebuildPlaceIndex()
+        rebuildApartmentPlan()
+        if let selectedCommunityID, !communities.contains(where: { $0.id == selectedCommunityID }) { self.selectedCommunityID = nil }
+        publicCatalogDataRevision &+= 1
     }
     func importPrivatePack(_ payload: DataPackPayload) throws {
         guard !deliveryCompletionPending, !privatePackImportPending else { throw CoreError("Wait for the current save or map import to finish.") }
@@ -311,7 +422,10 @@ final class AppStore: ObservableObject {
             .union(personal.miniRouteCompletions.map(\.groupID))
             .union(apartmentPlan.groups.filter { $0.id.hasPrefix("personal-apartment-") }.map(\.id))
         apartmentPlan = DeliveryPerformance.measure("Classify apartment stops") {
-            ApartmentRoutePlan.make(stops: personal.stops, communities: communities, rules: personal.apartmentRules,
+            let directory = communities
+            let rules = PersonalCommunityDirectory.preservingRules(places: personal.places,
+                rules: personal.apartmentRules, communities: directory)
+            return ApartmentRoutePlan.make(stops: personal.stops, communities: directory, rules: rules,
                                     corrections: personal.stopCorrections, personalCommunityIDs: personalCommunityIDs)
         }
         scopedApartmentPlaces.removeAll(); scopedBuildingAssociations.removeAll()

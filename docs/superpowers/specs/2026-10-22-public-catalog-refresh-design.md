@@ -1,0 +1,31 @@
+# Public pin-data refresh
+
+The owner wants public apartment/pin additions to arrive without another app build. One app update adds a small data-refresh path. Personal pins, delivery manifests, access codes, contact details and private notes remain local. Existing offline add/edit pin behavior stays available. The requested delivery target for this app increment is October 22, 17:42 UTC; it is not a completeness guarantee.
+
+## Existing system and route
+
+Extend `PublicCatalogSupplement` and the existing merge/persistence patterns, without changing private-pack limits or persistence. Public catalog data is currently bundled; private imported generations and personal SwiftData documents are separate. Use the existing public `AGForge-Labs/ApartmentFinder-public` repository and a dedicated `catalog-data` branch containing JSON only, with no workflow files. Future data-only revisions therefore do not dispatch an iOS build. No new backend, dependency, credential, permission or tester audience is required.
+
+The fixed endpoint is `https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest.json`. Data is read with unauthenticated HTTPS GETs; no personal fields are sent. A publisher prepares a versioned immutable `revisions/<revision>/` snapshot and atomically advances `latest.json` in the same Git commit after public-source admission checks. Existing revision files must never be overwritten. The publisher takes only explicitly prepared public catalog files, never a personal backup or device store.
+
+## Format and admission
+
+Manifest schema 1 has exactly `schemaVersion`, `revision`, `sequence`, `packVersion`, and `files`. Sequence is a positive monotonic Int64. Revision is one ASCII path segment matching `[A-Za-z0-9][A-Za-z0-9._-]{0,79}`. Files are exactly `public-catalog.json`, `public-locations.geojson`, `public-paths.geojson`; each descriptor contains `bytes` and lowercase SHA-256. Pack version must match the decoded catalog. Limits remain 3,000,000 catalog bytes, 64,000,000 location bytes, 16,000,000 path bytes; manifest limit 16,384 bytes. Canonical compact JSON may reduce wire size without removing provenance. Private imports retain their independent 2 MB catalog limit.
+
+Construct file URLs locally under the fixed repository/branch/revision prefix; reject credentials, arbitrary URLs, traversal, redirects, unsupported schemas, oversized responses, mismatched hashes/lengths, duplicate IDs, invalid joins and invalid geometry. Read bounded chunks rather than trusting Content-Length. Raw public-field admission precedes the shared private-capable model decoder: unknown/private fields, owner-checked door/entrance claims and confirmed paths are rejected. Preserve source-reference/estimate distinctions, floor qualification and uncertainty. No executable code, remote settings or scripts are accepted.
+
+## Cache and activation
+
+Use a dedicated directory in the already-authorized app-group container, with immutable public generations and one atomically replaced selection state. Keep the active and previous verified generations; generate a matching bounded known-address index locally for the share extension. Re-read and validate staged bytes before activation. Failure/cancellation before activation leaves the old selection intact. Startup loads verified cached public data, falls back to the verified previous generation, then the bundled snapshot. Corrupt files are not allowed to replace personal or private data.
+
+Manual rollback selects the verified previous revision and records the rejected revision so automatic refresh does not immediately reinstall it. A persistent highest-accepted sequence survives rollback and corrupt-current fallback; only a genuinely newer sequence can replace it. Equal-sequence/different-content revisions are rejected. An intact identical revision is a no-op; identical accepted bytes may repair a corrupted active generation. Serialize mutations and retain only active/previous owned generations, removing owned failed staging and obsolete generations. Personal overrides and imported identities retain precedence; full-street/unit/floor identities are not collapsed by coordinates or community+unit. Refresh reprojects onto the current private/personal state without rewriting those payloads. Owner-used streets remain usable through local directory/classification projections if a public revision removes or renames them; this context never enters the public feed.
+
+## App flow and publication
+
+Provide a small Pin data screen reachable from the app navigation, with current revision, refresh status, Refresh pin data, and rollback when available. Show progress and a useful offline/error result while keeping the current map usable. Check on foreground and periodically while active, throttled to five minutes; manual refresh bypasses that throttle. Checking/downloading must not stop ongoing personal navigation, block offline pin editing or erase the current delivery. Public activation gets its own revision notification so unchanged personal navigation is preserved. No automatic export/sharing of personal pins is added.
+
+The initial feed uses the same final reviewed public snapshot as the app's bundle. Later public-data revisions use the publisher and existing authenticated repository workflow, with no binary/signing/upload step. Field-source research and the catalog inventory remain separately qualified; 31 current ZIP-tagged catalog records are not an exhaustive census.
+
+## Verification
+
+Write focused tests before implementation. Exercise real staged files for hash/schema/size rejection, cancellation, atomic activation, corrupt-current fallback, rollback/replay, deduplication, personal/private preservation and address-index consistency. Use controlled transport for networking failures/redirects/oversize behavior. Add native AppStore and offline UI coverage; keep all existing cases. Run portable affected checks during implementation, then one full applicable exact-final-source app pass followed by the existing protected compile/sign/private TestFlight release on success. Do not rerun an unchanged successful full suite. Historical private/device coverage remains separately labeled.
