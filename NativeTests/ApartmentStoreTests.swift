@@ -116,6 +116,11 @@ final class ApartmentStoreTests: XCTestCase {
         // A later edit must also retain the first identity, not derive a new one.
         XCTAssertTrue(reopened.classify(ApartmentAddressRule(address: "402 Synthetic Street", kind: .apartment,
                                                             name: "Fictional test apartments", matchingAddress: original.address)))
+        XCTAssertEqual(reopened.personal.apartmentRules.first?.communityID, group.id,
+                       "A personal directory projection must not erase saved ownership on a second address correction")
+        let edited = try XCTUnwrap(reopened.apartmentGroup(group.id)?.nextStop)
+        XCTAssertEqual(reopened.doorMatch(edited, groupID: group.id).readyDoor?.id, door.id)
+        XCTAssertEqual(reopened.personal.stops, [original])
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: folder) }
         let inbox = ManifestInbox(directory: folder)

@@ -26,24 +26,20 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     func testOfflineRefreshKeepsCatalogSelectionAndPinEditingAvailable() {
         XCTAssertTrue(app.tabBars.buttons["Apartments"].isSelected)
         app.tabBars.buttons["Finder"].tap()
-        let chooseCommunity = app.buttons["finder.community"]
-        XCTAssertTrue(chooseCommunity.waitForExistence(timeout: 5))
-        chooseCommunity.tap()
-        let communitySearch = app.searchFields.firstMatch
-        XCTAssertTrue(communitySearch.waitForExistence(timeout: 5))
-        communitySearch.tap()
-        communitySearch.typeText("Tuscano")
-        let tuscano = app.buttons["finder.community.tuscano"]
-        XCTAssertTrue(tuscano.waitForExistence(timeout: 5))
-        tuscano.tap()
-        let unit = app.textFields["finder.unit"]
-        XCTAssertTrue(unit.waitForExistence(timeout: 5))
-        unit.tap()
-        unit.typeText("2066")
+        XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
+        // Select the identical fixture through Finder's existing exact-address
+        // path before checking refresh, selection preservation and pin editing.
+        let editSearch = app.buttons["finder.editSearch"]
+        expectHittable(editSearch)
+        editSearch.tap()
+        replace(app.textFields["finder.address"], with: "7255 W Sunset Rd")
+        replace(app.textFields["finder.unit"], with: "2066")
+        expectHittable(app.buttons["finder.search"])
         app.buttons["finder.search"].tap()
         let correction = app.buttons["finder.correct.tuscano-unit-county-2187653-2066"]
         expectHittable(correction)
         XCTAssertEqual(app.staticTexts["finder.matchCount"].label, "1 saved match")
+        XCTAssertTrue(app.buttons["finder.community"].label.contains("Tuscano"))
 
         app.buttons["catalogUpdates.open"].tap()
         let revision = app.staticTexts["catalogUpdates.revision"]
@@ -97,6 +93,35 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     private func expectHittable(_ element: XCUIElement) {
         let visible = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: element)
         XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 5), .completed)
+    }
+
+    private func replace(_ field: XCUIElement, with value: String) {
+        guard field.value as? String != value else { return }
+        expectHittable(field)
+        field.tap()
+        let current = field.value as? String ?? ""
+        if !current.isEmpty && current != field.placeholderValue {
+            field.press(forDuration: 1.1)
+            let selectAll = app.menuItems["Select All"].firstMatch
+            guard selectAll.waitForExistence(timeout: 3) else {
+                XCTFail("Finder fixture replacement requires the native Select All action")
+                return
+            }
+            selectAll.tap()
+            field.typeText(XCUIKeyboardKey.delete.rawValue)
+            let empty = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                let text = field.value as? String ?? ""
+                return text.isEmpty || text == field.placeholderValue
+            }, object: nil)
+            guard XCTWaiter.wait(for: [empty], timeout: 3) == .completed else {
+                XCTFail("Finder test input must be cleared before entering the fixture")
+                return
+            }
+        }
+        field.typeText(value)
+        let entered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: field)
+        XCTAssertEqual(XCTWaiter.wait(for: [entered], timeout: 3), .completed)
+        XCTAssertEqual(field.value as? String, value, "Finder test input must match the requested fixture")
     }
 
     private func reveal(_ element: XCUIElement) {

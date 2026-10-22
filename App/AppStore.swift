@@ -494,7 +494,9 @@ final class AppStore: ObservableObject {
                let previous = backup.apartmentRules.last(where: { $0.id == rule.id }),
                previous.kind == .apartment || previous.communityID != nil {
                 if let previousID = previous.communityID {
-                    if !communities.contains(where: { $0.id == previousID }) {
+                    // Personal display context is not a published catalog owner.
+                    // Keep its saved identity through repeated address corrections.
+                    if pack?.catalog.communities.contains(where: { $0.id == previousID }) != true {
                         saved.communityID = previousID
                     }
                 } else {
