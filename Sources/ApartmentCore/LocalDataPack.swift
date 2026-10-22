@@ -75,7 +75,11 @@ public struct LocalDataPack: Sendable {
                          unit: p.unit, floor: p.floor, kind: p.kind, verification: p.verification,
                          coordinate: try coordinate(feature.geometry.coordinates), sourceIDs: p.sourceIDs,
                          notes: p.notes, approachID: p.approachID, graphNodeID: p.graphNodeID, identityUncertain: p.identityUncertain, referenceKind: p.referenceKind,
-                         estimatedHorizontalUncertaintyM: p.estimatedHorizontalUncertaintyM, mapLabelOccurrenceID: p.mapLabelOccurrenceID, sourceUnitID: p.sourceUnitID, referenceAddresses: p.referenceAddresses)
+                         estimatedHorizontalUncertaintyM: p.estimatedHorizontalUncertaintyM, mapLabelOccurrenceID: p.mapLabelOccurrenceID, sourceUnitID: p.sourceUnitID, referenceAddresses: p.referenceAddresses,
+                         entranceSideEstimate: p.entranceSideEstimate)
+            if p.entranceSideEstimate != nil, !place.isValidEntranceSideEstimate {
+                throw CoreError("An estimated entrance-side area must retain unverified status, qualified floor evidence and an uncalibrated working search region.")
+            }
             if p.referenceKind != nil, !place.isValidBuildingAreaReference {
                 throw CoreError("A building reference must retain its source type and bounded area precision, without representing a unit, entrance or door.")
             }
@@ -176,6 +180,7 @@ private struct PointProperties: Decodable {
     var mapLabelOccurrenceID: String?
     var sourceUnitID: String?
     var referenceAddresses: [String]?
+    var entranceSideEstimate: EntranceSideEstimate?
 }
 private struct LineFeature: Decodable {
     var type: String; var id: String; var geometry: LineGeometry; var properties: LineProperties

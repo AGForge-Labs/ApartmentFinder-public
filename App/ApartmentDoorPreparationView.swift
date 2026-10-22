@@ -15,6 +15,7 @@ struct ApartmentDoorPreparationView: View {
     @State private var floor = ""
     @State private var positioning = false
     @State private var usedGPS = false
+    @State private var estimatePointChecked = false
     @State private var acquisition = DoorPinAcquisition()
     @State private var camera: MapCameraPosition = .automatic
     @AppStorage(DeliveryMapStyle.preferenceKey) private var mapStyle = DeliveryMapStyle.satellite
@@ -27,6 +28,7 @@ struct ApartmentDoorPreparationView: View {
     private var hasUncertainIdentity: Bool {
         chosen?.identityUncertain == true || (chosen == nil && match?.candidates.contains { $0.identityUncertain == true } == true)
     }
+    private var needsEstimatePointCheck: Bool { chosen?.entranceSideEstimate != nil && !estimatePointChecked }
     var body: some View {
         NavigationStack {
             if let stop, let group, let match {
@@ -61,8 +63,12 @@ struct ApartmentDoorPreparationView: View {
                                     } label: {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text([candidate.building.isEmpty ? "Building unknown" : "Building \(candidate.building)", candidate.floor.isEmpty ? nil : "Floor \(candidate.floor)"].compactMap { $0 }.joined(separator: " · "))
-                                            Text(candidate.kind == .door && candidate.verification == .fieldVerified ? "Saved door pin" : "Suggested unit location").font(.caption).foregroundStyle(.secondary)
-                                            if candidate.verification == .estimated {
+                                            if let estimate = candidate.entranceSideEstimate {
+                                                EntranceSideEstimateNotice(estimate: estimate)
+                                            } else {
+                                                Text(candidate.kind == .door && candidate.verification == .fieldVerified ? "Saved door pin" : "Suggested unit location").font(.caption).foregroundStyle(.secondary)
+                                            }
+                                            if candidate.entranceSideEstimate == nil && candidate.verification == .estimated {
                                                 Label("May be inaccurate", systemImage: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(.orange)
                                                 if candidate.identityUncertain == true { Text("Unit number or building is also uncertain").font(.caption).foregroundStyle(.secondary) }
                                             }
@@ -73,7 +79,12 @@ struct ApartmentDoorPreparationView: View {
                             }
                         } else {
                             Section {
-                                if hasEstimatedLocation || hasUncertainIdentity {
+                                if let estimate = chosen?.entranceSideEstimate {
+                                    EntranceSideEstimateNotice(estimate: estimate)
+                                        .accessibilityIdentifier("door.entranceSideWarning")
+                                    Text("Check the actual unit label and doorway in person, then move the pin to that doorway before confirming. A shared entry area does not identify which doorway serves this unit.")
+                                        .font(.caption)
+                                } else if hasEstimatedLocation || hasUncertainIdentity {
                                     Label("May be inaccurate", systemImage: "exclamationmark.triangle.fill")
                                         .foregroundStyle(.orange).accessibilityIdentifier("door.estimateWarning")
                                     Text("This is an estimated unit location. Check the building and doorway in person, then tap the map to correct it. Your confirmed door is saved for future manifests.")
@@ -84,7 +95,14 @@ struct ApartmentDoorPreparationView: View {
                                 }
                                 MapReader { proxy in
                                     Map(position: $camera) {
-                                        if let coordinate { Marker("Unit \(stop.unit)", coordinate: coordinate.cl).tint(.teal) }
+                                        if let coordinate {
+                                            if let estimate = chosen?.entranceSideEstimate {
+                                                Marker(estimate.sharedUnits.count > 1 ? "Entry area for \(estimate.sharedUnits.joined(separator: "/"))" : estimate.label,
+                                                       coordinate: coordinate.cl).tint(.orange)
+                                            } else {
+                                                Marker("Unit \(stop.unit)", coordinate: coordinate.cl).tint(.teal)
+                                            }
+                                        }
                                         if let fix = location.fix, fix.usable(at: .now) {
                                             Annotation("You", coordinate: fix.coordinate.cl) {
                                                 MapLocationDot(accessibilityID: "door.userLocation")
@@ -98,6 +116,7 @@ struct ApartmentDoorPreparationView: View {
                                         if let point = proxy.convert(point, from: .local) {
                                             acquisition.cancel()
                                             coordinate = Coordinate(latitude: point.latitude, longitude: point.longitude)
+                                            estimatePointChecked = coordinate?.isValid == true
                                         }
                                     }
                                 }.frame(height: 290)
@@ -114,6 +133,7 @@ struct ApartmentDoorPreparationView: View {
                                     usedGPS = true
                                     if let fix = location.fix, fix.usable(at: .now) {
                                         coordinate = fix.coordinate; center(fix.coordinate); acquisition.cancel()
+                                        estimatePointChecked = true
                                     } else {
                                         _ = acquisition.request(alreadyTracking: true)
                                     }
@@ -121,7 +141,7 @@ struct ApartmentDoorPreparationView: View {
                                 if usedGPS { Text(location.status).font(.caption).foregroundStyle(.secondary) }
                                 TextField("Building (optional)", text: $building)
                                 TextField("Floor (optional)", text: $floor)
-                                Button("Choose another pin") { acquisition.cancel(); positioning = false; coordinate = nil; chosen = nil }
+                                Button("Choose another pin") { acquisition.cancel(); estimatePointChecked = false; positioning = false; coordinate = nil; chosen = nil }
                             }
                         }
                     } else {
@@ -131,10 +151,10 @@ struct ApartmentDoorPreparationView: View {
                 .onChange(of: store.packRevision) { _, _ in dismiss() }
             .navigationTitle("Check Door Pin").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { estimatePointChecked = false; dismiss() } }
                     ToolbarItem(placement: .confirmationAction) {
                         Button(hasUncertainIdentity ? "Confirm Unit & Door" : "Confirm Door") { confirm(group: group, stop: stop) }
-                            .disabled(!positioning || coordinate == nil || unit != stop.unit || stop.unit.isEmpty)
+                            .disabled(!positioning || coordinate == nil || unit != stop.unit || stop.unit.isEmpty || needsEstimatePointCheck)
                             .accessibilityIdentifier("door.confirm")
                     }
                 }
@@ -144,16 +164,18 @@ struct ApartmentDoorPreparationView: View {
             }
         }
         .onAppear { unit = stop?.unit ?? ""; resetPin() }
-        .onChange(of: unit) { _, _ in acquisition.cancel() }
+        .onChange(of: unit) { _, _ in acquisition.cancel(); estimatePointChecked = false }
         .onChange(of: location.fix?.timestamp) { _, _ in
             if let point = acquisition.receive(location.fix, at: .now) {
                 coordinate = point; center(point)
+                estimatePointChecked = true
             }
         }
-        .onDisappear { acquisition.cancel(); _ = acquisition.finish() }
+        .onDisappear { acquisition.cancel(); _ = acquisition.finish(); estimatePointChecked = false }
     }
     private func resetPin() {
         acquisition.cancel()
+        estimatePointChecked = false
         chosen = nil; coordinate = nil; positioning = false; building = ""; floor = ""
         guard let match else { return }
         if match.previousSelection != nil { return }
@@ -163,11 +185,13 @@ struct ApartmentDoorPreparationView: View {
     }
     private func choose(_ place: Place) {
         acquisition.cancel()
+        estimatePointChecked = false
         chosen = place; coordinate = place.coordinate; building = place.building; floor = place.floor; positioning = true
         center(place.coordinate)
     }
     private func startNewPin() {
         acquisition.cancel()
+        estimatePointChecked = false
         let supportedIdentity = match?.supportedIdentityForNewPin
         chosen = nil; coordinate = nil
         building = supportedIdentity?.building ?? ""; floor = supportedIdentity?.floor ?? ""
@@ -180,7 +204,7 @@ struct ApartmentDoorPreparationView: View {
         camera = .region(MKCoordinateRegion(center: point.cl, latitudinalMeters: 140, longitudinalMeters: 140))
     }
     private func confirm(group: ApartmentGroup, stop: DeliveryStop) {
-        guard let coordinate, coordinate.isValid, unit == stop.unit, !stop.unit.isEmpty else { return }
+        guard !needsEstimatePointCheck, let coordinate, coordinate.isValid, unit == stop.unit, !stop.unit.isEmpty else { return }
         let base = chosen ?? Place(communityID: groupID, address: stop.address, unit: stop.unit,
                                    kind: .unitPosition, verification: .sourceMapped, coordinate: coordinate)
         let door = base.confirmedDoor(at: coordinate, building: building, floor: floor, address: stop.address)

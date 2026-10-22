@@ -310,6 +310,11 @@ private struct FinderView: View {
     private func detail(_ place: Place) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             PlaceRow(place: place)
+            if let estimate = place.entranceSideEstimate {
+                DisclosureGroup("Entrance-side evidence") {
+                    Text(estimate.evidenceNotes).font(.caption).foregroundStyle(.secondary)
+                }.font(.caption)
+            }
             if !place.notes.isEmpty { Text(place.notes).font(.caption).foregroundStyle(.secondary) }
             HStack {
                 Button("Local route",systemImage: "point.topleft.down.to.point.bottomright.curvepath") { navigation.clearPreview(); routeDestination = place }
@@ -337,26 +342,52 @@ private struct FinderView: View {
 
 struct PlaceRow: View {
     var place: Place
+    private var title: String {
+        if let estimate = place.entranceSideEstimate, estimate.sharedUnits.count > 1 {
+            return "Entry area for \(estimate.sharedUnits.joined(separator: "/"))"
+        }
+        return place.unit.isEmpty ? place.kind.label : "Unit \(place.unit)"
+    }
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: place.kind == .door ? "door.left.hand.closed" : "mappin.circle.fill")
                 .font(.title2).foregroundStyle(place.verification == .fieldVerified ? .mint : .orange)
             VStack(alignment: .leading, spacing: 4) {
-                Text(place.unit.isEmpty ? place.kind.label : "Unit \(place.unit)").font(.headline)
-                Text("Building \(place.building.isEmpty ? "unknown" : place.building) · Floor \(place.floor.isEmpty ? "unknown" : place.floor)").font(.subheadline)
-                if place.verification == .estimated || place.identityUncertain == true {
-                    Label("May be inaccurate", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption).foregroundStyle(.orange)
-                    if place.identityUncertain == true {
-                        Text("Unit number or building is also uncertain").font(.caption).foregroundStyle(.secondary)
-                    }
+                Text(title).font(.headline)
+                if let estimate = place.entranceSideEstimate {
+                    Text("Building \(place.building.isEmpty ? "unknown" : place.building)").font(.subheadline)
+                    EntranceSideEstimateNotice(estimate: estimate)
+                        .accessibilityIdentifier("finder.entranceSideEstimate.\(place.id)")
                 } else {
-                    Text("\(place.kind.label) · \(place.verification == .fieldVerified ? "Field verified" : place.sourceIDs.isEmpty ? "Personal estimate" : "From source map")")
-                        .font(.caption).foregroundStyle(.secondary)
+                    Text("Building \(place.building.isEmpty ? "unknown" : place.building) · Floor \(place.floor.isEmpty ? "unknown" : place.floor)").font(.subheadline)
+                }
+                if place.entranceSideEstimate == nil {
+                    if place.verification == .estimated || place.identityUncertain == true {
+                        Label("May be inaccurate", systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption).foregroundStyle(.orange)
+                        if place.identityUncertain == true {
+                            Text("Unit number or building is also uncertain").font(.caption).foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("\(place.kind.label) · \(place.verification == .fieldVerified ? "Field verified" : place.sourceIDs.isEmpty ? "Personal estimate" : "From source map")")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
             }
             Spacer()
         }.padding(.vertical,4)
+    }
+}
+
+struct EntranceSideEstimateNotice: View {
+    let estimate: EntranceSideEstimate
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Label(estimate.label, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption.bold())
+            Text(estimate.summary).font(.caption).fixedSize(horizontal: false, vertical: true)
+        }.foregroundStyle(.orange)
+            .accessibilityElement(children: .combine)
     }
 }
 

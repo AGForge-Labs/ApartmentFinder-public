@@ -9,6 +9,7 @@ struct DeliveryMapPin: View {
     let selected: Bool
     var estimated = false
     var referenceLabel: String? = nil
+    var referenceDisclaimer = "Not a door"
 
     var body: some View {
         VStack(spacing: 2) {
@@ -20,7 +21,7 @@ struct DeliveryMapPin: View {
                 .padding(.horizontal, 6).padding(.vertical, 3)
                 .background(.black.opacity(0.92), in: Capsule())
                 .overlay(Capsule().stroke(.white.opacity(selected ? 1 : 0.6), lineWidth: selected ? 2 : 1))
-            if referenceLabel != nil { Text("Not a door").font(.caption2.bold()).padding(3).background(.regularMaterial, in: Capsule()) }
+            if referenceLabel != nil { Text(referenceDisclaimer).font(.caption2.bold()).padding(3).background(.regularMaterial, in: Capsule()) }
             DeliveryPinShape()
                 .fill(color)
                 .overlay(DeliveryPinShape().stroke(.black.opacity(0.9), lineWidth: 5))

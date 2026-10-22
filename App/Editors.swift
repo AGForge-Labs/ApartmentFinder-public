@@ -29,7 +29,12 @@ struct PinEditor: View {
                     Text("\(place.coordinate.latitude, specifier: "%.6f"), \(place.coordinate.longitude, specifier: "%.6f")").font(.caption.monospaced())
                 }
                 Section("What this pin represents") {
-                    if place.verification == .estimated || place.identityUncertain == true {
+                    if let estimate = place.entranceSideEstimate {
+                        EntranceSideEstimateNotice(estimate: estimate)
+                            .accessibilityIdentifier("pinEditor.entranceSideEstimate")
+                        Text("Check the actual unit label and doorway in person. A representative search-area point is not a checked doorway.")
+                            .font(.caption)
+                    } else if place.verification == .estimated || place.identityUncertain == true {
                         Label("May be inaccurate", systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
                         Text(place.identityUncertain == true
@@ -84,6 +89,10 @@ struct PinEditor: View {
         if place.graphNodeID != nil && !observed { error = "Confirm that this graph endpoint reaches the pin before saving the connection."; return }
         place.verification = observed ? .fieldVerified : place.verification == .estimated ? .estimated : .sourceMapped
         if observed { place.identityUncertain = nil }
+        if place.entranceSideEstimate != nil {
+            place.id = UUID().uuidString
+            place.entranceSideEstimate = nil
+        }
         // A corrected position is personal evidence; the original research remains in the seed pack.
         place.sourceIDs = []; place.referenceKind = nil
         if store.save(place) { dismiss() }

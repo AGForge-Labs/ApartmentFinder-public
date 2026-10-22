@@ -25,7 +25,15 @@ def build_audit(catalog, features):
         geometry = feature.get('geometry', {})
         coordinate = geometry.get('coordinates', [])
         if geometry.get('type') == 'Point' and len(coordinate) == 2 and valid_point(*coordinate):
-            points[cid].append(feature['properties'])
+            properties = feature['properties']
+            estimate = properties.get('entranceSideEstimate')
+            if estimate is not None:
+                if (not isinstance(estimate, dict) or properties['kind'] != 'unitPosition' or
+                        properties.get('verification') != 'estimated' or properties.get('identityUncertain') is not True or
+                        any(estimate.get(flag) is not False for flag in ('uncertaintyCalibrated',
+                            'doorCoordinatesVerified', 'entranceCoordinatesVerified', 'physicalSignageVerified'))):
+                    raise ValueError('Entrance-side search regions must remain uncalibrated, unverified unit-position estimates')
+            points[cid].append(properties)
     for association in catalog.get('unitBuildingAssociations', []):
         cid = association['communityID']
         if cid not in communities:
@@ -53,6 +61,7 @@ def build_audit(catalog, features):
             unitPositions=dict(total=len(unit), sourceMapped=sum(p.get('verification') == 'sourceMapped' for p in unit),
                 estimated=sum(p.get('verification') == 'estimated' for p in unit),
                 operatorSourceUnitReferences=sum(p.get('sourceUnitID') is not None for p in unit)),
+            estimatedEntranceSideRegions=sum(p.get('entranceSideEstimate') is not None for p in unit),
             doors=dict(geographicPoints=len(doors), fieldVerified=verified),
             entrances=sum(p['kind'] == 'entrance' for p in local),
             unitBuildingAssociations=dict(total=len(associations[cid]),
@@ -69,6 +78,7 @@ def build_audit(catalog, features):
             communitiesWithBuildingAreas=sum(r['buildingAreaReferences']['total'] > 0 for r in selected),
             buildingAreaReferences=sum(r['buildingAreaReferences']['total'] for r in selected),
             unitPositions=sum(r['unitPositions']['total'] for r in selected),
+            estimatedEntranceSideRegions=sum(r['estimatedEntranceSideRegions'] for r in selected),
             fieldVerifiedPublicDoors=sum(r['doors']['fieldVerified'] for r in selected),
             unitBuildingAssociations=sum(r['unitBuildingAssociations']['total'] for r in selected))
     return dict(schemaVersion=1, catalogPackVersion=catalog['packVersion'], priorityZIPs=list(PRIORITY_ZIPS),
@@ -76,6 +86,7 @@ def build_audit(catalog, features):
         interpretation=[
             'Community coordinates are area references, not building anchors or delivery doors.',
             'Approximate building references are counted separately from unit positions and verified doors.',
+            'Estimated entrance-side search regions are a subset of estimated unit positions, not verified entrances or doors; their working allowances are uncalibrated.',
             'Unit/building associations supply labels only and do not count as geographic coverage.',
             'Missing public verified doors does not imply that an owner has no saved personal pins.',
             'This inventory does not establish complete apartment or ZIP coverage.'

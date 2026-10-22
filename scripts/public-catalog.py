@@ -24,7 +24,11 @@ COMMUNITY_FIELDS = {'id', 'name', 'address', 'zip', 'countyZIPs', 'deliveryAddre
                     'sourceIDs', 'researchStatus', 'gapNotes', 'latitude', 'longitude', 'publicEvidence'}
 POINT_FIELDS = {'communityID', 'address', 'building', 'unit', 'floor', 'kind', 'verification',
                 'sourceIDs', 'notes', 'identityUncertain', 'referenceKind', 'estimatedHorizontalUncertaintyM',
-                'mapLabelOccurrenceID', 'sourceUnitID', 'referenceAddresses'}
+                'mapLabelOccurrenceID', 'sourceUnitID', 'referenceAddresses', 'entranceSideEstimate'}
+ENTRANCE_SIDE_REQUIRED_FIELDS = {'frontage', 'workingAllowanceMeters', 'uncertaintyCalibrated',
+    'doorCoordinatesVerified', 'entranceCoordinatesVerified', 'physicalSignageVerified',
+    'dwellingFloorEvidence', 'entryLevelDescription', 'sharedUnits', 'evidenceNotes'}
+ENTRANCE_SIDE_FIELDS = ENTRANCE_SIDE_REQUIRED_FIELDS | {'dwellingFloor', 'sourceUnitID', 'sourceDate'}
 PATH_FIELDS = {'communityID', 'fromNode', 'toNode', 'mode', 'oneWay', 'blocked', 'stairs',
                'confirmed', 'sourceIDs', 'notes'}
 CATALOG_FIELDS = {'schemaVersion', 'packVersion', 'generatedAt', 'scopeZIPs', 'deliveryAreaExceptions',
@@ -38,6 +42,7 @@ GAP = 'Public property identity and available source positions are incomplete. N
 REFERENCE_GAP = 'Community coordinate is a published property reference or source-map reference only; it is not a unit, entrance or delivery destination.'
 SOURCE_NOTE = 'Published unit position; not an entrance or exact door. Verify the physical street, unit and building on arrival.'
 ESTIMATE_NOTE = 'May be inaccurate. Estimated unit position; not an entrance or exact door. Confirm the physical street, unit and building on arrival.'
+ENTRANCE_SIDE_NOTE = 'Estimated entrance-side search region; not a verified entrance or exact door. Representative point only; working allowance {allowance:g} m is uncalibrated, not guaranteed accuracy. Physical signage remains unverified.'
 PATH_NOTE = 'OpenStreetMap contributors, ODbL 1.0. Published source path, not personally confirmed. Access conditions remain unverified.'
 COVERAGE_NOTES = [
     'Public source-derived apartment and multifamily inventory. This is not a certified exhaustive inventory.',
@@ -97,9 +102,55 @@ def read_json(path, maximum=64_000_000):
     return json.loads(path.read_bytes())
 
 
+def entrance_side_estimate_note(properties):
+    estimate = properties['entranceSideEstimate']
+    require(isinstance(estimate, dict) and ENTRANCE_SIDE_REQUIRED_FIELDS <= set(estimate) <= ENTRANCE_SIDE_FIELDS,
+            'Unexpected or missing entrance-side estimate fields')
+    require(properties.get('kind') == 'unitPosition' and properties.get('verification') == 'estimated' and
+            properties.get('identityUncertain') is True, 'Entrance-side search regions must remain explicitly uncertain estimates')
+    require(not any(key in properties for key in ('referenceKind', 'estimatedHorizontalUncertaintyM',
+            'mapLabelOccurrenceID', 'sourceUnitID', 'referenceAddresses')),
+            'Entrance-side estimate cannot borrow building-reference or published-unit metadata')
+    unit = text(properties.get('unit'), 'entrance-side unit')
+    floor = text(properties.get('floor'), 'entrance-side position floor', empty=True)
+    allowance = estimate['workingAllowanceMeters']
+    require(type(allowance) in (int, float) and math.isfinite(allowance) and 1 <= allowance <= 100,
+            'Invalid entrance-side working allowance')
+    for key in ('uncertaintyCalibrated', 'doorCoordinatesVerified', 'entranceCoordinatesVerified', 'physicalSignageVerified'):
+        require(estimate[key] is False, 'Entrance-side verification and calibration flags must remain false')
+    shared = estimate['sharedUnits']
+    require(isinstance(shared, list) and len(shared) <= 4, 'Invalid entrance-side shared units')
+    for shared_unit in shared:
+        text(shared_unit, 'entrance-side shared unit')
+    require(len(set(shared)) == len(shared) and (not shared or unit in shared),
+            'Entrance-side shared units must be unique and include the literal unit')
+    frontage = estimate['frontage']
+    require(isinstance(frontage, list) and (2 <= len(frontage) <= 32 or len(frontage) == 0 and len(shared) >= 2),
+            'Entrance-side frontage requires 2 to 32 points or explicit shared-unit evidence')
+    for point in frontage:
+        require(isinstance(point, dict) and set(point) == {'latitude', 'longitude'}, 'Unexpected entrance-side frontage fields')
+        coordinate([point['longitude'], point['latitude']])
+    status = estimate['dwellingFloorEvidence']
+    require(status in ('unknown', 'inferred', 'historicalExplicit', 'currentExplicit'), 'Invalid dwelling-floor evidence')
+    dwelling_floor = estimate.get('dwellingFloor')
+    if status == 'unknown':
+        require(dwelling_floor is None, 'Unknown dwelling floor cannot assert a value')
+    else:
+        text(dwelling_floor, 'dwelling floor')
+    require(floor == '' or status == 'currentExplicit' and floor == dwelling_floor,
+            'Position floor requires matching current explicit dwelling-floor evidence')
+    text(estimate['entryLevelDescription'], 'entrance-side entry level')
+    text(estimate['evidenceNotes'], 'entrance-side evidence notes')
+    for key in ('sourceUnitID', 'sourceDate'):
+        if estimate.get(key) is not None:
+            text(estimate[key], 'entrance-side ' + key)
+    return ENTRANCE_SIDE_NOTE.format(allowance=allowance) + ' ' + estimate['evidenceNotes']
+
+
 def position_note(feature):
     """Construct fixed public text; reserve the reviewed dispute for its exact identity."""
     p = feature['properties']
+    estimate_note = entrance_side_estimate_note(p) if 'entranceSideEstimate' in p else None
     if feature['id'] == 'spanish-ridge-7380-unit-county-2179616-201':
         expected = dict(communityID='spanish-ridge-7380', address='7380 W RUSSELL RD',
             building='', unit='201', floor='', kind='unitPosition', verification='sourceMapped')
@@ -135,6 +186,8 @@ def position_note(feature):
                 note += ' The same unit label is not confirmed by the county parcel records; check the unit/building on arrival.'
             return note
         return SOURCE_NOTE + ' This 6355 position falls in the retained 89148 county polygon, consistent with the official postal address.'
+    if estimate_note is not None:
+        return estimate_note
     if 'referenceKind' in p:
         if p['referenceKind'] == 'operatorMapBuildingArea':
             return OPERATOR_BUILDING_REFERENCE_NOTE.format(uncertainty=p.get('estimatedHorizontalUncertaintyM', 0))

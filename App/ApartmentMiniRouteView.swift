@@ -364,10 +364,18 @@ struct ApartmentMiniRouteView: View {
                 Text("Operator unit reference · source floor label · physical accuracy unmeasured · not an entrance or door")
                     .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.sourceUnitWarning")
             }
-            if match.readyDoor == nil && match.candidates.contains(where: { $0.verification == .estimated }) {
+            if match.readyDoor == nil {
+                ForEach(match.candidates.filter { $0.entranceSideEstimate != nil }) { candidate in
+                    if let estimate = candidate.entranceSideEstimate {
+                        EntranceSideEstimateNotice(estimate: estimate)
+                            .accessibilityIdentifier("mini.entranceSideWarning")
+                    }
+                }
+            }
+            if match.readyDoor == nil && match.candidates.contains(where: { $0.entranceSideEstimate == nil && $0.verification == .estimated }) {
                 Label("May be inaccurate · Check or correct this pin on arrival", systemImage: "exclamationmark.triangle.fill")
                     .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.estimateWarning")
-                if match.candidates.contains(where: { $0.identityUncertain == true }) {
+                if match.candidates.contains(where: { $0.entranceSideEstimate == nil && $0.identityUncertain == true }) {
                     Text("Unit number or building is also uncertain").font(.caption).foregroundStyle(.secondary)
                 }
             }

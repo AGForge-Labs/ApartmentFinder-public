@@ -172,6 +172,7 @@ public struct ApartmentDoorMatch: Sendable {
         let candidates = local.filter {
             ($0.kind == .door || $0.kind == .unitPosition) && $0.coordinate.isValid && LocalSearch.normalized($0.unit) == unit
                 && (addressKeys.count <= 1 || LocalSearch.addressKey($0.address) == stopAddressKey)
+                && ($0.entranceSideEstimate == nil || LocalSearch.addressKey($0.address) == stopAddressKey)
         }.sorted { $0.id < $1.id }
         let verified = candidates.filter { $0.kind == .door && $0.verification == .fieldVerified }
         if addressKeys.count > 1, let selectedPlaceID,
@@ -231,6 +232,7 @@ public extension Place {
         result.identityUncertain = nil; result.referenceKind = nil
         result.estimatedHorizontalUncertaintyM = nil; result.mapLabelOccurrenceID = nil; result.sourceUnitID = nil
         result.referenceAddresses = nil
+        result.entranceSideEstimate = nil
         if result.notes.isEmpty { result.notes = "Door pin checked by owner." }
         return result
     }

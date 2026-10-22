@@ -102,7 +102,7 @@ PY
 import json,os,re,sys
 selection=json.load(open(sys.argv[1]))
 identities=selection['native']+selection['ui']
-expected=3 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 79
+expected=3 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 80
 assert len(identities)==len(set(identities))==expected
 assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -113,7 +113,7 @@ print('\n'.join(identities))
 PY
 FILTERS=()
 while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
-EXPECTED_NATIVE_COUNT=79
+EXPECTED_NATIVE_COUNT=80
 if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
 [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
 if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then

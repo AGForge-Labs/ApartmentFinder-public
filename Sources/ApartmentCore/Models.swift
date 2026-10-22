@@ -133,12 +133,15 @@ public struct Place: Codable, Identifiable, Hashable, Sendable {
     public var sourceUnitID: String?
     /// Explicit source-published alternate full streets for this building area.
     public var referenceAddresses: [String]?
-    public init(id: String = UUID().uuidString, communityID: String, address: String, building: String = "", unit: String = "", floor: String = "", kind: LocationKind, verification: Verification, coordinate: Coordinate, sourceIDs: [String] = [], notes: String = "", approachID: String? = nil, graphNodeID: String? = nil, identityUncertain: Bool? = nil, referenceKind: BuildingReferenceKind? = nil, estimatedHorizontalUncertaintyM: Double? = nil, mapLabelOccurrenceID: String? = nil, sourceUnitID: String? = nil, referenceAddresses: [String]? = nil) {
+    /// Estimated entrance-side evidence remains distinct from checked doors.
+    public var entranceSideEstimate: EntranceSideEstimate?
+    public init(id: String = UUID().uuidString, communityID: String, address: String, building: String = "", unit: String = "", floor: String = "", kind: LocationKind, verification: Verification, coordinate: Coordinate, sourceIDs: [String] = [], notes: String = "", approachID: String? = nil, graphNodeID: String? = nil, identityUncertain: Bool? = nil, referenceKind: BuildingReferenceKind? = nil, estimatedHorizontalUncertaintyM: Double? = nil, mapLabelOccurrenceID: String? = nil, sourceUnitID: String? = nil, referenceAddresses: [String]? = nil, entranceSideEstimate: EntranceSideEstimate? = nil) {
         self.id = id; self.communityID = communityID; self.address = address; self.building = building; self.unit = unit; self.floor = floor; self.kind = kind; self.verification = verification; self.coordinate = coordinate; self.sourceIDs = sourceIDs; self.notes = notes; self.approachID = approachID; self.graphNodeID = graphNodeID
         self.identityUncertain = identityUncertain; self.referenceKind = referenceKind
         self.estimatedHorizontalUncertaintyM = estimatedHorizontalUncertaintyM
         self.mapLabelOccurrenceID = mapLabelOccurrenceID; self.sourceUnitID = sourceUnitID
         self.referenceAddresses = referenceAddresses
+        self.entranceSideEstimate = entranceSideEstimate
     }
     public var isValidBuildingAreaReference: Bool {
         guard let referenceKind, kind == .building, verification == .sourceMapped, coordinate.isValid,

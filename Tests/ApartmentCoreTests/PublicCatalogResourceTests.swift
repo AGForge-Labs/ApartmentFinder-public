@@ -14,13 +14,23 @@ final class PublicCatalogResourceTests: XCTestCase {
     }
     func testPublicPackDecodesQualifiedPositionsAndKeepsRileyAndRussellStreetsSeparate() throws {
         let data = try pack()
-        XCTAssertEqual(data.catalog.packVersion, "2026.10.21.2-public-89123-geography")
+        XCTAssertEqual(data.catalog.packVersion, "2026.10.22.1-public-estimated-entrance")
         XCTAssertEqual(data.catalog.communities.count, 162)
-        XCTAssertEqual(data.places.count, 15_420)
-        XCTAssertEqual(Set(data.places.map(\.id)).count, 15_420)
+        XCTAssertEqual(data.places.count, 16_061)
+        XCTAssertEqual(Set(data.places.map(\.id)).count, 16_061)
         XCTAssertEqual(data.places.filter { $0.verification == .sourceMapped }.count, 14_678)
-        XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 742)
-        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 15_019)
+        XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 1_383)
+        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 15_660)
+        let originalPlaces = data.places.filter { $0.entranceSideEstimate == nil }
+        XCTAssertEqual(originalPlaces.count, 15_420, "The frozen b09 catalog remains separate from new estimates")
+        XCTAssertEqual(originalPlaces.filter { $0.verification == .sourceMapped }.count, 14_678)
+        XCTAssertEqual(originalPlaces.filter { $0.verification == .estimated }.count, 742)
+        XCTAssertEqual(originalPlaces.filter { $0.kind == .unitPosition }.count, 15_019)
+        let entryEstimates = data.places.filter { $0.entranceSideEstimate != nil }
+        XCTAssertEqual(entryEstimates.count, 641)
+        XCTAssertTrue(entryEstimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.kind == .unitPosition && $0.verification == .estimated })
+        XCTAssertFalse(data.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified },
+                       "Neither published unit references nor entrance-side estimates certify a physical door")
         XCTAssertEqual(data.places.filter { $0.referenceKind == .assessorLegalBuildingPolygon && $0.kind == .building && $0.unit.isEmpty && $0.floor.isEmpty }.count, 339)
         XCTAssertEqual(data.places.filter { $0.referenceKind == .operatorMapBuildingArea }.count, 62)
         XCTAssertEqual(data.catalog.unitBuildingAssociations?.count, 8_015)
@@ -63,11 +73,26 @@ final class PublicCatalogResourceTests: XCTestCase {
         XCTAssertEqual(Set(communities.map(\.id)), expected)
         XCTAssertEqual(communities.compactMap(\.coordinate).count, 20)
         XCTAssertTrue(communities.allSatisfy { ["89123", "89183"].contains($0.zip) })
-        XCTAssertFalse(data.places.contains { expected.contains($0.communityID) && $0.kind != .building })
-        XCTAssertEqual(data.places.filter { expected.contains($0.communityID) }.count, 302)
+        // These properties were unit-unmapped in the frozen b09 catalog. The
+        // new references add qualified search regions without rewriting its
+        // 302 building references or claiming observed doors.
+        let originalPlaces = data.places.filter { $0.entranceSideEstimate == nil }
+        XCTAssertFalse(originalPlaces.contains { expected.contains($0.communityID) && $0.kind != .building })
+        XCTAssertEqual(originalPlaces.filter { expected.contains($0.communityID) }.count, 302)
+        XCTAssertEqual(data.places.filter { expected.contains($0.communityID) && $0.kind == .building }.count, 302)
+        XCTAssertEqual(data.places.filter { expected.contains($0.communityID) }.count, 943)
+        let entryEstimates = data.places.filter { expected.contains($0.communityID) && $0.entranceSideEstimate != nil }
+        XCTAssertEqual(Dictionary(grouping: entryEstimates, by: \.communityID).mapValues(\.count),
+                       ["copper-creek": 608, "destinations-pebble": 27, "trend": 5, "lyric": 1])
+        XCTAssertTrue(entryEstimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.verification == .estimated })
+        for (id, count) in [("prosper-150", 150), ("summer-winds", 352)] {
+            let published = originalPlaces.filter { $0.communityID == id && $0.kind == .unitPosition }
+            XCTAssertEqual(published.count, count)
+            XCTAssertTrue(published.allSatisfy { $0.verification == .sourceMapped && $0.sourceUnitID != nil })
+        }
         let index = try KnownAddressIndex.read(Data(contentsOf: dataDirectory.appendingPathComponent("known-addresses.json")))
         XCTAssertEqual(index.addresses, data.catalog.communities.flatMap(\.matchingAddresses))
-        for street in ["6350 S Riley St", "6355 S Riley St", "7340 W Russell Rd", "7380 W Russell Rd", "9400 Bermuda Road"] {
+        for street in ["6350 S Riley St", "6355 S Riley St", "7340 W Russell Rd", "7380 W Russell Rd", "9400 Bermuda Road", "9490 Bermuda Road"] {
             XCTAssertTrue(index.addresses.contains { LocalSearch.addressKey($0) == LocalSearch.addressKey(street) })
         }
         XCTAssertEqual(data.catalog.communities.first { $0.id == "manhattan" }?.deliveryAddresses?.count, 9)
@@ -96,11 +121,34 @@ final class PublicCatalogResourceTests: XCTestCase {
         XCTAssertEqual(legalMatch.buildingReferences.count, 1)
         XCTAssertTrue(legalMatch.candidates.isEmpty); XCTAssertNil(legalMatch.readyDoor)
         XCTAssertNil(legalMatch.supportedIdentityForNewPin)
-        let schematicMatch = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: "1450 E Pebble Road", unit: "1022"),
-            communityID: "destinations-pebble", places: data.places, buildingAssociations: schematic)
-        XCTAssertEqual(schematicMatch.buildingAssociations.count, 1)
-        XCTAssertEqual(schematicMatch.buildingReferences.count, 1)
-        XCTAssertTrue(schematicMatch.candidates.isEmpty); XCTAssertNil(schematicMatch.readyDoor)
+        let pebbleStop = DeliveryStop(sequence: 1, address: "1450 E Pebble Road", unit: "1022")
+        let originalSchematicMatch = ApartmentDoorMatch.resolve(stop: pebbleStop, communityID: "destinations-pebble",
+            places: originalPlaces, buildingAssociations: schematic)
+        XCTAssertEqual(originalSchematicMatch.buildingAssociations.count, 1)
+        XCTAssertEqual(originalSchematicMatch.buildingReferences.count, 1)
+        XCTAssertTrue(originalSchematicMatch.candidates.isEmpty); XCTAssertNil(originalSchematicMatch.readyDoor)
+        let retainedLink = try XCTUnwrap(originalSchematicMatch.buildingAssociations.first)
+        let retainedArea = try XCTUnwrap(data.places.first { $0.id == retainedLink.referencePlaceID })
+        XCTAssertTrue(retainedArea.matchesBuildingAssociation(retainedLink))
+        let schematicMatch = ApartmentDoorMatch.resolve(stop: pebbleStop, communityID: "destinations-pebble",
+            places: data.places, buildingAssociations: schematic)
+        XCTAssertEqual(schematicMatch.candidates.count, 1)
+        XCTAssertEqual(schematicMatch.candidates.first?.unit, "1022")
+        XCTAssertTrue(schematicMatch.candidates.first?.isValidEntranceSideEstimate == true)
+        XCTAssertNil(schematicMatch.readyDoor); XCTAssertNil(schematicMatch.supportedIdentityForNewPin)
+        let copper = entryEstimates.filter { $0.communityID == "copper-creek" }
+        XCTAssertEqual(copper.filter { LocalSearch.addressKey($0.address) == LocalSearch.addressKey("9400 Bermuda Road") }.count, 240)
+        XCTAssertEqual(copper.filter { LocalSearch.addressKey($0.address) == LocalSearch.addressKey("9490 Bermuda Road") }.count, 368)
+        let copperLinks = data.catalog.unitBuildingAssociations?.filter { $0.communityID == "copper-creek" } ?? []
+        let exactStreet = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: "9400 Bermuda Road", unit: "126"),
+            communityID: "copper-creek", places: data.places, buildingAssociations: copperLinks)
+        XCTAssertEqual(exactStreet.candidates.count, 1)
+        XCTAssertEqual(exactStreet.candidates.first?.building, "D")
+        XCTAssertTrue(exactStreet.candidates.first?.floor.isEmpty == true)
+        XCTAssertNil(exactStreet.readyDoor)
+        let otherPhase = ApartmentDoorMatch.resolve(stop: DeliveryStop(sequence: 1, address: "9490 Bermuda Road", unit: "126"),
+            communityID: "copper-creek", places: data.places, buildingAssociations: copperLinks)
+        XCTAssertTrue(otherPhase.candidates.isEmpty); XCTAssertNil(otherPhase.readyDoor)
         for (communityID, street, unit, building, count) in [
             ("parkside-villas", "8400 S Maryland Parkway", "1018", "5", 200),
             ("summer-winds", "2725 W Wigwam Avenue", "1001", "1", 352)] {

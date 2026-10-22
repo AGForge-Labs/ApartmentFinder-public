@@ -7,6 +7,12 @@ extension Coordinate {
     init(_ value: CLLocationCoordinate2D) { self.init(latitude: value.latitude, longitude: value.longitude) }
 }
 
+private func entranceSideSearchRadius(_ place: Place) -> Double {
+    guard let estimate = place.entranceSideEstimate else { return 0 }
+    let frontageDistance = estimate.frontage.map { Geometry.distance(place.coordinate, $0) }.max() ?? 0
+    return frontageDistance + estimate.workingAllowanceMeters
+}
+
 struct CommunityMap: View {
     var places: [Place]
     var paths: [PathSegment]
@@ -46,6 +52,14 @@ private struct OfflineMap: View {
     @State private var pan = CGSize.zero
     @GestureState private var drag = CGSize.zero
     private var coordinates: [Coordinate] { places.map(\.coordinate) + paths.flatMap(\.coordinates) + route + (focus.map { [$0] } ?? []) }
+    private var selectedEstimate: EntranceSideEstimate? { places.first { $0.id == selectedID }?.entranceSideEstimate }
+    private var mapAccessibilityLabel: String {
+        if let selectedEstimate { return "Offline community map. \(selectedEstimate.summary). Use the search results to select a unit." }
+        if places.contains(where: { $0.entranceSideEstimate != nil }) {
+            return "Offline community map. Orange entry areas are estimated; doorways are unverified. Use the search results to select a unit."
+        }
+        return "Offline community map. Use the search results to select a unit."
+    }
     var body: some View {
         GeometryReader { geometry in
             let bounds = MapBounds(coordinates: coordinates)
@@ -70,11 +84,30 @@ private struct OfflineMap: View {
                 context.stroke(line(route), with: .color(.mint), style: .init(lineWidth: 5, lineCap: .round, lineJoin: .round))
                 for place in places {
                     let p = point(place.coordinate), chosen = place.id == selectedID
+                    if chosen, let estimate = place.entranceSideEstimate {
+                        let radius = entranceSideSearchRadius(place)
+                        let latitudeOffset = radius / 111_195
+                        let longitudeOffset = latitudeOffset / max(0.01, abs(bounds.longitudeScale))
+                        let north = point(Coordinate(latitude: place.coordinate.latitude + latitudeOffset, longitude: place.coordinate.longitude))
+                        let east = point(Coordinate(latitude: place.coordinate.latitude, longitude: place.coordinate.longitude + longitudeOffset))
+                        let rx = abs(east.x - p.x), ry = abs(north.y - p.y)
+                        let region = Path(ellipseIn: CGRect(x: p.x-rx, y: p.y-ry, width: rx*2, height: ry*2))
+                        context.fill(region, with: .color(.orange.opacity(0.12)))
+                        context.stroke(region, with: .color(.orange.opacity(0.7)), style: StrokeStyle(lineWidth: 1, dash: [4,3]))
+                        if estimate.frontage.count >= 2 {
+                            context.stroke(line(estimate.frontage), with: .color(.orange), style: StrokeStyle(lineWidth: 2, dash: [4,3]))
+                        }
+                    }
                     let r: CGFloat = chosen ? 9 : 3
                     context.fill(Path(ellipseIn: CGRect(x: p.x-r,y: p.y-r,width: r*2,height: r*2)),
-                                 with: .color(chosen ? .yellow : place.kind == .door ? .mint : .cyan.opacity(0.7)))
+                                 with: .color(place.entranceSideEstimate != nil ? .orange : chosen ? .yellow : place.kind == .door ? .mint : .cyan.opacity(0.7)))
                     if chosen || (scale > 3 && !place.unit.isEmpty) {
-                        context.draw(Text(place.unit.isEmpty ? place.kind.label : place.unit).font(.caption2.bold()).foregroundColor(.white),
+                        let label: String
+                        if let estimate = place.entranceSideEstimate {
+                            let units = estimate.sharedUnits.isEmpty ? place.unit : estimate.sharedUnits.joined(separator: "/")
+                            label = "Est. entry area \(units)\nDoorway unverified"
+                        } else { label = place.unit.isEmpty ? place.kind.label : place.unit }
+                        context.draw(Text(label).font(.caption2.bold()).foregroundColor(.white),
                                      at: CGPoint(x: p.x, y: p.y - 14))
                     }
                 }
@@ -107,7 +140,18 @@ private struct OfflineMap: View {
             .overlay(alignment: .topTrailing) {
                 Button { zoom = 1; pan = .zero } label: { Image(systemName: "arrow.up.left.and.arrow.down.right").padding(10).background(.ultraThinMaterial, in: Circle()) }.padding(8)
             }
-        }.accessibilityLabel("Offline community map. Use the search results to select a unit.")
+            .overlay(alignment: .topLeading) {
+                if let selectedEstimate {
+                    EntranceSideEstimateNotice(estimate: selectedEstimate)
+                        .padding(8).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .padding(8).padding(.trailing, 50).accessibilityIdentifier("community.entranceSideWarning")
+                } else if places.contains(where: { $0.entranceSideEstimate != nil }) {
+                    Text("Orange: estimated entry areas; doorways unverified")
+                        .font(.caption2).foregroundStyle(.orange).padding(8)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8)).padding(8).padding(.trailing, 50)
+                }
+            }
+        }.accessibilityLabel(mapAccessibilityLabel)
     }
 }
 
@@ -140,10 +184,18 @@ private final class PinAnnotation: NSObject, MKAnnotation {
     let coordinate: CLLocationCoordinate2D
     let title: String?
     let subtitle: String?
+    let isEntranceSideEstimate: Bool
     init(_ place: Place) {
         recordID = place.id; coordinate = place.coordinate.cl
-        title = place.unit.isEmpty ? place.kind.label : "Unit \(place.unit)"
-        subtitle = "\(place.kind.label) · Floor \(place.floor.isEmpty ? "unknown" : place.floor)"
+        isEntranceSideEstimate = place.entranceSideEstimate != nil
+        if let estimate = place.entranceSideEstimate {
+            let units = estimate.sharedUnits.isEmpty ? place.unit : estimate.sharedUnits.joined(separator: "/")
+            title = "\(estimate.label) - \(units)"
+            subtitle = estimate.summary
+        } else {
+            title = place.unit.isEmpty ? place.kind.label : "Unit \(place.unit)"
+            subtitle = "\(place.kind.label) · Floor \(place.floor.isEmpty ? "unknown" : place.floor)"
+        }
     }
 }
 private final class AppLocationAnnotation: NSObject, MKAnnotation {
@@ -173,7 +225,8 @@ private struct StreetMap: UIViewRepresentable {
     func updateUIView(_ view: MKMapView, context: Context) {
         context.coordinator.parent = self
         view.showsUserLocation = false
-        let signature = places.hashValue ^ paths.hashValue ^ route.hashValue
+        let selectedEstimate = places.first { $0.id == selectedID && $0.entranceSideEstimate != nil }
+        let signature = places.hashValue ^ paths.hashValue ^ route.hashValue ^ (selectedEstimate?.id.hashValue ?? 0)
         if signature != context.coordinator.signature {
             context.coordinator.signature = signature
             view.removeAnnotations(view.annotations.filter { !($0 is MKUserLocation) })
@@ -182,6 +235,14 @@ private struct StreetMap: UIViewRepresentable {
             for path in paths {
                 let line = MKPolyline(coordinates: path.coordinates.map(\.cl),count: path.coordinates.count)
                 line.title = path.blocked ? "blocked" : path.confirmed ? "path" : "unconfirmed"; view.addOverlay(line)
+            }
+            if let selectedEstimate, let estimate = selectedEstimate.entranceSideEstimate {
+                let region = MKCircle(center: selectedEstimate.coordinate.cl, radius: entranceSideSearchRadius(selectedEstimate))
+                region.title = "estimated-entry-region"; view.addOverlay(region)
+                if estimate.frontage.count >= 2 {
+                    let frontage = MKPolyline(coordinates: estimate.frontage.map(\.cl), count: estimate.frontage.count)
+                    frontage.title = "estimated-entry-frontage"; view.addOverlay(frontage)
+                }
             }
             if !route.isEmpty {
                 let line = MKPolyline(coordinates: route.map(\.cl),count: route.count); line.title = "route"; view.addOverlay(line)
@@ -201,6 +262,13 @@ private struct StreetMap: UIViewRepresentable {
         var parent: StreetMap; var signature: Int?; var anchor: Coordinate?
         init(_ parent: StreetMap) { self.parent = parent }
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if let pin = annotation as? PinAnnotation, pin.isEntranceSideEstimate {
+                let view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "estimated-entry")
+                view.markerTintColor = .systemOrange; view.glyphImage = UIImage(systemName: "exclamationmark.triangle.fill")
+                view.canShowCallout = true
+                view.accessibilityLabel = [pin.title, pin.subtitle].compactMap { $0 }.joined(separator: ". ")
+                return view
+            }
             guard annotation is AppLocationAnnotation else { return nil }
             let view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "app-location")
             view.markerTintColor = .systemBlue; view.glyphImage = UIImage(systemName: "location.fill")
@@ -210,10 +278,18 @@ private struct StreetMap: UIViewRepresentable {
             if let pin = view.annotation as? PinAnnotation { parent.onSelect(pin.recordID) }
         }
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let region = overlay as? MKCircle, region.title == "estimated-entry-region" {
+                let renderer = MKCircleRenderer(circle: region)
+                renderer.fillColor = UIColor.systemOrange.withAlphaComponent(0.12)
+                renderer.strokeColor = UIColor.systemOrange.withAlphaComponent(0.7)
+                renderer.lineWidth = 1; renderer.lineDashPattern = [4,3]
+                return renderer
+            }
             guard let line = overlay as? MKPolyline else { return MKOverlayRenderer(overlay: overlay) }
             let renderer = MKPolylineRenderer(polyline: line); renderer.lineWidth = line.title == "route" ? 6 : 3
             renderer.strokeColor = line.title == "route" ? .systemMint : line.title == "blocked" ? .systemRed : .systemOrange
             if line.title == "unconfirmed" { renderer.lineDashPattern = [5,5] }
+            if line.title == "estimated-entry-frontage" { renderer.lineDashPattern = [4,3] }
             return renderer
         }
         @objc func pin(_ gesture: UILongPressGestureRecognizer) {

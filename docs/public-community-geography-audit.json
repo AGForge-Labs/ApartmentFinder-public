@@ -3,13 +3,14 @@
     "buildingAreaReferences": 401,
     "communities": 162,
     "communitiesWithBuildingAreas": 19,
+    "estimatedEntranceSideRegions": 641,
     "fieldVerifiedPublicDoors": 0,
     "mappedCommunityAreas": 96,
     "missingCommunityAreas": 66,
     "unitBuildingAssociations": 8015,
-    "unitPositions": 15019
+    "unitPositions": 15660
   },
-  "catalogPackVersion": "2026.10.21.2-public-89123-geography",
+  "catalogPackVersion": "2026.10.22.1-public-estimated-entrance",
   "communities": [
     {
       "address": "2312 North Green Valley Parkway",
@@ -30,6 +31,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -75,6 +77,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -120,6 +123,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -165,6 +169,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -212,6 +217,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -256,6 +262,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -298,6 +305,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -343,6 +351,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -385,6 +394,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -430,6 +440,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -475,6 +486,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -520,6 +532,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -562,6 +575,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -604,6 +618,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -646,6 +661,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -691,6 +707,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -733,6 +750,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -775,6 +793,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -817,6 +836,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -859,6 +879,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -909,6 +930,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -960,6 +982,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -1011,6 +1034,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1056,6 +1080,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1098,6 +1123,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1140,6 +1166,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1182,6 +1209,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1227,6 +1255,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1269,6 +1298,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1314,6 +1344,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1364,11 +1395,12 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 608,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": false,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Copper Creek Apartments",
@@ -1381,10 +1413,10 @@
         "total": 608
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 608,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 608
       }
     },
     {
@@ -1409,6 +1441,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1454,6 +1487,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1496,6 +1530,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1541,6 +1576,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1583,6 +1619,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1625,6 +1662,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1675,6 +1713,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1726,6 +1765,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1768,11 +1808,12 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 27,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Destinations Pebble 55+ Active Adult Apartment Homes",
@@ -1785,10 +1826,10 @@
         "total": 416
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 27,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 27
       }
     },
     {
@@ -1819,6 +1860,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1870,6 +1912,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1921,6 +1964,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -1963,6 +2007,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2008,6 +2053,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2053,6 +2099,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2095,6 +2142,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2145,6 +2193,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -2187,6 +2236,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2237,6 +2287,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2287,6 +2338,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2332,6 +2384,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2377,6 +2430,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2422,6 +2476,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2467,6 +2522,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2509,6 +2565,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2554,6 +2611,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2599,6 +2657,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2641,6 +2700,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2683,6 +2743,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2725,6 +2786,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2775,6 +2837,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2817,6 +2880,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2859,6 +2923,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2901,6 +2966,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2946,6 +3012,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -2996,6 +3063,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3041,6 +3109,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3083,6 +3152,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3125,6 +3195,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3175,6 +3246,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -3220,6 +3292,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3265,6 +3338,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3310,6 +3384,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3355,6 +3430,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3406,6 +3482,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -3448,6 +3525,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3498,11 +3576,12 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 1,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Lyric",
@@ -3515,10 +3594,10 @@
         "total": 376
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 1,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 1
       }
     },
     {
@@ -3540,6 +3619,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3590,6 +3670,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -3632,6 +3713,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3677,6 +3759,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3719,6 +3802,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3764,6 +3848,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3809,6 +3894,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3851,6 +3937,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3896,6 +3983,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3941,6 +4029,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -3983,6 +4072,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4033,6 +4123,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4075,6 +4166,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4120,6 +4212,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4165,6 +4258,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4215,6 +4309,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4265,6 +4360,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 359,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4310,6 +4406,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4352,6 +4449,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4403,6 +4501,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4453,6 +4552,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4503,6 +4603,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4553,6 +4654,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4595,6 +4697,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4645,6 +4748,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4690,6 +4794,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4732,6 +4837,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4774,6 +4880,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4824,6 +4931,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4874,6 +4982,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -4916,6 +5025,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -4958,6 +5068,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5000,6 +5111,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5045,6 +5157,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5087,6 +5200,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5137,6 +5251,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -5189,6 +5304,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5239,6 +5355,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5281,6 +5398,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5326,6 +5444,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5368,6 +5487,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5413,6 +5533,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5455,6 +5576,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5500,6 +5622,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5550,6 +5673,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -5595,6 +5719,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5640,6 +5765,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5685,6 +5811,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5730,6 +5857,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5772,6 +5900,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5814,6 +5943,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5859,6 +5989,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -5909,6 +6040,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": false,
@@ -5960,6 +6092,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6005,6 +6138,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6050,6 +6184,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6092,6 +6227,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6137,6 +6273,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6182,6 +6319,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6227,6 +6365,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6269,6 +6408,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6311,6 +6451,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6353,6 +6494,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6395,6 +6537,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6437,6 +6580,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6479,6 +6623,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6521,6 +6666,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6563,6 +6709,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6605,6 +6752,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6647,6 +6795,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6692,6 +6841,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6742,11 +6892,12 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 5,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": false,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Trend!",
@@ -6759,10 +6910,10 @@
         "total": 361
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 5,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 5
       }
     },
     {
@@ -6787,6 +6938,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6829,6 +6981,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6874,6 +7027,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6916,6 +7070,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -6967,6 +7122,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7009,6 +7165,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7051,6 +7208,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7096,6 +7254,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7141,6 +7300,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7186,6 +7346,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7231,6 +7392,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7276,6 +7438,7 @@
         "geographicPoints": 0
       },
       "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
       "floorOnlyReferences": 0,
       "gaps": {
         "buildingAreasMissing": true,
@@ -7303,6 +7466,7 @@
   "interpretation": [
     "Community coordinates are area references, not building anchors or delivery doors.",
     "Approximate building references are counted separately from unit positions and verified doors.",
+    "Estimated entrance-side search regions are a subset of estimated unit positions, not verified entrances or doors; their working allowances are uncalibrated.",
     "Unit/building associations supply labels only and do not count as geographic coverage.",
     "Missing public verified doors does not imply that an owner has no saved personal pins.",
     "This inventory does not establish complete apartment or ZIP coverage."
@@ -7311,11 +7475,12 @@
     "buildingAreaReferences": 401,
     "communities": 97,
     "communitiesWithBuildingAreas": 19,
+    "estimatedEntranceSideRegions": 641,
     "fieldVerifiedPublicDoors": 0,
     "mappedCommunityAreas": 36,
     "missingCommunityAreas": 61,
     "unitBuildingAssociations": 8015,
-    "unitPositions": 502
+    "unitPositions": 1143
   },
   "priorityZIPs": [
     "89123",

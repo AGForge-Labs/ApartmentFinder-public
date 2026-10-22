@@ -32,7 +32,7 @@ final class Reviewed89123GeographyTests: XCTestCase {
     func testPebble416LiteralUnitsResolveTenApproximateAreasWithoutUnitOrDoorCoordinates() throws {
         let data = try pack()
         let associations = (data.catalog.unitBuildingAssociations ?? []).filter { $0.communityID == "destinations-pebble" }
-        let areas = data.places.filter { $0.communityID == "destinations-pebble" }
+        let areas = data.places.filter { $0.communityID == "destinations-pebble" && $0.referenceKind == .operatorMapBuildingArea }
         XCTAssertEqual(associations.count, 416)
         XCTAssertEqual(areas.count, 10)
         XCTAssertTrue(areas.allSatisfy { $0.referenceKind == .operatorMapBuildingArea && $0.estimatedHorizontalUncertaintyM == 20 })
@@ -65,7 +65,7 @@ final class Reviewed89123GeographyTests: XCTestCase {
         let summer = data.places.filter { $0.communityID == "summer-winds" && ["1041", "1044"].contains($0.unit) }
         XCTAssertEqual(Set(summer.map(\.unit)), ["1041", "1044"])
         XCTAssertTrue(summer.allSatisfy { $0.floor == "1" })
-        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition && $0.sourceUnitID == nil }.count, 14_517)
+        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition && $0.sourceUnitID == nil && $0.entranceSideEstimate == nil }.count, 14_517)
         XCTAssertFalse(data.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified })
     }
 

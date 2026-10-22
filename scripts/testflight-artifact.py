@@ -74,6 +74,10 @@ REQUIRED_SCREENSHOTS = {
         "Durango estimates with per-unit warning",
         "Corrected door persists and next estimate remains marked",
     ),
+    "EstimatedEntranceSideUITests/testEstimatedEntryRegionsKeepStreetFloorAndSharedDoorUncertaintyVisible()": (
+        "Copper Creek estimates retain exact streets and qualified floors",
+        "Lyric pair remains ambiguous and unit 1287 has no invented point",
+    ),
     "MiniRouteCompletionTests/testOneTapCompletesOnlyTheActiveMiniRouteWithoutConfirmation()": (
         "Active mini-route scoped completion control",
         "Completed mini-route with persisted Undo control",
@@ -119,7 +123,7 @@ def expected_test_count(root):
             tests.extend(re.findall(r"(?m)^\s*func\s+(test[A-Za-z0-9_]*)\s*\(",
                                     path.read_text(encoding="utf-8")))
         counts[directory] = len(tests)
-    require(counts == {"NativeTests": 86, "UITests": 45}, "Reviewed native test inventory changed")
+    require(counts == {"NativeTests": 86, "UITests": 46}, "Reviewed native test inventory changed")
     return sum(counts.values())
 
 

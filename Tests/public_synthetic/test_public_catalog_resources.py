@@ -44,6 +44,11 @@ def frozen_ea_resources(current=None):
     restored from a replacement fixture: their current objects must still match.
     """
     catalog, locations, paths = json.loads(json.dumps(current)) if current is not None else resources()
+    entrance_proof = json.loads((ROOT/'docs/estimated-entrance-side-preservation.json').read_bytes())
+    entrance_ids = set(entrance_proof['newFeatureIDs'])
+    entrance_sources = set(entrance_proof['newSourceIDs'])
+    locations['features'] = [f for f in locations['features'] if f['id'] not in entrance_ids]
+    catalog['sources'] = [s for s in catalog['sources'] if s['id'] not in entrance_sources]
     proof = json.loads((ROOT/'docs/89123-geography-preservation.json').read_bytes())
     allowed_community = {'latitude','longitude','sourceIDs','gapNotes','publicEvidence','deliveryAddresses'}
     allowed_association = {'sourceIDs','referencePlaceID','mapFloor','sourceUnitID'}
@@ -236,12 +241,75 @@ class PublicCatalogResourceTests(unittest.TestCase):
         current,points,_ = resources()
         self.assertEqual(len(current['unitBuildingAssociations']),8015)
         self.assertEqual(len(current['unitFloorReferences']),359)
-        self.assertEqual(len(points['features']),15420)
+        self.assertEqual(len(points['features']),16061)
         self.assertEqual(sum(p['properties'].get('referenceKind')=='operatorMapBuildingArea' for p in points['features']),62)
         self.assertEqual(sum(p['properties'].get('referenceKind')=='assessorLegalBuildingPolygon' for p in points['features']),339)
         self.assertEqual(sum(p['properties'].get('sourceUnitID') is not None for p in points['features']),502)
         self.assertFalse(any(p['properties']['kind'] in ('door','entrance') or p['properties']['verification']=='fieldVerified' for p in points['features']))
         self.assertFalse(any(a['communityID']=='one-las-vegas' for a in current['unitBuildingAssociations']))
+
+    def test_estimated_entry_increment_preserves_all_shipped_objects_and_exact_qualifications(self):
+        catalog, locations, paths = resources()
+        proof = json.loads((ROOT/'docs/estimated-entrance-side-preservation.json').read_bytes())
+        self.assertEqual(proof['baseSource'], 'b09e5d1fdd745e8748c817b76aff9cde11371eae')
+        index = json.loads((ROOT/'data/known-addresses.json').read_bytes())
+        self.assertEqual(index['packVersion'], catalog['packVersion'])
+        self.assertEqual(fingerprint(index['entries']),
+                         'cbd6de3d52dea4312711e953c1317d457499341442707688ff2c33122abcadab')
+        ids, source_ids = set(proof['newFeatureIDs']), set(proof['newSourceIDs'])
+        self.assertEqual((len(ids), len(source_ids)), (641, 26))
+        new = [f for f in locations['features'] if f['id'] in ids]
+        old = [f for f in locations['features'] if f['id'] not in ids]
+        self.assertEqual(len(old), 15420)
+        self.assertEqual(fingerprint(old), '7766b818fb8aaa59387d785f1a8178ad0e47c8ee739908822c1dc234b1984ad0')
+        self.assertEqual(fingerprint(sorted(new, key=lambda f: f['id'])),
+                         '333ddea7c3941850675b3b61ec8867b5d74dcaccc7153d01c5d9eb74252d2fd4')
+        prior = {
+            'sources': ([s for s in catalog['sources'] if s['id'] not in source_ids], 752,
+                        '8ff89a8596d6a08682353da9f2330e3ec2fc1053435406df4139f15d38f9af97'),
+            'communities': (catalog['communities'], 162,
+                            'ea51ba622170eb07b7276b55f406e3b97539a28af1f32b84d7f90d07430c3818'),
+            'associations': (catalog['unitBuildingAssociations'], 8015,
+                             '4b7551ff7d577284a350855569a238718615a1cdeed50275cca1561e9aa4c600'),
+            'floorReferences': (catalog['unitFloorReferences'], 359,
+                                '51c1b883ba1bb6270b0a56ec273717e8baf53a609e3fdac2d31295376d2a55d0'),
+            'paths': (paths['features'], 17,
+                      '5f601eba93b5bd25d7a624e40d3e5231c0ecea98dd3faa42b2d7ef73af8280ff'),
+        }
+        for name, (values, count, digest) in prior.items():
+            with self.subTest(collection=name):
+                self.assertEqual(len(values), count)
+                self.assertEqual(fingerprint(values), digest)
+        self.assertEqual({f['id'] for f in locations['features'] if f['properties'].get('entranceSideEstimate')}, ids)
+        counts = {}
+        for feature in new:
+            p = feature['properties']; e = p['entranceSideEstimate']
+            key = (p['communityID'], p['address'])
+            counts[key] = counts.get(key, 0) + 1
+            self.assertEqual((p['kind'], p['verification'], p['identityUncertain']),
+                             ('unitPosition', 'estimated', True))
+            for flag in ('doorCoordinatesVerified', 'entranceCoordinatesVerified',
+                         'physicalSignageVerified', 'uncertaintyCalibrated'):
+                self.assertIs(e[flag], False)
+            self.assertNotIn('referenceKind', p)
+            self.assertNotIn('sourceUnitID', p)
+            if p['address'] == '9400 BERMUDA RD':
+                self.assertEqual((p['floor'], e['dwellingFloorEvidence'], e['dwellingFloor']), ('', 'unknown', None))
+            if p['address'] == '9490 BERMUDA RD':
+                self.assertEqual((p['floor'], e['dwellingFloorEvidence']), ('', 'historicalExplicit'))
+        self.assertEqual(counts, {
+            ('copper-creek', '9400 BERMUDA RD'): 240,
+            ('copper-creek', '9490 BERMUDA RD'): 368,
+            ('destinations-pebble', '1450 E PEBBLE RD'): 27,
+            ('trend', '240 E SILVERADO RANCH BLVD'): 5,
+            ('lyric', '304 E SILVERADO RANCH BLVD'): 1,
+        })
+        lyric = next(f['properties'] for f in new if f['properties']['communityID'] == 'lyric')
+        self.assertEqual(lyric['entranceSideEstimate']['sharedUnits'], ['1013', '1014'])
+        self.assertEqual(lyric['entranceSideEstimate']['frontage'], [])
+        self.assertEqual(lyric['floor'], '')
+        self.assertFalse(any(f['properties']['unit'] in ('2062', '2091') for f in new
+                             if f['properties']['communityID'] == 'destinations-pebble'))
 
     def test_exact_reviewed_new_values_are_checked_before_reversing_the_delta(self):
         catalog,locations,_ = resources()

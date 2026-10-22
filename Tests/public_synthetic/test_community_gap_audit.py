@@ -45,6 +45,44 @@ class CommunityGapAuditTests(unittest.TestCase):
         self.assertEqual(row['doors'], dict(geographicPoints=2, fieldVerified=1))
         self.assertEqual(row['unitPositions'], dict(total=2, estimated=1, sourceMapped=1, operatorSourceUnitReferences=0))
 
+    def test_estimated_entrance_side_regions_are_an_explicit_subset_and_never_verified_doors(self):
+        catalog = dict(packVersion='fictional', communities=[community('a'), community('b')])
+        metadata = dict(frontage=[dict(latitude=0, longitude=0), dict(latitude=0.001, longitude=0)],
+            workingAllowanceMeters=10, uncertaintyCalibrated=False, doorCoordinatesVerified=False,
+            entranceCoordinatesVerified=False, physicalSignageVerified=False, dwellingFloorEvidence='unknown',
+            entryLevelDescription='Entry elevation unknown', sharedUnits=[], evidenceNotes='Fictional source frontage only')
+        features = [feature('a', 'unitPosition', 'estimated', entranceSideEstimate=metadata, identityUncertain=True),
+            feature('a', 'unitPosition'), feature('a', 'door', 'fieldVerified'),
+            feature('b', 'unitPosition', 'estimated')]
+        before = copy.deepcopy((catalog, features))
+        result = AUDIT.build_audit(catalog, features)
+        rows = {row['communityID']: row for row in result['communities']}
+        self.assertIn('estimatedEntranceSideRegions', rows['a'])
+        self.assertEqual(rows['a']['estimatedEntranceSideRegions'], 1)
+        self.assertEqual(rows['b']['estimatedEntranceSideRegions'], 0)
+        self.assertEqual(result['allCatalog']['estimatedEntranceSideRegions'], 1)
+        self.assertEqual(result['priorityArea']['estimatedEntranceSideRegions'], 1)
+        self.assertEqual(result['allCatalog']['unitPositions'], 3)
+        self.assertEqual(rows['a']['doors'], dict(geographicPoints=1, fieldVerified=1))
+        self.assertEqual(rows['b']['doors'], dict(geographicPoints=0, fieldVerified=0))
+        self.assertEqual(rows['a']['entrances'], 0)
+        self.assertIn('subset of estimated unit positions', ' '.join(result['interpretation']))
+        self.assertEqual((catalog, features), before)
+        for mutation in (dict(kind='door'), dict(kind='entrance'), dict(verification='fieldVerified'),
+                dict(identityUncertain=False)):
+            with self.subTest(mutation=mutation):
+                changed = copy.deepcopy(features)
+                changed[0]['properties'].update(mutation)
+                with self.assertRaises(ValueError):
+                    AUDIT.build_audit(catalog, changed)
+        for flag in ('uncertaintyCalibrated', 'doorCoordinatesVerified', 'entranceCoordinatesVerified', 'physicalSignageVerified'):
+            for value in (True, 0):
+                with self.subTest(flag=flag, value=value):
+                    changed = copy.deepcopy(features)
+                    changed[0]['properties']['entranceSideEstimate'][flag] = value
+                    with self.assertRaises(ValueError):
+                        AUDIT.build_audit(catalog, changed)
+
     def test_checked_in_inventory_is_deterministic_and_covers_every_catalog_record(self):
         catalog = json.loads((ROOT / 'data/public-catalog.json').read_bytes())
         features = json.loads((ROOT / 'data/public-locations.geojson').read_bytes())['features']
@@ -54,6 +92,8 @@ class CommunityGapAuditTests(unittest.TestCase):
         self.assertEqual({r['communityID'] for r in result['communities']}, {c['id'] for c in catalog['communities']})
         self.assertEqual(len(result['communities']), len(catalog['communities']))
         self.assertEqual(result['allCatalog']['unitBuildingAssociations'], len(catalog['unitBuildingAssociations']))
+        self.assertEqual(result['allCatalog']['estimatedEntranceSideRegions'],
+            sum(f['properties'].get('entranceSideEstimate') is not None for f in features))
 
     def test_final_gap_list_matches_exact_catalog_identities_and_geography(self):
         audit = json.loads((ROOT / 'docs/public-community-geography-audit.json').read_bytes())

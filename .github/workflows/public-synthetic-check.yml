@@ -205,7 +205,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':79}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':80}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -216,7 +216,7 @@ jobs:
           PY
           FILTERS=()
           while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
-          EXPECTED_NATIVE_COUNT=79
+          EXPECTED_NATIVE_COUNT=80
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi

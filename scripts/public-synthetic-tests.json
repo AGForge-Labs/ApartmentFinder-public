@@ -35,6 +35,18 @@
     "DeliveryCompletionTransactionTests/testFailedSaveRestoresProgressAndAllowsRetry",
     "DeliveryCompletionTransactionTests/testProgressIsPublishedBeforeTheAtomicSave",
     "DeliveryCompletionTransactionTests/testRepeatedTapDuringSaveCannotPublishOrSaveAnotherMutation",
+    "EntranceSideEstimateTests/testClaimedVerificationOrCalibrationCannotEnterAnEstimatePack",
+    "EntranceSideEstimateTests/testConfirmingEstimateCreatesIndependentPersonalDoorAndClearsEstimateOnlyOnCopy",
+    "EntranceSideEstimateTests/testCurrentExplicitDwellingFloorMustMatchAndDoesNotVerifyEntryElevation",
+    "EntranceSideEstimateTests/testEstimateCannotBeReinterpretedAsDoorEntranceOperatorPointOrConfidentIdentity",
+    "EntranceSideEstimateTests/testEstimateCannotMatchDifferentStreetEvenInASingleStreetCatalog",
+    "EntranceSideEstimateTests/testFrontageAllowanceAndEvidenceAreBoundedAndRequired",
+    "EntranceSideEstimateTests/testGeoJSONAndPersonalCodableRetainFrontageUncertaintyAndFalseVerificationFlags",
+    "EntranceSideEstimateTests/testInferredAndHistoricalFloorsRemainQualifiedOutsideOrdinaryPlaceFloor",
+    "EntranceSideEstimateTests/testLegacyRecordWithoutEstimateStillDecodesAndLoads",
+    "EntranceSideEstimateTests/testSharedEntryAreaRetainsOnlyExplicitLiteralUnitPair",
+    "EntranceSideEstimateTests/testSharedEstimateSummaryNamesThePairAndDoesNotClaimAThresholdOrKnownFloor",
+    "EntranceSideEstimateTests/testUniqueOrSelectedCheckedPersonalDoorWinsDespiteEstimateIdentityAndOtherStreet",
     "KnownAddressSupplementTests/testEquivalentPublicSpellingDoesNotDuplicateOrReplaceSavedStreetAndSeparateNumbersStayDistinct",
     "KnownAddressSupplementTests/testInstalledAddressSnapshotKeepsPrivateStreetsAndReceivesNewPublicAreaBeforeMainLaunch",
     "ManifestTests/testBadOnTracRowCannotBecomeAValidPartialImport",
@@ -226,13 +238,14 @@
     "ApartmentFinderTests/SelectedStopCompletionStoreTests/testWrongGroupUnknownStopAndFinderPlaceIDsCannotCompleteAStop"
   ],
   "ui": [
-    "ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport",
-    "ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation",
     "ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors",
     "ApartmentFinderUITests/CommunityMapControlsTests/testPausedControlsStayCompactAndKeepTheirActions",
+    "ApartmentFinderUITests/EstimatedEntranceSideUITests/testEstimatedEntryRegionsKeepStreetFloorAndSharedDoorUncertaintyVisible",
     "ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch",
+    "ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport",
+    "ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation",
+    "ApartmentFinderUITests/Reviewed89123GeographyUITests/testHistoricalAliasAndFloorOnlyReferenceDoNotInventATowerOrDoor",
     "ApartmentFinderUITests/Reviewed89123GeographyUITests/testPebbleUsesOneApproximateMarkerPerBuildingAndRetainsUnitFloorSelection",
-    "ApartmentFinderUITests/Reviewed89123GeographyUITests/testStackedSourceUnitFloorsAndRecoveredSummerLabelsRemainUnverified",
-    "ApartmentFinderUITests/Reviewed89123GeographyUITests/testHistoricalAliasAndFloorOnlyReferenceDoNotInventATowerOrDoor"
+    "ApartmentFinderUITests/Reviewed89123GeographyUITests/testStackedSourceUnitFloorsAndRecoveredSummerLabelsRemainUnverified"
   ]
 }

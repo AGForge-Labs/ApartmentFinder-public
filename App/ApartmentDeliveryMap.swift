@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import CoreLocation
 import ApartmentCore
 
 struct ApartmentDeliveryMap: View {
@@ -31,7 +32,22 @@ struct ApartmentDeliveryMap: View {
         var buildingReference: Bool { place.referenceKind != nil }
         var id: String { stop.id + "|" + place.id }
         var color: Color { stop.completed ? .gray : ready ? .teal : .orange }
+        var estimatedAreaRadius: CLLocationDistance {
+            guard let estimate = place.entranceSideEstimate else { return 0 }
+            let origin = CLLocation(latitude: place.coordinate.latitude, longitude: place.coordinate.longitude)
+            let frontageDistance = estimate.frontage.map {
+                origin.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude))
+            }.max() ?? 0
+            // Cover the whole supported frontage plus its uncalibrated allowance.
+            return frontageDistance + estimate.workingAllowanceMeters
+        }
+        var estimateReferenceLabel: String? {
+            guard let estimate = place.entranceSideEstimate else { return nil }
+            let units = estimate.sharedUnits.isEmpty ? stop.unit : estimate.sharedUnits.joined(separator: "/")
+            return "Est. entry area - \(units)"
+        }
         var status: String {
+            if let estimate = place.entranceSideEstimate { return estimate.summary }
             if place.referenceKind == .operatorMapBuildingArea {
                 return "Approximate operator building area; working uncertainty \(Int(place.estimatedHorizontalUncertaintyM ?? 0)) meters is not guaranteed accuracy; physical signs unverified; not a door"
             }
@@ -65,7 +81,7 @@ struct ApartmentDeliveryMap: View {
         return areas.isEmpty ? group.coordinate.map { [$0] } ?? [] : areas
     }
     private func guides(_ pins: [Pin]) -> [OrderGuide] {
-        let byStop = Dictionary(grouping: pins.filter { !$0.buildingReference }, by: { $0.stop.id })
+        let byStop = Dictionary(grouping: pins.filter { !$0.buildingReference && $0.place.entranceSideEstimate == nil }, by: { $0.stop.id })
         // Only connect adjacent, unambiguous locations; never bridge a missing unit.
         return zip(group.stops, group.stops.dropFirst()).compactMap { first, second in
             guard let a = byStop[first.id], a.count == 1, let b = byStop[second.id], b.count == 1 else { return nil }
@@ -78,6 +94,9 @@ struct ApartmentDeliveryMap: View {
         let located = Set(pins.map { $0.stop.id })
         let missing = group.stops.filter { !$0.completed && !located.contains($0.id) }.count
         if missing > 0 { return missing == 1 ? "1 door not mapped" : "\(missing) doors not mapped" }
+        if pins.contains(where: { !$0.ready && !$0.stop.completed && $0.place.entranceSideEstimate != nil }) {
+            return "Estimated entry areas - doorways unverified"
+        }
         if pins.contains(where: { !$0.ready && !$0.stop.completed && $0.place.verification == .estimated }) { return "⚠ Estimated pins — check on arrival" }
         return pins.contains { !$0.ready && !$0.stop.completed } ? "Orange pins need checking" : "Teal pins: checked doors"
     }
@@ -87,6 +106,17 @@ struct ApartmentDeliveryMap: View {
         let guides = guides(pins)
         MapReader { proxy in
             Map(position: $camera, scope: mapScope) {
+                ForEach(pins.filter { $0.place.entranceSideEstimate != nil }) { pin in
+                    if let estimate = pin.place.entranceSideEstimate {
+                        MapCircle(center: pin.place.coordinate.cl, radius: pin.estimatedAreaRadius)
+                            .foregroundStyle(.orange.opacity(0.12))
+                            .stroke(.orange.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        if estimate.frontage.count >= 2 {
+                            MapPolyline(coordinates: estimate.frontage.map(\.cl))
+                                .stroke(.orange.opacity(0.8), style: StrokeStyle(lineWidth: 3, dash: [4, 3]))
+                        }
+                    }
+                }
                 ForEach(guides) { guide in
                     MapPolyline(coordinates: guide.coordinates)
                         .stroke(.teal.opacity(0.75), style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
@@ -118,6 +148,9 @@ struct ApartmentDeliveryMap: View {
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 4) {
                     coverageLabel(pins)
+                    if pins.contains(where: { $0.place.entranceSideEstimate != nil }) {
+                        Text("Orange regions: uncalibrated working search areas").font(.caption2)
+                    }
                     if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
                     if pins.isEmpty {
                         Text(!contextAreas.isEmpty ? "Building areas only · unit location unknown" : group.coordinate == nil ? "Community location not mapped" : "Community area · doors not mapped").font(.caption2)
@@ -279,7 +312,8 @@ struct ApartmentDeliveryMap: View {
         Button { select(pin.stop.id) } label: {
             DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                            color: pin.color, selected: focusedStopID == pin.stop.id, estimated: pin.place.verification == .estimated,
-                           referenceLabel: pin.buildingReference ? "Unit \(pin.stop.unit) · \(pin.place.referenceKind == .operatorMapBuildingArea ? "Approx" : "Legal") B\(pin.place.building) area" : nil)
+                           referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · \(pin.place.referenceKind == .operatorMapBuildingArea ? "Approx" : "Legal") B\(pin.place.building) area" : nil),
+                           referenceDisclaimer: pin.place.entranceSideEstimate == nil ? "Not a door" : "Doorway unverified")
                 .contentShape(ProjectedDeliveryPinHitRegion(point: point, viewport: viewport))
         }.buttonStyle(.plain)
             .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")

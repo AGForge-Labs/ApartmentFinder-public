@@ -48,7 +48,7 @@ class PreservedArtifactTests(unittest.TestCase):
         }
         self.write_manifest()
         (signed / 'SHA256.txt').write_text(self.actual['ipa_sha256'] + '  ApartmentFinder-TestFlight.ipa\n')
-        self.summary = {'result': 'Passed', 'passedTests': 131, 'totalTestCount': 131,
+        self.summary = {'result': 'Passed', 'passedTests': 132, 'totalTestCount': 132,
                         'failedTests': 0, 'skippedTests': 0, 'expectedFailures': 0}
         self.write_summary()
         attachments = self.directory / 'test-attachments'
@@ -81,13 +81,13 @@ class PreservedArtifactTests(unittest.TestCase):
 
     def test_exact_signed_build_and_reviewed_screenshots_pass(self):
         result = self.verify()
-        self.assertEqual(result['native_tests'], 131)
-        self.assertEqual(result['required_screenshots'], 45)
+        self.assertEqual(result['native_tests'], 132)
+        self.assertEqual(result['required_screenshots'], 47)
 
     def test_native_evidence_can_be_checked_without_signing_or_an_ipa(self):
         (self.directory / 'testflight' / 'ApartmentFinder-TestFlight.ipa').unlink()
         result = artifact.verify_native_evidence(self.directory, root=ROOT)
-        self.assertEqual(result, {'native_tests': 131, 'required_screenshots': 45})
+        self.assertEqual(result, {'native_tests': 132, 'required_screenshots': 47})
 
     def test_native_only_command_checks_evidence_without_entering_signing(self):
         (self.directory / 'testflight' / 'ApartmentFinder-TestFlight.ipa').unlink()
@@ -96,7 +96,7 @@ class PreservedArtifactTests(unittest.TestCase):
                                 env=dict(os.environ, GITHUB_SHA=self.commit))
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout),
-                         {'commit': self.commit, 'native_tests': 131, 'required_screenshots': 45})
+                         {'commit': self.commit, 'native_tests': 132, 'required_screenshots': 47})
         result = subprocess.run(command + ['--write-outputs'], cwd=ROOT, text=True,
                                 capture_output=True, env=dict(os.environ, GITHUB_SHA=self.commit))
         self.assertNotEqual(result.returncode, 0)
@@ -133,6 +133,7 @@ class PreservedArtifactTests(unittest.TestCase):
                         {'passedTests': 114, 'totalTestCount': 114},
                         {'passedTests': 115, 'totalTestCount': 115},
                         {'passedTests': 125, 'totalTestCount': 125},
+                        {'passedTests': 131, 'totalTestCount': 131},
                         {'passedTests': 60}, {'result': 'Failed'},
                         {'failedTests': 1}, {'skippedTests': 1}, {'expectedFailures': 1}):
             with self.subTest(changes=changes):
@@ -202,6 +203,26 @@ class PreservedArtifactTests(unittest.TestCase):
                     record['attachments'] = [a for a in old if a['suggestedHumanReadableName'] != name]
                     removed += len(old) - len(record['attachments'])
                 self.assertEqual(removed, 1, 'Each expected heading-up screenshot must exist in the valid artifact')
+                manifest.write_text(json.dumps(records))
+                with self.assertRaisesRegex(ValueError, 'Missing or duplicate screenshot'):
+                    artifact.verify_native_evidence(self.directory, root=ROOT)
+
+    def test_estimated_entry_regions_require_both_qualified_outcome_screenshots(self):
+        test = 'EstimatedEntranceSideUITests/testEstimatedEntryRegionsKeepStreetFloorAndSharedDoorUncertaintyVisible()'
+        names = (
+            'Copper Creek estimates retain exact streets and qualified floors',
+            'Lyric pair remains ambiguous and unit 1287 has no invented point',
+        )
+        self.assertEqual(artifact.REQUIRED_SCREENSHOTS[test], names)
+        manifest = self.directory / 'test-attachments' / 'manifest.json'
+        original = json.loads(manifest.read_text())
+        for name in names:
+            with self.subTest(missing=name):
+                records = json.loads(json.dumps(original))
+                selected = next(record for record in records if record['testIdentifier'] == test)
+                self.assertEqual(sum(item['suggestedHumanReadableName'] == name for item in selected['attachments']), 1)
+                selected['attachments'] = [item for item in selected['attachments']
+                                           if item['suggestedHumanReadableName'] != name]
                 manifest.write_text(json.dumps(records))
                 with self.assertRaisesRegex(ValueError, 'Missing or duplicate screenshot'):
                     artifact.verify_native_evidence(self.directory, root=ROOT)

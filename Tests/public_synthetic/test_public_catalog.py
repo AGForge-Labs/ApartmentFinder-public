@@ -598,6 +598,196 @@ class PublicCatalogExportTests(unittest.TestCase):
                 result = self.run_validate(valid=False)
                 self.assertIn('Unexpected public position text', result.stderr)
 
+    def configure_entrance_side_estimate(self):
+        properties = self.locations['features'][0]['properties']
+        properties.update(kind='unitPosition', verification='estimated', identityUncertain=True, floor='')
+        properties['entranceSideEstimate'] = dict(
+            frontage=[dict(latitude=0.0, longitude=0.0), dict(latitude=0.0001, longitude=0.0001)],
+            workingAllowanceMeters=10, uncertaintyCalibrated=False, doorCoordinatesVerified=False,
+            entranceCoordinatesVerified=False, physicalSignageVerified=False,
+            dwellingFloorEvidence='unknown', entryLevelDescription='Entry elevation unknown', sharedUnits=[],
+            sourceUnitID='fictional-source-001', sourceDate='2004-12-06',
+            evidenceNotes='Reviewed fictional corridor-facing boundary; no individual doorway is observed.')
+        return properties
+
+    def test_entrance_side_estimate_round_trip_retains_metadata_and_scoped_qualification(self):
+        properties = self.configure_entrance_side_estimate()
+        expected = copy.deepcopy(properties['entranceSideEstimate'])
+        self.run_export(); self.run_validate()
+        exported = json.loads((self.output / 'public-locations.geojson').read_bytes())['features'][0]['properties']
+        self.assertIn('entranceSideEstimate', exported)
+        self.assertEqual(exported['entranceSideEstimate'], expected)
+        self.assertEqual(exported['floor'], '')
+        self.assertNotIn('sourceUnitID', exported)
+        self.assertEqual(exported['notes'],
+            'Estimated entrance-side search region; not a verified entrance or exact door. '
+            'Representative point only; working allowance 10 m is uncalibrated, not guaranteed accuracy. '
+            'Physical signage remains unverified. ' + expected['evidenceNotes'])
+        self.assertNotIn('PRIVATE PIN TEXT', exported['notes'])
+        self.assertNotIn('gateCode', exported)
+
+    def test_entrance_side_estimate_floor_evidence_never_infers_floor_from_unit_digits(self):
+        properties = self.configure_entrance_side_estimate()
+        original = copy.deepcopy(properties)
+        for index, (status, value, place_floor) in enumerate((
+                ('unknown', None, ''), ('inferred', '2', ''), ('historicalExplicit', '3', ''),
+                ('currentExplicit', '2', '2'), ('currentExplicit', '2', ''))):
+            with self.subTest(status=status, place_floor=place_floor):
+                properties.clear(); properties.update(copy.deepcopy(original))
+                properties['floor'] = place_floor
+                properties['entranceSideEstimate'].update(dwellingFloorEvidence=status, dwellingFloor=value)
+                self.output = self.directory / ('entrance-floor-' + str(index))
+                self.run_export(); self.run_validate()
+                exported = json.loads((self.output / 'public-locations.geojson').read_bytes())['features'][0]['properties']
+                self.assertEqual(exported['unit'], '001')
+                self.assertEqual(exported['floor'], place_floor)
+                self.assertIn('entranceSideEstimate', exported)
+                self.assertEqual(exported['entranceSideEstimate']['dwellingFloor'], value)
+
+    def test_entrance_side_estimate_empty_frontage_requires_literal_shared_unit_identity(self):
+        properties = self.configure_entrance_side_estimate()
+        properties['entranceSideEstimate'].update(frontage=[], sharedUnits=['001', '002'])
+        self.run_export(); self.run_validate()
+        original = copy.deepcopy(properties['entranceSideEstimate'])
+        for index, units in enumerate(([], ['001'], ['001', '001'], ['1', '002'],
+                ['001', '002', '003', '004', '005'], ['001', 2], ['001', ''])):
+            with self.subTest(units=units):
+                properties['entranceSideEstimate'] = dict(copy.deepcopy(original), sharedUnits=units)
+                self.output = self.directory / ('invalid-entrance-shared-' + str(index))
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+
+    def test_entrance_side_estimate_rejects_tampered_verification_and_unrelated_point_metadata(self):
+        properties = self.configure_entrance_side_estimate()
+        original = copy.deepcopy(properties)
+        mutations = [dict(kind='door'), dict(kind='entrance'), dict(kind='building'),
+            dict(verification='sourceMapped'), dict(verification='fieldVerified'),
+            dict(identityUncertain=False), dict(identityUncertain=1), dict(sourceUnitID='published-unit'),
+            dict(referenceKind='assessorLegalBuildingPolygon'), dict(referenceKind='operatorMapBuildingArea'),
+            dict(estimatedHorizontalUncertaintyM=10), dict(mapLabelOccurrenceID='operator-lobe'),
+            dict(referenceAddresses=['100 Fictional Rd'])]
+        for index, mutation in enumerate(mutations):
+            with self.subTest(mutation=mutation):
+                properties.clear(); properties.update(dict(copy.deepcopy(original), **mutation))
+                self.output = self.directory / ('invalid-entrance-precision-' + str(index))
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+        for key in ('uncertaintyCalibrated', 'doorCoordinatesVerified', 'entranceCoordinatesVerified', 'physicalSignageVerified'):
+            for value in (True, 0, None, 'false'):
+                with self.subTest(flag=key, value=value):
+                    properties.clear(); properties.update(copy.deepcopy(original))
+                    properties['entranceSideEstimate'][key] = value
+                    self.output = self.directory / ('invalid-entrance-' + key + '-' + str(value))
+                    self.run_export(valid=False)
+                    self.assertFalse(self.output.exists())
+
+    def test_entrance_side_estimate_rejects_malformed_nested_fields_instead_of_stripping_them(self):
+        properties = self.configure_entrance_side_estimate()
+        original = copy.deepcopy(properties['entranceSideEstimate'])
+        mutations = [dict(privateNotes='SYNTHETIC PRIVATE FIELD'), dict(workingAllowanceMeters=True),
+            dict(workingAllowanceMeters=0), dict(workingAllowanceMeters=101),
+            dict(workingAllowanceMeters=float('nan')), dict(workingAllowanceMeters=float('inf')),
+            dict(workingAllowanceMeters='10'), dict(frontage=[dict(latitude=0, longitude=0)]),
+            dict(frontage=[dict(latitude=0, longitude=0)] * 33),
+            dict(frontage=[dict(latitude=0, longitude=0, resident='SYNTHETIC PRIVATE FIELD')] * 2),
+            dict(frontage=[[0, 0], [0, 0]]), dict(frontage=[dict(latitude=True, longitude=0)] * 2),
+            dict(frontage=[dict(latitude=91, longitude=0)] * 2),
+            dict(frontage=[dict(latitude=0, longitude=181)] * 2),
+            dict(frontage=[dict(latitude=0, longitude=float('nan'))] * 2),
+            dict(frontage=[dict(latitude=0)] * 2), dict(frontage=None), dict(sharedUnits='001'),
+            dict(sharedUnits=['002']), dict(dwellingFloorEvidence='verified'),
+            dict(dwellingFloor='2'), dict(dwellingFloorEvidence='inferred'),
+            dict(dwellingFloorEvidence='historicalExplicit', dwellingFloor=''),
+            dict(dwellingFloorEvidence='currentExplicit', dwellingFloor=2),
+            dict(entryLevelDescription=''), dict(entryLevelDescription='x' * 2049),
+            dict(evidenceNotes=''), dict(evidenceNotes='x' * 2049), dict(evidenceNotes={'resident': 'SYNTHETIC'}),
+            dict(sourceDate=2004), dict(sourceUnitID=''), dict(sourceUnitID={'privateNotes': 'SYNTHETIC'})]
+        for index, mutation in enumerate(mutations):
+            with self.subTest(mutation=mutation):
+                properties['entranceSideEstimate'] = dict(copy.deepcopy(original), **mutation)
+                self.output = self.directory / ('invalid-entrance-field-' + str(index))
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+        for key in original:
+            if key in ('sourceDate', 'sourceUnitID'):
+                continue
+            with self.subTest(missing=key):
+                properties['entranceSideEstimate'] = copy.deepcopy(original)
+                properties['entranceSideEstimate'].pop(key)
+                self.output = self.directory / ('missing-entrance-' + key)
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+        for index, value in enumerate((None, [], 'unverified')):
+            properties['entranceSideEstimate'] = value
+            self.output = self.directory / ('invalid-entrance-object-' + str(index))
+            self.run_export(valid=False)
+            self.assertFalse(self.output.exists())
+
+    def test_entrance_side_estimate_rejects_unqualified_floors(self):
+        properties = self.configure_entrance_side_estimate()
+        original = copy.deepcopy(properties)
+        for index, (status, value, place_floor) in enumerate((('unknown', None, '1'),
+                ('inferred', '2', '2'), ('historicalExplicit', '3', '3'), ('currentExplicit', '2', '3'))):
+            with self.subTest(status=status, place_floor=place_floor):
+                properties.clear(); properties.update(copy.deepcopy(original))
+                properties['floor'] = place_floor
+                properties['entranceSideEstimate'].update(dwellingFloorEvidence=status, dwellingFloor=value)
+                self.output = self.directory / ('invalid-entrance-floor-' + str(index))
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+
+    def test_entrance_side_estimate_validator_rejects_metadata_and_note_tampering_after_digest_update(self):
+        self.configure_entrance_side_estimate()
+        self.run_export()
+        original = json.loads((self.output / 'public-locations.geojson').read_bytes())
+        self.assertIn('entranceSideEstimate', original['features'][0]['properties'])
+        mutations = [lambda p: p['entranceSideEstimate'].update(doorCoordinatesVerified=True),
+            lambda p: p['entranceSideEstimate'].update(privateNotes='SYNTHETIC PRIVATE FIELD'),
+            lambda p: p['entranceSideEstimate']['frontage'][0].update(accessCode='SYNTHETIC PRIVATE FIELD'),
+            lambda p: p.update(notes=p['entranceSideEstimate']['evidenceNotes']),
+            lambda p: p.update(notes=p['notes'] + ' ARBITRARY EXTRA FREE TEXT'),
+            lambda p: p.update(privateNotes='SYNTHETIC PRIVATE FIELD'),
+            lambda p: p.pop('entranceSideEstimate')]
+        for index, mutate in enumerate(mutations):
+            with self.subTest(mutation=index):
+                locations = copy.deepcopy(original)
+                mutate(locations['features'][0]['properties'])
+                self.write_locations_with_reviewed_digest(locations)
+                self.run_validate(valid=False)
+
+    def test_entrance_side_estimate_accepts_bounded_values_and_nullable_optional_fields(self):
+        properties = self.configure_entrance_side_estimate()
+        original = copy.deepcopy(properties['entranceSideEstimate'])
+        for index, allowance in enumerate((1, 100)):
+            properties['entranceSideEstimate'] = dict(copy.deepcopy(original), workingAllowanceMeters=allowance,
+                frontage=[dict(latitude=-90, longitude=-180)] * 32, sharedUnits=['001', '002', '003', '004'],
+                entryLevelDescription='x' * 2048, evidenceNotes='x' * 2048,
+                dwellingFloor=None, sourceUnitID=None, sourceDate=None)
+            self.output = self.directory / ('bounded-entrance-' + str(index))
+            self.run_export(); self.run_validate()
+            exported = json.loads((self.output / 'public-locations.geojson').read_bytes())['features'][0]['properties']
+            self.assertIn('entranceSideEstimate', exported)
+            self.assertEqual(exported['entranceSideEstimate'], properties['entranceSideEstimate'])
+
+    def test_entrance_side_estimate_absence_keeps_legacy_point_note_policy(self):
+        self.run_export(); self.run_validate()
+        exported = json.loads((self.output / 'public-locations.geojson').read_bytes())['features'][0]['properties']
+        self.assertNotIn('entranceSideEstimate', exported)
+        self.assertEqual(exported['notes'], 'Published unit position; not an entrance or exact door. '
+            'Verify the physical street, unit and building on arrival.')
+
+    def test_entrance_side_estimate_cannot_bypass_reserved_position_source_guards(self):
+        estimate = copy.deepcopy(self.configure_entrance_side_estimate()['entranceSideEstimate'])
+        fixtures = copy.deepcopy((self.catalog, self.locations))
+        for index, configure in enumerate((self.configure_disputed_unit, lambda: self.configure_riley_position('6355'))):
+            with self.subTest(reserved=index):
+                self.catalog, self.locations = copy.deepcopy(fixtures)
+                feature = configure()
+                feature['properties'].update(verification='sourceMapped', entranceSideEstimate=copy.deepcopy(estimate))
+                self.output = self.directory / ('reserved-entrance-' + str(index))
+                self.run_export(valid=False)
+                self.assertFalse(self.output.exists())
+
     def test_exact_doors_and_confirmed_personal_paths_are_rejected(self):
         self.locations['features'][0]['properties']['kind'] = 'door'
         self.run_export(valid=False)

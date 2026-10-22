@@ -105,6 +105,9 @@ struct UITestManifestControls: ToolbarContent {
                     } else if arguments.contains("--community-area-manifest") {
                         // Public operator labels with invented deliveries, never an owner's manifest.
                         csv = "sequence,address,unit,notes\n1,304 E Silverado Ranch Blvd,1193,Synthetic regression\n2,304 E Silverado Ranch Blvd,2171,Synthetic regression\n3,240 E Silverado Ranch Blvd,PUBLIC-TEST-A,Synthetic unmapped unit\n4,240 E Silverado Ranch Blvd,PUBLIC-TEST-B,Synthetic unmapped unit\n"
+                    } else if arguments.contains("--estimated-entry-manifest") {
+                        // Invented deliveries against reviewed public references, never an owner's route.
+                        csv = "sequence,address,unit,notes\n1,9400 Bermuda Rd,126,Synthetic estimated-entry regression\n2,9490 Bermuda Rd,1022,Synthetic separate-street regression\n3,304 E Silverado Ranch Blvd,1014,Synthetic shared-entry regression\n4,304 E Silverado Ranch Blvd,1287,Synthetic unresolved-door regression\n"
                     } else if arguments.contains("--reviewed-89123-manifest") {
                         csv = "sequence,address,unit,notes\n1,1450 E Pebble Rd,1000,Synthetic regression\n2,1450 E Pebble Rd,1001,Synthetic regression\n3,1450 E Pebble Rd,1159,Synthetic regression\n4,8680 Ensworth St,101,Synthetic regression\n5,8680 Ensworth St,201,Synthetic regression\n6,2725 W Wigwam Ave,1041,Synthetic regression\n7,2725 W Wigwam Ave,1044,Synthetic regression\n8,2750 W Wigwam Ave,1101,Synthetic regression\n9,8255 S Las Vegas Blvd,101,Synthetic regression\n"
                     } else if arguments.contains("--tuscano-manifest") {
