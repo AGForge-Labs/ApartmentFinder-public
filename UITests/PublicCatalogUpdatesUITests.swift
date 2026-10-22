@@ -27,13 +27,30 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Apartments"].isSelected)
         app.tabBars.buttons["Finder"].tap()
         XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
-        // Select the identical fixture through Finder's existing exact-address
-        // path before checking refresh, selection preservation and pin editing.
-        let editSearch = app.buttons["finder.editSearch"]
-        expectHittable(editSearch)
-        editSearch.tap()
-        replace(app.textFields["finder.address"], with: "7255 W Sunset Rd")
-        replace(app.textFields["finder.unit"], with: "2066")
+        // Navigate the production community list without search-field focus or
+        // keyboard replacement; retain the identical Tuscano unit fixture.
+        app.buttons["finder.community"].tap()
+        XCTAssertTrue(app.navigationBars["Communities"].waitForExistence(timeout: 5))
+        let tuscano = app.buttons["finder.community.tuscano"]
+        for _ in 0..<16 where !tuscano.exists || !tuscano.isHittable { app.swipeUp() }
+        XCTAssertTrue(tuscano.waitForExistence(timeout: 5))
+        XCTAssertTrue(tuscano.isHittable)
+        tuscano.tap()
+        XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.navigationBars["Communities"].exists)
+        XCTAssertTrue(app.buttons["finder.community"].label.contains("Tuscano"))
+        XCTAssertEqual(app.textFields["finder.address"].value as? String, "7255 W Sunset Rd")
+        let unit = app.textFields["finder.unit"]
+        expectHittable(unit)
+        let initialUnit = unit.value as? String
+        XCTAssertNotNil(initialUnit)
+        XCTAssertTrue(initialUnit == "" || initialUnit == unit.placeholderValue,
+                      "The isolated Finder fixture must start with an empty unit field")
+        unit.tap()
+        unit.typeText("2066")
+        let entered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "2066"), object: unit)
+        XCTAssertEqual(XCTWaiter.wait(for: [entered], timeout: 3), .completed)
+        XCTAssertEqual(unit.value as? String, "2066")
         expectHittable(app.buttons["finder.search"])
         app.buttons["finder.search"].tap()
         let correction = app.buttons["finder.correct.tuscano-unit-county-2187653-2066"]
@@ -93,35 +110,6 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     private func expectHittable(_ element: XCUIElement) {
         let visible = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: element)
         XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 5), .completed)
-    }
-
-    private func replace(_ field: XCUIElement, with value: String) {
-        guard field.value as? String != value else { return }
-        expectHittable(field)
-        field.tap()
-        let current = field.value as? String ?? ""
-        if !current.isEmpty && current != field.placeholderValue {
-            field.press(forDuration: 1.1)
-            let selectAll = app.menuItems["Select All"].firstMatch
-            guard selectAll.waitForExistence(timeout: 3) else {
-                XCTFail("Finder fixture replacement requires the native Select All action")
-                return
-            }
-            selectAll.tap()
-            field.typeText(XCUIKeyboardKey.delete.rawValue)
-            let empty = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-                let text = field.value as? String ?? ""
-                return text.isEmpty || text == field.placeholderValue
-            }, object: nil)
-            guard XCTWaiter.wait(for: [empty], timeout: 3) == .completed else {
-                XCTFail("Finder test input must be cleared before entering the fixture")
-                return
-            }
-        }
-        field.typeText(value)
-        let entered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: field)
-        XCTAssertEqual(XCTWaiter.wait(for: [entered], timeout: 3), .completed)
-        XCTAssertEqual(field.value as? String, value, "Finder test input must match the requested fixture")
     }
 
     private func reveal(_ element: XCUIElement) {
