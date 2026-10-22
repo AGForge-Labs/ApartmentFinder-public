@@ -29,10 +29,26 @@ public enum PersonalCommunityDirectory {
             addresses[id, default: []].insert(rule.address)
             if !rule.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { names[id] = rule.name }
         }
-        let claimed = Dictionary(grouping: directory.flatMap { community in
+        let ownerClaims = Dictionary(grouping: addresses.flatMap { id, streets in
+            streets.map { (LocalSearch.addressKey($0), id) }
+        }, by: { $0.0 }).mapValues { Set($0.map { $0.1 }) }
+        func claimedByAnotherOwner(_ street: String, id: String) -> Bool {
+            guard let owners = ownerClaims[LocalSearch.addressKey(street)], owners.count == 1 else { return false }
+            return !owners.contains(id)
+        }
+        // Hold a conflicting directory identity locally rather than move an
+        // existing delivery group to a new ID. The stored public pack is intact.
+        var result = directory.compactMap { original -> Community? in
+            guard !claimedByAnotherOwner(original.address, id: original.id) else { return nil }
+            var community = original
+            if let aliases = community.deliveryAddresses {
+                community.deliveryAddresses = aliases.filter { !claimedByAnotherOwner($0, id: community.id) }
+            }
+            return community
+        }
+        let claimed = Dictionary(grouping: result.flatMap { community in
             community.matchingAddresses.map { (LocalSearch.addressKey($0), community.id) }
         }, by: { $0.0 }).mapValues { Set($0.map { $0.1 }) }
-        var result = directory
         for id in addresses.keys.sorted() {
             let ownerAddresses = (addresses[id] ?? []).sorted().filter { address in
                 // A newly published directory identity cannot silently acquire an
