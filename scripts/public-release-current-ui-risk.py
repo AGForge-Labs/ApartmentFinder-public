@@ -8,9 +8,10 @@ import urllib.request
 
 ROOT=Path(__file__).resolve().parents[1]
 BASE='708ef295532acb95c211bb76135ffd9ee01610da'
+RELEASE_PARENT='c8399d1a16cbd1dc144a40c5d8825de627509dc7'
 PRIOR_RUN=39868707775
 REPO='AGForge-Labs/ApartmentFinder-public'
-ALLOWED={'.github/workflows/public-testflight.yml','scripts/public-release-current-ui-risk.py'}
+ALLOWED={'.github/workflows/public-testflight.yml','scripts/public-release-current-ui-risk.py','Tests/release/test_public_release_recovery.py'}
 
 def require(value):
     if not value:raise ValueError('Fixed27.1 owner-selected release source or context mismatch')
@@ -31,9 +32,9 @@ def main():
     require(env.get('RELEASE_CURRENT_UI_RISK_ACCEPTED')=='true')
     require(env.get('RELEASE_KNOWN_MAP_RISK_ACCEPTED')!='true' and env.get('RELEASE_BUILD_NUMBER')=='27.1')
     parents=subprocess.check_output(['git','show','-s','--format=%P','HEAD'],cwd=ROOT,text=True).split()
-    require(parents==[BASE])
+    require(parents==[RELEASE_PARENT])
     changed=subprocess.check_output(['git','diff','--name-only','--no-renames',BASE,'HEAD'],cwd=ROOT,text=True).splitlines()
-    require(len(changed)==2 and set(changed)==ALLOWED)
+    require(len(changed)==3 and set(changed)==ALLOWED)
     prior=read_api('/actions/runs/'+str(PRIOR_RUN))
     require(prior.get('id')==PRIOR_RUN and prior.get('head_sha')==BASE and prior.get('run_attempt')==1)
     require(prior.get('workflow_id')==390747513 and prior.get('status')=='completed' and prior.get('conclusion')=='failure')

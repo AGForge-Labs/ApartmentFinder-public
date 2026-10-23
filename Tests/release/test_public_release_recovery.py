@@ -45,7 +45,8 @@ class PublicReleaseRecoveryTests(unittest.TestCase):
 
     def test_normal_application_validation_and_environment_boundary_remain(self):
         workflow=(ROOT/'.github/workflows/public-testflight.yml').read_text()
-        self.assertIn('if: ${{ !inputs.accept_known_map_regression }}',workflow)
+        self.assertIn('if: ${{ !inputs.accept_known_map_regression && !inputs.accept_current_ui_test_risk }}',workflow)
+        self.assertIn('run: python3 -B scripts/public-release-current-ui-risk.py',workflow)
         self.assertIn('run: bash scripts/public-release-validation.sh',workflow)
         self.assertIn("needs.validate.result == 'success'",workflow)
         self.assertIn('name: release',workflow)
