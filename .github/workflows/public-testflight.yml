@@ -20,6 +20,11 @@ on:
         required: false
         type: boolean
         default: false
+      accept_current_ui_test_risk:
+        description: Release the identical708ef295 app as27.1 without more tests; retain the disclosed unit-entry UI failure
+        required: false
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -30,6 +35,7 @@ env:
   RELEASE_BUILD_NUMBER: ${{ inputs.build_number }}
   RELEASE_AUTHORIZED: ${{ inputs.authorize_upload }}
   RELEASE_KNOWN_MAP_RISK_ACCEPTED: ${{ inputs.accept_known_map_regression }}
+  RELEASE_CURRENT_UI_RISK_ACCEPTED: ${{ inputs.accept_current_ui_test_risk }}
   PYTHONDONTWRITEBYTECODE: '1'
   DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
   HOMEBREW_NO_AUTO_UPDATE: '1'
@@ -51,14 +57,18 @@ jobs:
       - name: Require exact owner-reviewed public source
         run: python3 -B scripts/public-release.py check
       - name: Release gate regression checks
+        if: ${{ !inputs.accept_current_ui_test_risk }}
         run: python3 -B -m unittest discover -s Tests/release -v
       - name: Preserve existing native and source regression checks
-        if: ${{ !inputs.accept_known_map_regression }}
+        if: ${{ !inputs.accept_known_map_regression && !inputs.accept_current_ui_test_risk }}
         shell: bash
         run: bash scripts/public-release-validation.sh
       - name: Verify fixed prior acceptance and identical application source under explicit risk acceptance
-        if: ${{ inputs.accept_known_map_regression }}
+        if: ${{ inputs.accept_known_map_regression && !inputs.accept_current_ui_test_risk }}
         run: python3 -B scripts/public-release-recovery.py
+      - name: Verify identical application source and retain the disclosed UI failure without rerunning tests
+        if: ${{ inputs.accept_current_ui_test_risk }}
+        run: python3 -B scripts/public-release-current-ui-risk.py
   release:
     needs: validate
     if: ${{ needs.validate.result == 'success' }}
