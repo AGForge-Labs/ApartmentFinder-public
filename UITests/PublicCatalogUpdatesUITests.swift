@@ -64,8 +64,25 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
                       "The isolated Finder fixture must start with an empty unit field")
         unit.tap()
         unit.typeText("2066")
-        let entered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "2066"), object: unit)
+        // Observe the exact value read by each predicate evaluation. The
+        // original three-second wait still fails if no evaluation completes.
+        let observationOrigin = ProcessInfo.processInfo.systemUptime
+        var entryObservations: [String] = []
+        let entered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let started = ProcessInfo.processInfo.systemUptime
+            let rawValue = unit.value
+            let finished = ProcessInfo.processInfo.systemUptime
+            let matches = (rawValue as? String) == "2066"
+            let returnedInWindow = finished <= observationOrigin + 3
+            if entryObservations.count < 8 {
+                entryObservations.append("start=\(started - observationOrigin) end=\(finished - observationOrigin) type=\(String(reflecting: type(of: rawValue))) value=\(String(reflecting: rawValue)) matches=\(matches) inWindow=\(returnedInWindow)")
+            }
+            return matches && returnedInWindow
+        }, object: nil)
         let entryWaitResult = XCTWaiter.wait(for: [entered], timeout: 3)
+        for observation in entryObservations {
+            print("PublicCatalogInputPredicate \(observation)")
+        }
         if entryWaitResult != .completed {
             // Observe only after the original wait has failed. A late value must
             // never turn this failed setup into a passing acceptance result.
