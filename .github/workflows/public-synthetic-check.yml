@@ -44,6 +44,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Conservative collection admission cutoff; native job remains capped at 90 minutes.
+          PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH=$(( $(date +%s) + 80 * 60 ))
+          printf 'PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH=%s\n' "$PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH" >> "$GITHUB_ENV"
           [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
             echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
@@ -116,10 +119,27 @@ jobs:
           "${WORK[@]}" python3 -c 'import json,sys; assert any(x["identifier"]==sys.argv[1] and x.get("isAvailable") for x in json.load(open(sys.argv[2]))["runtimes"]),"Required iOS 26.2 runtime is unavailable"' "$RUNTIME" "$RUNNER_TEMP/runtimes.json"
           DEVICE=$("${WORK[@]}" xcrun simctl create "ApartmentFinder synthetic ${GITHUB_RUN_ID}" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro "$RUNTIME")
           [[ "$DEVICE" =~ ^[0-9A-Fa-f-]{36}$ ]]
+          FAILURE_DIAGNOSTICS_COLLECTED=0
+          FAILURE_TEST_START=0
+          FAILURE_TEST_END=0
+          collect_test_failure_diagnostics() {
+            local original_status="$1"
+            [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]] || return 0
+            [[ "$original_status" != 0 && "$FAILURE_TEST_START" != 0 && "$FAILURE_DIAGNOSTICS_COLLECTED" == 0 ]] || return 0
+            FAILURE_DIAGNOSTICS_COLLECTED=1
+            local test_end="$FAILURE_TEST_END"
+            if [[ "$test_end" == 0 ]]; then test_end=$(date +%s) || return 0; fi
+            python3 -B scripts/public-test-failure-diagnostics.py \
+              --temp-root "$RUNNER_TEMP" --device "$DEVICE" --source-commit "$GITHUB_SHA" \
+              --xcode-status "${XCODE_STATUS:-$original_status}" --result-status "${RESULT_STATUS:-1}" \
+              --start-epoch "$FAILURE_TEST_START" --end-epoch "$test_end" \
+              --deadline-epoch "${PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH:-0}" || true
+          }
           cleanup() {
             local original_status=$?
             local cleanup_status=0
             trap - EXIT
+            collect_test_failure_diagnostics "$original_status"
             if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
               if [[ "$DIAGNOSTICS_COLLECTED" == 0 ]]; then
                 python3 -B scripts/public-synthetic-diagnostics.py collect --device "$DEVICE" || true
@@ -227,6 +247,7 @@ jobs:
             DIAGNOSTICS_COLLECTED=1
           fi
           XCODE_STATUS=0
+          FAILURE_TEST_START=$(date +%s) || FAILURE_TEST_START=0
           "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
             -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
@@ -234,6 +255,7 @@ jobs:
             -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
             "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test || XCODE_STATUS=$?
+          FAILURE_TEST_END=$(date +%s) || FAILURE_TEST_END=0
           MAP_GESTURE_STATUS=0
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
             python3 -B scripts/public-map-gesture-diagnostics.py --device "$DEVICE" --run-nonce "$MAP_GESTURE_RUN_NONCE" || MAP_GESTURE_STATUS=$?
@@ -245,6 +267,7 @@ jobs:
           else
             RESULT_STATUS=1
           fi
+          collect_test_failure_diagnostics "$XCODE_STATUS"
           if [[ "$XCODE_STATUS" != 0 ]]; then exit "$XCODE_STATUS"; fi
           if [[ "$MAP_GESTURE_STATUS" != 0 ]]; then exit "$MAP_GESTURE_STATUS"; fi
           if [[ "$RESULT_STATUS" != 0 ]]; then exit "$RESULT_STATUS"; fi
