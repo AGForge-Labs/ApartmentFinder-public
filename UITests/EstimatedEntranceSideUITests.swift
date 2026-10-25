@@ -11,6 +11,9 @@ final class EstimatedEntranceSideUITests: XCTestCase {
     }
 
     override func tearDown() {
+        if (testRun?.totalFailureCount ?? 0) > 0 {
+            mapStateDiagnostics(stage: "tearDown", targetID: "mini.pin.4.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-1287", includeHierarchy: true)
+        }
         if app.state == .runningForeground { capture("Estimated entrance-side final screen") }
         app.terminate()
         super.tearDown()
@@ -81,6 +84,7 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         app.buttons["mini.focus.4"].tap()
         XCTAssertTrue(app.staticTexts["Unit 1287"].exists)
         XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated shared entry")
+        mapStateDiagnostics(stage: "Lyric stop 4 selected, evidence collapsed", targetID: "mini.pin.4.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-1287")
         expandEvidence()
         XCTAssertTrue(evidenceAppears(shared, timeout: 5))
         XCTAssertTrue(shared.label.contains("1287/1288"))
@@ -88,7 +92,12 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertTrue(shared.label.lowercased().contains("uncalibrated"))
         XCTAssertTrue(shared.label.lowercased().contains("floor unknown"))
         let laterSharedPin = app.buttons["mini.pin.4.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-1287"]
-        XCTAssertTrue(laterSharedPin.waitForExistence(timeout: 5))
+        mapStateDiagnostics(stage: "Lyric stop 4 evidence expanded", targetID: "mini.pin.4.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-1287")
+        let laterSharedPinAppeared = laterSharedPin.waitForExistence(timeout: 5)
+        if !laterSharedPinAppeared {
+            mapStateDiagnostics(stage: "Lyric stop 4 pin missing after evidence expansion", targetID: "mini.pin.4.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-1287", includeHierarchy: true)
+        }
+        XCTAssertTrue(laterSharedPinAppeared)
         XCTAssertTrue(laterSharedPin.label.contains("Estimated shared entry, units 1287/1288"))
         XCTAssertFalse(laterSharedPin.label.contains("Checked door"))
         XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
@@ -142,19 +151,72 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         }
         let headerState = headerMatches.allElementsBoundByIndex.map(describe).joined(separator: "\n")
         let warningState = warnings.allElementsBoundByIndex.map(describe).joined(separator: "\n")
-        let diagnostics = String("""
+        let diagnostics = """
         stage=\(stage);headerID=\(identifier);typedButtons=\(app.buttons.matching(identifier: identifier).count)
         headers=\(headerMatches.count)
         \(headerState)
         warnings=\(warnings.count)
         \(warningState)
         \(app.debugDescription)
-        """.prefix(32_768))
-        print("PIN-EVIDENCE-DIAGNOSTIC \(diagnostics)")
-        let attachment = XCTAttachment(string: diagnostics)
+        """
+        let payload = "PIN-EVIDENCE-DIAGNOSTIC \(diagnostics)"
+        // A clipped UTF-8 scalar can expand by at most two replacement bytes.
+        // Reserve four bytes so print\'s newline stays within 32,768 bytes.
+        let boundedPayload = String(decoding: payload.utf8.prefix(32_764), as: UTF8.self)
+        print(boundedPayload)
+        let attachment = XCTAttachment(string: boundedPayload)
         attachment.name = "Synthetic evidence disclosure diagnostics"
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+
+    private func mapStateDiagnostics(stage: String, targetID: String = "",
+                                     includeHierarchy: Bool = false) {
+        guard app != nil, app.launchArguments.contains("--uitesting"),
+              app.launchArguments.contains("--test-store"),
+              app.state == .runningForeground else { return }
+        func describe(_ element: XCUIElement) -> String {
+            guard element.exists, let snapshot = try? element.snapshot() else {
+                return "missing or unavailable snapshot"
+            }
+            let frame = snapshot.frame
+            let finite = [frame.minX, frame.minY, frame.width, frame.height].allSatisfy { $0.isFinite }
+            // Do not query isHittable or frame directly on a possibly missing target.
+            return "type=\(snapshot.elementType.rawValue);id=\(snapshot.identifier);label=\(snapshot.label);value=\(String(describing: snapshot.value));frame=\(frame);finite=\(finite)"
+        }
+        let pins = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin."))
+        let pinState = pins.allElementsBoundByIndex.map(describe).joined(separator: "\n")
+        let choices = app.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "Map", "Satellite"))
+        let choiceState = choices.allElementsBoundByIndex.map(describe).joined(separator: "\n")
+        let target = targetID.isEmpty ? "not requested" : describe(app.buttons[targetID])
+        let hierarchy = includeHierarchy ? app.debugDescription : "omitted for routine state observation"
+        let diagnostics = """
+        stage=\(stage);targetID=\(targetID)
+        window=\(describe(app.windows.firstMatch))
+        mapAXFrame=\(describe(app.maps.firstMatch))
+        nextCard=\(describe(app.staticTexts["mini.next"]))
+        mapStyle=\(describe(app.buttons["mini.mapStyle"]))
+        camera=\(describe(app.buttons["mini.recenter"]))
+        evidenceHeader=\(describe(app.buttons["mini.evidenceDetails"]))
+        choices=\(choices.count);sheets=\(app.sheets.count);alerts=\(app.alerts.count)
+        \(choiceState)
+        target=\(target)
+        pinCount=\(pins.count)
+        \(pinState)
+        \(hierarchy)
+        """
+        let payload = "MINI-MAP-STATE-DIAGNOSTIC \(diagnostics)"
+        // A clipped UTF-8 scalar can expand by at most two replacement bytes.
+        // Reserve four bytes so print\'s newline stays within 32,768 bytes.
+        let boundedPayload = String(decoding: payload.utf8.prefix(32_764), as: UTF8.self)
+        print(boundedPayload)
+        if includeHierarchy {
+            let attachment = XCTAttachment(string: boundedPayload)
+            attachment.name = "Synthetic mini-map state"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
     }
 
     private func capture(_ name: String) {
