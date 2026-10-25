@@ -95,6 +95,10 @@ private struct FinderView: View {
     @State private var searched = false
     @State private var selected: Place?
     @State private var communityPicker = false
+    #if DEBUG && targetEnvironment(simulator)
+    @State private var pickerTraceStages: [SyntheticCommunityPickerStage] = []
+    @State private var pickerTraceOwnsPresentation = false
+    #endif
     @State private var pinEditor: Place?
     @State private var pathEditor: PathSegment?
     @State private var routeDestination: Place?
@@ -145,6 +149,9 @@ private struct FinderView: View {
                         }.padding(12).background(.teal.opacity(0.15),in: RoundedRectangle(cornerRadius: 14))
                     }
                     .accessibilityIdentifier("finder.community")
+                    #if DEBUG && targetEnvironment(simulator)
+                    .modifier(SyntheticCommunityPickerTraceValue(value: pickerTraceValue))
+                    #endif
                     if let community {
                         DigitalLockerStatusView(evidence: community.digitalLocker, sources: store.pack?.catalog.sources ?? [])
                         CommunityMap(places: communityPlaces,paths: communityPaths,route: navigation.route?.coordinates ?? [],
@@ -240,8 +247,26 @@ private struct FinderView: View {
             .sheet(isPresented: $communityPicker) {
                 CommunityPicker(store: store) { community in
                     communityID = community.id; address = community.address; selected = nil; searched = false
+                    #if DEBUG && targetEnvironment(simulator)
+                    if community.id == "tuscano" {
+                        recordPickerStage(communityID == "tuscano" && address == "7255 W Sunset Rd"
+                                          ? .finderTargetAssigned : .finderAssignmentMismatch)
+                        recordPickerStage(.clearPreviewEntered)
+                    }
+                    #endif
                     navigation.clearPreview()
+                    #if DEBUG && targetEnvironment(simulator)
+                    if community.id == "tuscano" { recordPickerStage(.clearPreviewReturned) }
+                    #endif
                 }
+                #if DEBUG && targetEnvironment(simulator)
+                .observingSelection { stage, community in
+                    guard community.id == "tuscano" else { return }
+                    recordPickerStage(stage)
+                }
+                .onAppear { beginPickerObservation() }
+                .onDisappear { endPickerObservation() }
+                #endif
             }
             .sheet(item: $pinEditor) { PinEditor(store: store,location: location,place: $0,offline: offline) }
             .sheet(item: $pathEditor) { PathEditor(store: store,location: location,path: $0,offline: offline) }
@@ -277,6 +302,30 @@ private struct FinderView: View {
             .onChange(of: store.personal.paths) { _,_ in navigation.clearPreview(); rememberPublicNavigationInputs() }
         }
     }
+    #if DEBUG && targetEnvironment(simulator)
+    private var pickerTraceValue: String {
+        "PickerTraceV1:" + pickerTraceStages.map(\.rawValue).joined(separator: ",")
+    }
+    private func beginPickerObservation() {
+        guard SyntheticCommunityPickerObservation.enabled, !pickerTraceOwnsPresentation else { return }
+        pickerTraceOwnsPresentation = true
+        pickerTraceStages = pickerTraceStages.isEmpty ? [.armed] : [.mirrorUnavailable]
+    }
+    private func recordPickerStage(_ stage: SyntheticCommunityPickerStage) {
+        guard SyntheticCommunityPickerObservation.enabled else { return }
+        guard pickerTraceOwnsPresentation, pickerTraceStages.first == .armed,
+              !pickerTraceStages.contains(stage), pickerTraceStages.count < 8 else {
+            pickerTraceStages = [.mirrorUnavailable]
+            return
+        }
+        pickerTraceStages.append(stage)
+    }
+    private func endPickerObservation() {
+        guard SyntheticCommunityPickerObservation.enabled, pickerTraceOwnsPresentation else { return }
+        recordPickerStage(.sheetDisappeared)
+        pickerTraceOwnsPresentation = false
+    }
+    #endif
     private func refreshAfterPublicCatalogUpdate() {
         let previousSelection = selected
         let currentSelection = previousSelection.flatMap { previous in store.places.first { $0.id == previous.id } }
@@ -450,11 +499,54 @@ struct EntranceSideEstimateNotice: View {
     }
 }
 
+#if DEBUG && targetEnvironment(simulator)
+// Fixed diagnostic tokens only. No chosen names, addresses or IDs are stored.
+fileprivate enum SyntheticCommunityPickerStage: String {
+    case armed
+    case chooseEntered
+    case finderTargetAssigned
+    case finderAssignmentMismatch
+    case clearPreviewEntered
+    case clearPreviewReturned
+    case chooseReturned
+    case dismissRequested
+    case sheetDisappeared
+    case mirrorUnavailable
+}
+private enum SyntheticCommunityPickerObservation {
+    static var enabled: Bool {
+        UITestSupport.enabled && UITestSupport.storeURL() != nil &&
+            ProcessInfo.processInfo.arguments.contains("--synthetic-community-picker-trace")
+    }
+}
+private struct SyntheticCommunityPickerTraceValue: ViewModifier {
+    let value: String
+    @ViewBuilder func body(content: Content) -> some View {
+        if SyntheticCommunityPickerObservation.enabled {
+            content.accessibilityValue(Text(verbatim: value))
+        } else { content }
+    }
+}
+#endif
 struct CommunityPicker: View {
     @ObservedObject var store: AppStore
     var choose: (Community) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
+    #if DEBUG && targetEnvironment(simulator)
+    fileprivate func observingSelection(_ observe: @escaping (SyntheticCommunityPickerStage, Community) -> Void) -> Self {
+        guard SyntheticCommunityPickerObservation.enabled else { return self }
+        var copy = self
+        let originalChoose = choose
+        copy.choose = { community in
+            observe(.chooseEntered, community)
+            originalChoose(community)
+            observe(.chooseReturned, community)
+            observe(.dismissRequested, community)
+        }
+        return copy
+    }
+    #endif
     var body: some View {
         NavigationStack {
             List(FinderCommunityOrder.ordered(FinderSearch.communities(matching: search, in: store.communities))) { community in

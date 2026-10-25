@@ -9,7 +9,7 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
                                "--reset-test-inbox", "--catalog-refresh-offline",
-                               "--synthetic-map-location"]
+                               "--synthetic-map-location", "--synthetic-community-picker-trace"]
         app.launch()
         XCTAssertTrue(app.buttons["apartments.import"].waitForExistence(timeout: 20))
     }
@@ -43,11 +43,13 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(tuscano.waitForExistence(timeout: 5))
         XCTAssertTrue(tuscano.isHittable)
         XCTAssertTrue(pickerRowFullyVisible(tuscano), "The entire community row must be inside the app window before its single tap")
+        observePickerSnapshotBeforeTap()
         tuscano.tap()
         // The Finder button also exists behind this sheet; its existence is not
         // a dismissal signal. Wait for the actual presentation boundary.
         let picker = app.navigationBars["Communities"]
         let pickerClosed = picker.waitForNonExistence(timeout: 5)
+        observePickerTraceAfterWait()
         if !pickerClosed {
             print("PublicCatalogPickerFailure pickerExists=\(picker.exists) selectedCommunity=\(app.buttons["finder.community"].label) address=\(String(reflecting: app.textFields["finder.address"].value as? String))")
         }
@@ -137,6 +139,60 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(status.label.localizedCaseInsensitiveContains("offline"))
         app.buttons["catalogUpdates.close"].tap()
         XCTAssertTrue(app.buttons["apartments.import"].isEnabled)
+    }
+
+    private func observePickerSnapshotBeforeTap() {
+        print("PICKER-BOUNDARY-OBSERVATION schema=1;phase=beforeSingleTap;status=readStarted")
+        do {
+            let snapshot = try app.snapshot()
+            var visited = 0, truncated = false
+            var targets: [(CGRect, CGRect?, CGRect?)] = []
+            var traceValues: [String] = []
+            func visit(_ node: XCUIElementSnapshot, window: CGRect?, list: CGRect?) {
+                guard visited < 4096 else { truncated = true; return }
+                visited += 1
+                let currentWindow = node.elementType == .window ? node.frame : window
+                let isList = node.elementType == .collectionView || node.elementType == .table || node.elementType == .scrollView
+                let currentList = isList ? node.frame : list
+                if node.identifier == "finder.community.tuscano" {
+                    targets.append((node.frame, currentWindow, currentList))
+                }
+                if node.identifier == "finder.community" { traceValues.append(safePickerTrace(node.value)) }
+                for child in node.children {
+                    if truncated { break }
+                    visit(child, window: currentWindow, list: currentList)
+                }
+            }
+            visit(snapshot, window: nil, list: nil)
+            guard !truncated, targets.count == 1, let target = targets.first,
+                  let window = target.1, let list = target.2 else {
+                print("PICKER-BOUNDARY-OBSERVATION schema=1;phase=beforeSingleTap;status=ambiguousOrTruncated;targetCount=\(min(2, targets.count))")
+                return
+            }
+            let trace = traceValues.count == 1 ? traceValues[0] : "unavailable"
+            print("PICKER-BOUNDARY-OBSERVATION schema=1;phase=beforeSingleTap;status=observed;target=\(target.0);window=\(window);list=\(list);trace=\(trace)")
+        } catch {
+            print("PICKER-BOUNDARY-OBSERVATION schema=1;phase=beforeSingleTap;status=unavailable")
+        }
+    }
+
+    private func observePickerTraceAfterWait() {
+        // Read after the original result is fixed; this never changes that result.
+        print("PICKER-BOUNDARY-OBSERVATION schema=1;phase=afterOriginalDismissalWait;status=readStarted")
+        let snapshot = try? app.buttons["finder.community"].snapshot()
+        let trace = safePickerTrace(snapshot?.value)
+        print("PICKER-BOUNDARY-OBSERVATION schema=1;phase=afterOriginalDismissalWait;trace=\(trace)")
+    }
+
+    private func safePickerTrace(_ value: Any?) -> String {
+        guard let raw = value as? String, raw.count <= 200, raw.hasPrefix("PickerTraceV1:") else { return "unavailable" }
+        let stages = raw.dropFirst("PickerTraceV1:".count).split(separator: ",", omittingEmptySubsequences: false).map(String.init)
+        if stages == ["mirrorUnavailable"] { return "mirrorUnavailable" }
+        let allowed: Set<String> = ["armed", "chooseEntered", "finderTargetAssigned", "finderAssignmentMismatch",
+                                    "clearPreviewEntered", "clearPreviewReturned", "chooseReturned", "dismissRequested", "sheetDisappeared"]
+        guard stages.first == "armed", stages.count <= 8, Set(stages).count == stages.count,
+              stages.allSatisfy({ allowed.contains($0) }) else { return "unavailable" }
+        return stages.joined(separator: ",")
     }
 
     private func pickerRowFullyVisible(_ row: XCUIElement) -> Bool {
