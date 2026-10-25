@@ -74,7 +74,11 @@ struct ApartmentDeliveryMap: View {
     private var contextAreas: [Place] { store.buildingAreaReferences(groupID: group.id) }
     private var fallbackCoordinates: [Coordinate] {
         let areas = contextAreas.map(\.coordinate)
-        return areas.isEmpty ? group.coordinate.map { [$0] } ?? [] : areas
+        if !areas.isEmpty { return areas }
+        if let coordinate = group.coordinate { return [coordinate] }
+        guard let locker = store.digitalLocker(groupID: group.id), locker.status == .present,
+              let point = locker.point else { return [] }
+        return [point.coordinate]
     }
     private func guides(_ pins: [Pin]) -> [OrderGuide] {
         let byStop = Dictionary(grouping: pins.filter { !$0.buildingReference && $0.place.entranceSideEstimate == nil }, by: { $0.stop.id })

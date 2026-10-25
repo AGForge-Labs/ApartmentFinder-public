@@ -106,7 +106,7 @@ final class MapAppearanceTests: XCTestCase {
         print("MAP-APPEARANCE background drag map=\(mapFrame) visible=\(visibleMap) start=\(start) end=\(end), initialPins=\(initialPinFrames), rightRoom=\(rightRoom), leftRoom=\(leftRoom), camera=\(initialCameraValue)")
         map.coordinate(withNormalizedOffset: startOffset)
             .press(forDuration: 0.2, thenDragTo: map.coordinate(withNormalizedOffset: endOffset),
-                   withVelocity: .slow, thenHoldForDuration: 0.5)
+                   withVelocity: XCUIGestureVelocity(rawValue: 50), thenHoldForDuration: 0.5)
         // MapKit can keep moving after XCTest reports the drag complete. Measure
         // the settled pan, not a transient frame before the style menu opens.
         let pannedPinFrames = waitForSettledPins([firstPin, secondPin], in: app, movingFrom: initialPinFrames)

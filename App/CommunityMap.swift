@@ -264,7 +264,8 @@ private struct StreetMap: UIViewRepresentable {
             }
         }
         AppOwnedMapLocation.update(view, fix: fix, at: .now)
-        let anchor = focus ?? places.first?.coordinate
+        let lockerAnchor = digitalLocker?.status == .present ? digitalLocker?.point?.coordinate : nil
+        let anchor = focus ?? places.first?.coordinate ?? lockerAnchor
         if context.coordinator.anchor != anchor, let anchor {
             context.coordinator.anchor = anchor
             view.setRegion(MKCoordinateRegion(center: anchor.cl,latitudinalMeters: 650,longitudinalMeters: 650),animated: true)

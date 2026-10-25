@@ -150,25 +150,21 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
                                 file: StaticString = #filePath, line: UInt = #line) {
         guard let app else { XCTFail("The synthetic test app must be launched", file: file, line: line); return }
         var lastGeometry = "No usable target/window snapshots observed"
-        var printedBeforeHittability = false
         let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let window = app.windows.firstMatch
-            guard element.exists, let target = try? element.snapshot(),
-                  window.exists, let windowSnapshot = try? window.snapshot() else {
-                lastGeometry = "Target or application window missing, or snapshot unavailable"
+            guard element.exists, window.exists else {
+                lastGeometry = "Target or application window missing"
                 return false
             }
-            let frame = target.frame, windowFrame = windowSnapshot.frame
+            // Use the element's resolved geometry; an optional diagnostic
+            // snapshot is not a readiness requirement for a real toolbar tap.
+            let frame = element.frame, windowFrame = window.frame
             let intersection = frame.intersection(windowFrame)
-            lastGeometry = "id=\(target.identifier);type=\(target.elementType.rawValue);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
+            lastGeometry = "id=\(element.identifier);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
             guard self.usableFrame(frame), self.usableFrame(windowFrame), self.usableFrame(intersection) else {
                 // Never ask XCTest to calculate an activation point for missing,
                 // empty, nonfinite or entirely off-window geometry.
                 return false
-            }
-            if !printedBeforeHittability {
-                self.catalogReadinessDiagnostics(stage: "before first hittability query", targetState: lastGeometry)
-                printedBeforeHittability = true
             }
             // Geometry is readiness only: the original real hittability result
             // remains required. No coordinate tap, navigation or input fallback.

@@ -82,6 +82,15 @@ final class Reviewed89123GeographyUITests: XCTestCase {
             XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
             XCTAssertFalse(app.buttons["mini.navigate"].exists)
         }
+        // Long, expanded evidence occupies the active map's bottom safe-area
+        // inset. Restore its compact state before asserting the map viewport;
+        // keep every provenance assertion above and the exact pin count below.
+        let details = app.buttons["mini.evidenceDetails"]
+        XCTAssertEqual(details.value as? String, "Expanded")
+        details.tap()
+        let collapsed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Collapsed"), object: details)
+        XCTAssertEqual(XCTWaiter.wait(for: [collapsed], timeout: 5), .completed,
+                       "Collapse the evidence panel before checking the physical map viewport")
         waitForCount(markers, 3)
         let camera = app.buttons["mini.recenter"].value as? String ?? ""
         let center = camera.components(separatedBy: ", map center ").last?.components(separatedBy: ", camera revision ").first?.split(separator: ",") ?? []

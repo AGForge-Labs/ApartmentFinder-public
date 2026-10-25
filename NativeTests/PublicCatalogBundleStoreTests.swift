@@ -53,6 +53,17 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         }
         return try XCTUnwrap(Bundle(url: url))
     }
+    private func rawPublicBundle(at root: URL, catalog: Data, locations: Data, paths: Data) throws -> Bundle {
+        let url = root.appendingPathComponent("\(UUID().uuidString).bundle", isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        let info = ["CFBundleIdentifier": "org.example.public-catalog.\(UUID().uuidString)", "CFBundlePackageType": "BNDL"]
+        try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: url.appendingPathComponent("Info.plist"))
+        for (name, bytes) in [("public-catalog.json", catalog), ("public-locations.geojson", locations), ("public-paths.geojson", paths)] {
+            try bytes.write(to: url.appendingPathComponent(name))
+        }
+        // Bundle creation follows all writes so resource discovery sees the complete fixture.
+        return try XCTUnwrap(Bundle(url: url))
+    }
     private func documents(at url: URL) throws -> [String: Data] {
         let container = try ModelContainer(for: StoredDocument.self, configurations: ModelConfiguration(url: url, cloudKitDatabase: .none))
         return Dictionary(uniqueKeysWithValues: try ModelContext(container).fetch(FetchDescriptor<StoredDocument>()).map { ($0.key, $0.payload) })
@@ -238,8 +249,14 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
             "digitalLocker": lockerObject]]
         let empty = try JSONSerialization.data(withJSONObject: ["type": "FeatureCollection", "schemaVersion": 1,
             "packVersion": "fictional-locker-camera-v1", "features": []])
-        let publicPayload = try DataPackPayload(catalog: JSONSerialization.data(withJSONObject: catalog), locations: empty, paths: empty)
-        let resourceBundle = try bundle(at: root, publicPayload: publicPayload)
+        // This is an immutable public bundle, not a user-selected private pack.
+        // Keep the real public loader path: a locker-only property has no doors.
+        let resourceBundle = try rawPublicBundle(at: root,
+            catalog: JSONSerialization.data(withJSONObject: catalog), locations: empty, paths: empty)
+        let admittedPublic = try XCTUnwrap(PublicCatalogSupplement.read(from: resourceBundle))
+        XCTAssertEqual(admittedPublic.catalog.communities.map(\.id), ["fictional-locker-only"])
+        XCTAssertTrue(admittedPublic.places.isEmpty)
+        XCTAssertTrue(admittedPublic.paths.isEmpty)
         let directory = root.appendingPathComponent("locker-camera-packs")
         let store = AppStore(storeURL: root.appendingPathComponent("locker-camera.store"), resourceBundle: resourceBundle, packDirectory: directory)
         XCTAssertNil(store.errorMessage)
