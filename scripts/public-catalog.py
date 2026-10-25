@@ -17,11 +17,12 @@ import sys
 from urllib.parse import parse_qsl, urlsplit
 
 SCHEMA = 1
-ALLOWED_ZIPS = {'89113', '89148', '89123', '89183', '89052', '89014', '89044'}
+# Clark County OpenData/zip_p polygons intersecting -115.50,35.85,-114.85,36.50 (2026-10-24).
+ALLOWED_ZIPS = {'89002', '89004', '89005', '89011', '89012', '89014', '89015', '89019', '89030', '89031', '89032', '89040', '89044', '89052', '89054', '89074', '89081', '89084', '89085', '89086', '89101', '89102', '89103', '89104', '89106', '89107', '89108', '89109', '89110', '89113', '89115', '89117', '89118', '89119', '89120', '89121', '89122', '89123', '89124', '89128', '89129', '89130', '89131', '89134', '89135', '89138', '89139', '89141', '89142', '89143', '89144', '89145', '89146', '89147', '89148', '89149', '89156', '89158', '89161', '89166', '89169', '89178', '89179', '89183', '89191'}
 SOURCE_FIELD_ORDER = ('retrievedAt', 'id', 'url', 'title')
 SOURCE_FIELDS = set(SOURCE_FIELD_ORDER)
 COMMUNITY_FIELDS = {'id', 'name', 'address', 'zip', 'countyZIPs', 'deliveryAddresses', 'aliases',
-                    'sourceIDs', 'researchStatus', 'gapNotes', 'latitude', 'longitude', 'publicEvidence'}
+                    'sourceIDs', 'researchStatus', 'gapNotes', 'latitude', 'longitude', 'publicEvidence', 'digitalLocker'}
 POINT_FIELDS = {'communityID', 'address', 'building', 'unit', 'floor', 'kind', 'verification',
                 'sourceIDs', 'notes', 'identityUncertain', 'referenceKind', 'estimatedHorizontalUncertaintyM',
                 'mapLabelOccurrenceID', 'sourceUnitID', 'referenceAddresses', 'entranceSideEstimate'}
@@ -55,6 +56,103 @@ RESOURCE_LIMITS = {'public-catalog.json': 3_000_000, 'public-locations.geojson':
 RESOURCE_NAMES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson', 'known-addresses.json')
 
 
+# Tool-owned, content-pinned exception for the independently reviewed directory
+# cohort. This is not a payload flag or an arbitrary notes/import switch.
+REVIEWED_POINT_REGISTRY_SHA256 = 'ef44cf26b94a929aa51d40a3613a67532f3df181bf14b219a7ef030be1d41b1b'
+REVIEWED_POINT_NAMESPACES = ('directory-sector:trend:', 'directory-unit-sector:destinations-pebble:',
+    'directory-unit-sector:parkside-villas:', 'estimated-unit-side:paramount:',
+    'estimated-unit-side:manhattan:phase1:')
+REVIEWED_POINT_PREFIX = 'Approximate unit-sector/side reference; not a verified door or entrance. '
+_reviewed_point_registry = None
+MANHATTAN12_NAMESPACE = 'directory-unit-sector:manhattan:'
+MANHATTAN12_REGISTRY_SHA256 = 'b1699d79c3fecba0cae5d454201b903bd381e583572f1dc59a55a62c908a8d36'
+_reviewed_manhattan12_registry = None
+AREA28_NAMESPACES = ('estimated-unit-area:octave-apartments:', 'estimated-unit-area:st-james-place:',
+    'estimated-unit-area:southpark:')
+AREA28_REGISTRY_SHA256 = '829a8e0f1804ae6548a521cf1d667ae051ba3f7cbf6c1fc92b473207a3e1303f'
+_reviewed_area28_registry = None
+AREA30_NAMESPACES = ('southpark:unit-area:', 'directory-unit-sector:paragon-lofts:')
+AREA30_REGISTRY_SHA256 = 'ae4b2ee9aa0880f69488558863b50f06dacb7cd2b33ab45add3b3b8763a32ff1'
+_reviewed_area30_registry = None
+
+
+def canonical_object_sha256(value):
+    body = (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False) + '\n').encode()
+    return hashlib.sha256(body).hexdigest()
+
+
+def reviewed_point_registry():
+    global _reviewed_point_registry
+    if _reviewed_point_registry is None:
+        path = Path(__file__).with_name('reviewed-directory-features-20261023.json')
+        require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 1_000_000,
+                'Missing or linked publisher-owned directory review seal')
+        body = path.read_bytes()
+        require(hashlib.sha256(body).hexdigest() == REVIEWED_POINT_REGISTRY_SHA256,
+                'Publisher-owned directory review seal changed')
+        value = json.loads(body)
+        require(set(value) == {'schemaVersion', 'reservedNamespaces', 'featureSHA256', 'sourceSHA256'} and
+                value['schemaVersion'] == 1 and tuple(value['reservedNamespaces']) == REVIEWED_POINT_NAMESPACES,
+                'Unexpected publisher-owned directory review seal')
+        _reviewed_point_registry = value
+    return _reviewed_point_registry
+
+
+def is_reviewed_point_id(value):
+    return isinstance(value, str) and value.startswith(REVIEWED_POINT_NAMESPACES + (MANHATTAN12_NAMESPACE,) + AREA28_NAMESPACES + AREA30_NAMESPACES)
+
+
+def reviewed_area30_registry():
+    global _reviewed_area30_registry
+    if _reviewed_area30_registry is None:
+        path = Path(__file__).with_name('reviewed-sourceareas30-features-20261023.json')
+        require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 20_000,
+                'Missing or linked publisher-owned recorded-unit-area review seal')
+        body = path.read_bytes()
+        require(hashlib.sha256(body).hexdigest() == AREA30_REGISTRY_SHA256,
+                'Publisher-owned recorded-unit-area review seal changed')
+        value = json.loads(body)
+        require(set(value) == {'schemaVersion', 'reservedNamespaces', 'featureSHA256', 'sourceSHA256'} and
+                value['schemaVersion'] == 1 and tuple(value['reservedNamespaces']) == AREA30_NAMESPACES,
+                'Unexpected publisher-owned recorded-unit-area review seal')
+        _reviewed_area30_registry = value
+    return _reviewed_area30_registry
+
+
+def reviewed_area28_registry():
+    global _reviewed_area28_registry
+    if _reviewed_area28_registry is None:
+        path = Path(__file__).with_name('reviewed-local28-features-20261023.json')
+        require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 20_000,
+                'Missing or linked publisher-owned unit-area review seal')
+        body = path.read_bytes()
+        require(hashlib.sha256(body).hexdigest() == AREA28_REGISTRY_SHA256,
+                'Publisher-owned unit-area review seal changed')
+        value = json.loads(body)
+        require(set(value) == {'schemaVersion', 'reservedNamespaces', 'featureSHA256', 'sourceSHA256'} and
+                value['schemaVersion'] == 1 and tuple(value['reservedNamespaces']) == AREA28_NAMESPACES,
+                'Unexpected publisher-owned unit-area review seal')
+        _reviewed_area28_registry = value
+    return _reviewed_area28_registry
+
+
+def reviewed_manhattan12_registry():
+    global _reviewed_manhattan12_registry
+    if _reviewed_manhattan12_registry is None:
+        path = Path(__file__).with_name('reviewed-manhattan12-features-20261023.json')
+        require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 20_000,
+                'Missing or linked publisher-owned Manhattan review seal')
+        body = path.read_bytes()
+        require(hashlib.sha256(body).hexdigest() == MANHATTAN12_REGISTRY_SHA256,
+                'Publisher-owned Manhattan review seal changed')
+        value = json.loads(body)
+        require(set(value) == {'schemaVersion', 'reservedNamespaces', 'featureSHA256', 'sourceSHA256'} and
+                value['schemaVersion'] == 1 and value['reservedNamespaces'] == [MANHATTAN12_NAMESPACE],
+                'Unexpected publisher-owned Manhattan review seal')
+        _reviewed_manhattan12_registry = value
+    return _reviewed_manhattan12_registry
+
+
 def require(condition, message):
     if not condition:
         raise ValueError(message)
@@ -79,6 +177,34 @@ def timestamp(value):
 def coordinate(value):
     require(isinstance(value, list) and len(value) == 2 and all(type(x) in (int, float) and math.isfinite(x) for x in value)
             and -180 <= value[0] <= 180 and -90 <= value[1] <= 90, 'Invalid public coordinate')
+
+
+def digital_locker(value, sources):
+    require(isinstance(value, dict) and set(value) <= {'status', 'brand', 'placementDescription', 'sourceIDs', 'checkedAt', 'point'}
+        and {'status', 'sourceIDs', 'checkedAt'} <= set(value), 'Unexpected digital locker fields')
+    status = value['status']
+    require(status in ('present', 'absent', 'unknown'), 'Invalid digital locker status')
+    def refs(ids, required):
+        require(isinstance(ids, list) and all(isinstance(x, str) for x in ids) and (not required or ids)
+            and len(ids) <= 16 and len(ids) == len(set(ids)) and set(ids) <= set(sources), 'Unresolved digital locker evidence')
+    refs(value['sourceIDs'], status != 'unknown')
+    reviewed = value['checkedAt']
+    require(isinstance(reviewed, str) and bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', reviewed)), 'Invalid locker review date')
+    require(datetime.strptime(reviewed, '%Y-%m-%d').strftime('%Y-%m-%d') == reviewed, 'Invalid locker review date')
+    if 'brand' in value:
+        name = value['brand']
+        require(isinstance(name, str) and name.strip() and len(name) <= 80 and not re.search(
+            r'usps|keyed|mailbox|cluster.?box|package room|mailroom', name, re.I), 'Unsupported electronic locker identity')
+    if 'placementDescription' in value:
+        text(value['placementDescription'], 'locker placement')
+        require(len(value['placementDescription']) <= 240, 'Locker placement too long')
+    if 'point' in value:
+        point = value['point']
+        require(status == 'present' and isinstance(point, dict) and set(point) == {'longitude', 'latitude', 'locationSourceIDs', 'precision'}, 'Invalid digital locker point')
+        coordinate([point['longitude'], point['latitude']])
+        require(-115.50 <= point['longitude'] <= -114.85 and 35.85 <= point['latitude'] <= 36.50, 'Locker point outside research area')
+        refs(point['locationSourceIDs'], True)
+        require(point['precision'] in ('sourceMapped', 'approximate'), 'Invalid locker location precision')
 
 
 def source_url(value):
@@ -150,6 +276,25 @@ def entrance_side_estimate_note(properties):
 def position_note(feature):
     """Construct fixed public text; reserve the reviewed dispute for its exact identity."""
     p = feature['properties']
+    if is_reviewed_point_id(feature['id']):
+        if feature['id'].startswith(AREA30_NAMESPACES):
+            registry = reviewed_area30_registry()
+        elif feature['id'].startswith(AREA28_NAMESPACES):
+            registry = reviewed_area28_registry()
+        elif feature['id'].startswith(MANHATTAN12_NAMESPACE):
+            registry = reviewed_manhattan12_registry()
+        else:
+            registry = reviewed_point_registry()
+        require(set(p) == {'communityID', 'address', 'building', 'unit', 'floor', 'kind',
+                    'verification', 'sourceIDs', 'notes', 'identityUncertain'} and
+                p['kind'] == 'unitPosition' and p['verification'] == 'estimated' and
+                p['identityUncertain'] is True and p['floor'] == '',
+                'Reviewed directory point changed precision or public fields')
+        require(canonical_object_sha256(feature) == registry['featureSHA256'].get(feature['id']),
+                'Unreviewed directory point identity, coordinate, provenance or notes')
+        note = text(p['notes'], 'reviewed directory notes')
+        require(note.startswith(REVIEWED_POINT_PREFIX), 'Missing directory uncertainty qualification')
+        return note
     estimate_note = entrance_side_estimate_note(p) if 'entranceSideEstimate' in p else None
     if feature['id'] == 'spanish-ridge-7380-unit-county-2179616-201':
         expected = dict(communityID='spanish-ridge-7380', address='7380 W RUSSELL RD',
@@ -238,6 +383,8 @@ def validate_payload(catalog, locations, paths):
         if 'latitude' in community:
             coordinate([community['longitude'], community['latitude']])
         refs(community['sourceIDs'])
+        if 'digitalLocker' in community:
+            digital_locker(community['digitalLocker'], sources)
         if 'publicEvidence' in community:
             evidence = community['publicEvidence']
             require(set(evidence) <= {'communityType', 'areaScope', 'addressSourceIDs', 'coordinate', 'addressCityDisagreement', 'singleResidentialBuilding'} and
@@ -307,6 +454,21 @@ def validate_payload(catalog, locations, paths):
                 for key in ('oneWay', 'blocked', 'stairs'):
                     require(type(p[key]) is bool, 'Invalid path flags')
                 text(p['fromNode'], 'path node'); text(p['toNode'], 'path node')
+    # Each immutable cohort is absent in its earlier historical revisions and
+    # complete when present. A new cohort must not invalidate older feed files.
+    for namespaces, registry_provider in ((REVIEWED_POINT_NAMESPACES, reviewed_point_registry),
+            ((MANHATTAN12_NAMESPACE,), reviewed_manhattan12_registry),
+            (AREA28_NAMESPACES, reviewed_area28_registry),
+            (AREA30_NAMESPACES, reviewed_area30_registry)):
+        cohort = {f['id'] for f in locations['features'] if isinstance(f['id'], str) and f['id'].startswith(namespaces)}
+        if cohort:
+            registry = registry_provider()
+            require(cohort == set(registry['featureSHA256']),
+                    'Reviewed directory cohort is incomplete, including possible alternate sides')
+            cohort_sources = {s for f in locations['features'] if f['id'] in cohort for s in f['properties']['sourceIDs']}
+            require(cohort_sources == set(registry['sourceSHA256']) and
+                    all(canonical_object_sha256(sources[s]) == registry['sourceSHA256'][s] for s in cohort_sources),
+                    'Reviewed directory evidence source changed')
     associations = catalog.get('unitBuildingAssociations', [])
     require(isinstance(associations, list) and len(associations) <= 50_000, 'Invalid building association collection')
     association_ids, association_keys = set(), set()
@@ -489,7 +651,7 @@ def prepare(source, output, version, additions, evidence_file=None):
         catalog['communities'].extend({k: copy.deepcopy(v) for k, v in c.items() if k in COMMUNITY_FIELDS} for c in extra['communities'])
         for patch in extra.get('communityEnrichments', []):
             require(set(patch) <= {'id', 'deliveryAddresses', 'aliasesToAdd', 'latitude', 'longitude',
-                'sourceIDsToAdd', 'coordinateMethod', 'coordinateScope'}, 'Unexpected enrichment fields')
+                'sourceIDsToAdd', 'coordinateMethod', 'coordinateScope', 'digitalLocker'}, 'Unexpected enrichment fields')
             targets = [c for c in catalog['communities'] if c['id'] == patch['id']]
             require(len(targets) == 1, 'Unknown or duplicate enrichment target')
             target = targets[0]
@@ -498,6 +660,8 @@ def prepare(source, output, version, additions, evidence_file=None):
                 if source_key in patch:
                     require(isinstance(patch[source_key], list) and all(isinstance(v, str) for v in patch[source_key]), 'Invalid enrichment identity list')
                     target[destination_key] = list(dict.fromkeys(target.get(destination_key, []) + patch[source_key]))
+            if 'digitalLocker' in patch:
+                target['digitalLocker'] = copy.deepcopy(patch['digitalLocker'])
             require(('latitude' in patch) == ('longitude' in patch), 'Partial enrichment coordinate')
             if 'latitude' in patch:
                 coordinate([patch['longitude'], patch['latitude']])
@@ -528,6 +692,8 @@ def prepare(source, output, version, additions, evidence_file=None):
         community['researchStatus'] = 'publicSourceInventory'
         community['gapNotes'] = gap_notes(community)
     refs = {i for c in catalog['communities'] for i in c['sourceIDs']}
+    refs.update(i for c in catalog['communities'] for i in c.get('digitalLocker', {}).get('sourceIDs', []))
+    refs.update(i for c in catalog['communities'] for i in c.get('digitalLocker', {}).get('point', {}).get('locationSourceIDs', []))
     refs.update(i for a in catalog.get('unitBuildingAssociations', []) for i in a['sourceIDs'])
     refs.update(i for a in catalog.get('unitFloorReferences', []) for i in a['sourceIDs'])
     refs.update(i for collection in collections for f in collection['features'] for i in f['properties']['sourceIDs'])

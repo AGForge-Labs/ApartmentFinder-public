@@ -4,7 +4,7 @@ import Foundation
 /// Validate raw keys before the shared, private-capable decoder can ignore them.
 enum PublicCatalogUpdateAdmission {
     private static let catalogKeys: Set<String> = ["schemaVersion", "packVersion", "generatedAt", "scopeZIPs", "deliveryAreaExceptions", "sources", "communities", "coverage", "unitBuildingAssociations", "unitFloorReferences"]
-    private static let communityKeys: Set<String> = ["id", "name", "address", "zip", "countyZIPs", "deliveryAddresses", "aliases", "sourceIDs", "researchStatus", "gapNotes", "latitude", "longitude", "publicEvidence"]
+    private static let communityKeys: Set<String> = ["id", "name", "address", "zip", "countyZIPs", "deliveryAddresses", "aliases", "sourceIDs", "researchStatus", "gapNotes", "latitude", "longitude", "publicEvidence", "digitalLocker"]
     private static let associationKeys: Set<String> = ["id", "communityID", "address", "unit", "building", "identifierKind", "sourceIDs", "referencePlaceID", "mapFloor", "sourceUnitID", "historicalLegalAlias", "historicalFloor"]
     private static let pointKeys: Set<String> = ["communityID", "address", "building", "unit", "floor", "kind", "verification", "sourceIDs", "notes", "identityUncertain", "referenceKind", "estimatedHorizontalUncertaintyM", "mapLabelOccurrenceID", "sourceUnitID", "referenceAddresses", "entranceSideEstimate"]
     private static let pathKeys: Set<String> = ["communityID", "fromNode", "toNode", "mode", "oneWay", "blocked", "stairs", "confirmed", "sourceIDs", "notes"]
@@ -31,6 +31,7 @@ enum PublicCatalogUpdateAdmission {
             _ = try object(community, allowed: communityKeys, required: ["id", "name", "address", "zip", "aliases", "sourceIDs", "researchStatus", "gapNotes"])
             let latitude = community["latitude"], longitude = community["longitude"]
             guard (latitude == nil) == (longitude == nil) else { throw CoreError("Incomplete public community coordinate.") }
+            if let locker = community["digitalLocker"] { try digitalLocker(locker, sourceIDs: sourceIDs) }
             if let evidence = community["publicEvidence"] {
                 try publicEvidence(evidence, sourceIDs: sourceIDs, hasCoordinate: latitude != nil)
             }
@@ -72,6 +73,15 @@ enum PublicCatalogUpdateAdmission {
                 }
             }
         }
+    }
+
+    private static func digitalLocker(_ raw: Any, sourceIDs: Set<String>) throws {
+        let value = try object(raw, allowed: ["status", "brand", "placementDescription", "sourceIDs", "checkedAt", "point"], required: ["status", "sourceIDs", "checkedAt"])
+        if let point = value["point"] {
+            _ = try object(point, allowed: ["longitude", "latitude", "locationSourceIDs", "precision"], required: ["longitude", "latitude", "locationSourceIDs", "precision"])
+        }
+        let evidence = try JSONDecoder().decode(DigitalLockerEvidence.self, from: JSONSerialization.data(withJSONObject: value))
+        guard evidence.isValid(sourceIDs: sourceIDs) else { throw CoreError("Unsupported digital locker evidence.") }
     }
 
     private static func publicEvidence(_ raw: Any, sourceIDs: Set<String>, hasCoordinate: Bool) throws {

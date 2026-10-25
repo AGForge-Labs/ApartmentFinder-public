@@ -84,13 +84,15 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let store = AppStore(storeURL: url, resourceBundle: .main, packDirectory: directory)
         XCTAssertNil(store.errorMessage)
         XCTAssertFalse(store.requiresPrivatePack)
-        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.22.2-public-data-refresh")
-        XCTAssertEqual(store.communities.count, 162)
-        XCTAssertEqual(store.places.count, 16_064)
+        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.24.3-public-valley-directories-lockers")
+        XCTAssertEqual(store.communities.count, 186)
+        XCTAssertEqual(store.places.count, 23_533)
         XCTAssertEqual(store.paths.count, 17)
-        XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 8_015)
+        XCTAssertEqual(store.pack?.catalog.sources.count, 939)
+        XCTAssertFalse(store.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified })
+        XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 8_139)
         let estimates = store.places.filter { $0.entranceSideEstimate != nil }
-        XCTAssertEqual(estimates.count, 644)
+        XCTAssertEqual(estimates.count, 4_603)
         XCTAssertTrue(estimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.verification == .estimated && $0.kind == .unitPosition })
         let copper = store.doorMatch(DeliveryStop(sequence: 1, address: "9400 Bermuda Road", unit: "126"), groupID: "copper-creek")
         XCTAssertEqual(copper.candidates.count, 1)
@@ -104,7 +106,11 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(shared.candidates.first?.entranceSideEstimate?.sharedUnits, ["1013", "1014"])
         XCTAssertNil(shared.readyDoor)
         let unresolved = store.doorMatch(DeliveryStop(sequence: 1, address: "304 E Silverado Ranch Blvd", unit: "1287"), groupID: "lyric")
-        XCTAssertTrue(unresolved.candidates.isEmpty)
+        XCTAssertEqual(unresolved.candidates.count, 1)
+        XCTAssertTrue(unresolved.candidates.first?.isValidEntranceSideEstimate == true)
+        XCTAssertEqual(unresolved.candidates.first?.verification, .estimated)
+        XCTAssertEqual(unresolved.candidates.first?.entranceSideEstimate?.sharedUnits, ["1287", "1288"])
+        XCTAssertNil(unresolved.readyDoor)
         XCTAssertEqual(store.communities.first { $0.id == "lyric" }?.coordinate, Coordinate(latitude: 36.01408, longitude: -115.159018))
         XCTAssertEqual(store.communities.first { $0.id == "trend" }?.coordinate, Coordinate(latitude: 36.01422151644452, longitude: -115.16156023077903))
         let legal = store.doorMatch(DeliveryStop(sequence: 1, address: "2300 E Silverado Ranch Blvd", unit: "1037"), groupID: "latigo")
@@ -113,8 +119,15 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertTrue(legal.candidates.isEmpty); XCTAssertNil(legal.readyDoor)
         XCTAssertNil(legal.supportedIdentityForNewPin)
         let schematic = store.doorMatch(DeliveryStop(sequence: 2, address: "304 E Silverado Ranch Blvd", unit: "1189"), groupID: "lyric")
-        XCTAssertEqual(schematic.buildingAssociations.first?.identifierKind, .operatorMap)
-        XCTAssertTrue(schematic.buildingReferences.isEmpty); XCTAssertTrue(schematic.candidates.isEmpty)
+        let schematicAssociation = store.pack?.catalog.unitBuildingAssociations?.first {
+            $0.communityID == "lyric" && $0.unit == "1189"
+        }
+        XCTAssertEqual(schematicAssociation?.identifierKind, .operatorMap)
+        XCTAssertTrue(schematic.buildingAssociations.isEmpty); XCTAssertTrue(schematic.buildingReferences.isEmpty)
+        XCTAssertEqual(schematic.candidates.count, 1)
+        XCTAssertTrue(schematic.candidates.first?.isValidEntranceSideEstimate == true)
+        XCTAssertEqual(schematic.candidates.first?.verification, .estimated)
+        XCTAssertEqual(schematic.candidates.first?.entranceSideEstimate?.sharedUnits, ["1189", "1190"])
         XCTAssertNil(schematic.readyDoor)
         for (communityID, street, unit, building) in [
             ("parkside-villas", "8400 S Maryland Parkway", "1018", "5"),
@@ -126,10 +139,21 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
                 XCTAssertEqual(match.candidates.first?.floor, "1")
                 XCTAssertTrue(match.buildingReferences.isEmpty)
             } else {
-                XCTAssertEqual(match.buildingAssociations.first?.identifierKind, .operatorMap)
-                XCTAssertEqual(match.buildingAssociations.first?.building, building)
-                XCTAssertNil(match.buildingAssociations.first?.mapFloor)
-                XCTAssertEqual(match.buildingReferences.count, 1); XCTAssertTrue(match.candidates.isEmpty)
+                let retainedAssociation = try XCTUnwrap(store.pack?.catalog.unitBuildingAssociations?.first {
+                    $0.communityID == communityID && $0.unit == unit
+                })
+                XCTAssertEqual(retainedAssociation.identifierKind, .operatorMap)
+                XCTAssertEqual(retainedAssociation.building, building)
+                XCTAssertNil(retainedAssociation.mapFloor)
+                let retainedArea = try XCTUnwrap(store.places.first { $0.id == retainedAssociation.referencePlaceID })
+                XCTAssertTrue(retainedArea.matchesBuildingAssociation(retainedAssociation))
+                XCTAssertTrue(match.buildingAssociations.isEmpty); XCTAssertTrue(match.buildingReferences.isEmpty)
+                XCTAssertEqual(match.candidates.first?.building, building)
+                XCTAssertEqual(match.candidates.count, 1)
+                XCTAssertEqual(match.candidates.first?.verification, .estimated)
+                XCTAssertEqual(match.candidates.first?.identityUncertain, true)
+                XCTAssertTrue(match.candidates.first?.floor.isEmpty == true)
+                XCTAssertTrue(match.candidates.first?.notes.contains("not a verified door or entrance") == true)
             }
             XCTAssertNil(match.readyDoor)
         }

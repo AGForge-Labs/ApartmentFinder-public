@@ -55,12 +55,24 @@ public enum PublicCatalogSupplement {
         }
         var admitted: [String: Community] = [:]
         var neededSources = Set<String>()
-        for community in supplement.catalog.communities {
+        for publishedCommunity in supplement.catalog.communities {
+            var community = publishedCommunity
             let key = LocalSearch.addressKey(community.address)
             guard !key.isEmpty, addressOwners[key]?.count == 1, usableSources(community.sourceIDs) else { continue }
+            if let locker = community.digitalLocker,
+               !locker.isValid(sourceIDs: Set(publicSources.keys)) || (!locker.allSourceIDs.isEmpty && !usableSources(locker.allSourceIDs)) {
+                // Optional amenity provenance cannot suppress independent property mapping.
+                community.digitalLocker = nil
+            }
             if var existing = baseCommunities[community.id] {
                 guard LocalSearch.addressKey(existing.address) == key else { continue }
                 var changed = false
+                // An imported/private value always wins. Only fill absent same-property evidence.
+                if existing.digitalLocker == nil, let locker = community.digitalLocker,
+                   locker.isValid(sourceIDs: Set(publicSources.keys)), usableSources(locker.allSourceIDs) || locker.allSourceIDs.isEmpty {
+                    existing.digitalLocker = locker; changed = true
+                    neededSources.formUnion(locker.allSourceIDs)
+                }
                 if existing.coordinate == nil, let area = community.coordinate, area.isValid,
                    result.catalog.communities.contains(where: { $0.id == community.id }) {
                     // Project only an absent area and its provenance. The imported
@@ -86,6 +98,7 @@ public enum PublicCatalogSupplement {
                 result.catalog.communities.append(community)
                 admitted[community.id] = community
                 neededSources.formUnion(community.sourceIDs)
+                neededSources.formUnion(community.digitalLocker?.allSourceIDs ?? [])
                 for zip in [community.zip] + (community.countyZIPs ?? []) where
                     supplement.catalog.scopeZIPs.contains(zip) && !result.catalog.scopeZIPs.contains(zip) {
                     result.catalog.scopeZIPs.append(zip)

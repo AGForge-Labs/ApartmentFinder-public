@@ -91,9 +91,10 @@ class PublicCatalogFeedTests(unittest.TestCase):
             resourcesSHA256={name: hashlib.sha256((self.source / name).read_bytes()).hexdigest() for name in self.documents})
         (self.source / 'public-catalog-review.json').write_bytes(encoded(review))
 
-    def run_prepare(self, *, revision='r1', sequence=1, previous=None, valid=True):
+    def run_prepare(self, *, revision='r1', sequence=1, previous=None, valid=True, latest_name='latest.json'):
         command = [sys.executable, '-X', 'utf8', '-B', str(SCRIPT), 'prepare', '--directory', str(self.source),
             '--output', str(self.output), '--revision=' + revision, '--sequence=' + str(sequence)]
+        command += ['--latest-name', latest_name]
         if previous is not None:
             command += ['--previous-manifest', str(previous)]
         result = subprocess.run(command, text=True, encoding='utf-8', capture_output=True)
@@ -102,6 +103,21 @@ class PublicCatalogFeedTests(unittest.TestCase):
         else:
             self.assertNotEqual(result.returncode, 0)
         return result
+
+    def test_v2_pointer_preserves_legacy_manifest_and_revision_bytes(self):
+        self.run_prepare(revision='legacy', sequence=1)
+        before = self.tree()
+        self.documents['public-catalog.json']['communities'][0]['digitalLocker'] = dict(
+            status='present', brand='Amazon Hub', sourceIDs=['fixture'], checkedAt='2026-10-24')
+        self.write_source()
+        self.run_prepare(revision='lockers-v2', sequence=2, latest_name='latest-v2.json')
+        for name, body in before.items():
+            self.assertEqual(self.tree()[name], body)
+        selected = json.loads((self.output / 'latest-v2.json').read_bytes())
+        self.assertEqual(selected['revision'], 'lockers-v2')
+        self.assertEqual(selected['schemaVersion'], 1)
+        self.run_prepare(revision='unsafe-legacy', sequence=3, valid=False)
+        self.assertEqual((self.output / 'latest.json').read_bytes(), before['latest.json'])
 
     def tree(self):
         return {str(p.relative_to(self.output)): p.read_bytes() for p in self.output.rglob('*') if p.is_file()}

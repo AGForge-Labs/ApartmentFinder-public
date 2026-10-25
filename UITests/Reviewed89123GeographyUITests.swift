@@ -60,7 +60,9 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         open("destinations-pebble")
         let markers = pins(containing: "destinations-pebble:building:")
         waitForCount(markers, 2)
-        XCTAssertTrue(markers.allElementsBoundByIndex.allSatisfy { $0.label.contains("Approximate operator building area") && $0.label.contains("not a door") })
+        XCTAssertTrue(markers.allElementsBoundByIndex.allSatisfy { $0.label.contains("Directory building") })
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Directory building")
+        expandEvidence()
         XCTAssertTrue(app.staticTexts["mini.buildingReferenceWarning"].label.contains("20 m"))
         XCTAssertTrue(app.staticTexts["mini.buildingReferenceWarning"].label.contains("not guaranteed"))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Map floor 1")).firstMatch.exists)
@@ -71,6 +73,7 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         XCTAssertTrue(markers.matching(NSPredicate(format: "label CONTAINS %@", "unit 1001")).firstMatch.exists)
         app.buttons["mini.focus.3"].tap()
         XCTAssertTrue(app.staticTexts["Unit 1159"].exists)
+        expandEvidence()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Operator map building 10")).firstMatch.exists)
         XCTAssertFalse(app.staticTexts["Community location not mapped"].exists)
         let camera = app.buttons["mini.recenter"].value as? String ?? ""
@@ -86,6 +89,7 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         open("prosper-150")
         waitForCount(pins(containing: "sightmap:38241:unit:"), 2)
         XCTAssertTrue(app.staticTexts["Unit 101"].exists)
+        expandEvidence()
         XCTAssertTrue(app.staticTexts["mini.sourceUnitWarning"].label.contains("not an entrance or door"))
         let ground = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.4.")).firstMatch
         XCTAssertTrue(ground.isHittable)
@@ -105,18 +109,21 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         waitForCount(pins(containing: "sightmap:369:unit:"), 2)
         XCTAssertTrue(app.staticTexts["Unit 1041"].exists)
         app.buttons["mini.focus.7"].tap(); XCTAssertTrue(app.staticTexts["Unit 1044"].exists)
+        expandEvidence()
         XCTAssertTrue(app.staticTexts["mini.sourceUnitWarning"].label.contains("not an entrance or door"))
         capture("Summer Winds recovered literal units 1041 and 1044")
     }
     func testHistoricalAliasAndFloorOnlyReferenceDoNotInventATowerOrDoor() {
         open("octave-apartments")
         waitForCount(pins(containing: "octave-building-1"), 1)
+        expandEvidence()
         XCTAssertTrue(app.staticTexts["mini.historicalAliasWarning"].label.contains("Historical legal alias"))
         XCTAssertTrue(app.staticTexts["mini.historicalAliasWarning"].label.contains("current signage unverified"))
         XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
         capture("Octave historical legal alias is qualified")
         app.terminate(); open("one-las-vegas")
         waitForCount(pins(containing: ""), 0)
+        expandEvidence()
         XCTAssertTrue(app.staticTexts["mini.floorOnlyReference"].label.contains("County floor 1"))
         XCTAssertTrue(app.staticTexts["mini.floorOnlyReference"].label.contains("tower unknown"))
         XCTAssertTrue(app.staticTexts["mini.communityLocation"].label.contains("unit location unknown"))
@@ -124,6 +131,12 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         print("89123-ONE-LAS-VEGAS camera=\(String(describing: app.buttons["mini.recenter"].value)); routePins=0; unitTowerJoins=0")
         capture("One Las Vegas tower areas are context only, never a guessed unit destination")
     }
+    private func expandEvidence() {
+        let details = app.descendants(matching: .any).matching(identifier: "mini.evidenceDetails").firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        details.tap()
+    }
+
     private func capture(_ title: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot()); attachment.name = title
         attachment.lifetime = .keepAlways; add(attachment)

@@ -44,18 +44,14 @@ struct ApartmentDeliveryMap: View {
         var estimateReferenceLabel: String? {
             guard let estimate = place.entranceSideEstimate else { return nil }
             let units = estimate.sharedUnits.isEmpty ? stop.unit : estimate.sharedUnits.joined(separator: "/")
-            return "Est. entry area - \(units)"
+            return [units, place.building.isEmpty ? nil : "B\(place.building)"].compactMap { $0 }.joined(separator: " · ")
         }
         var status: String {
-            if let estimate = place.entranceSideEstimate { return estimate.summary }
-            if place.referenceKind == .operatorMapBuildingArea {
-                return "Approximate operator building area; working uncertainty \(Int(place.estimatedHorizontalUncertaintyM ?? 0)) meters is not guaranteed accuracy; physical signs unverified; not a door"
-            }
-            if buildingReference { return "Legal building reference; physical signs and accuracy unverified; not a door" }
-            if !ready && place.sourceUnitID != nil { return "Published operator unit reference; not an entrance or checked door" }
-            let accuracy = ready ? "Checked door" : place.verification == .estimated ? "May be inaccurate" : "Suggested location"
-            return stop.completed ? "Delivered, \(accuracy)" : accuracy
+            let shared = place.entranceSideEstimate?.sharedUnits ?? []
+            let label = place.pinEvidenceLabel + (shared.count > 1 ? ", units " + shared.joined(separator: "/") : "")
+            return stop.completed ? "Delivered, \(label)" : label
         }
+
     }
     private struct OrderGuide: Identifiable {
         let id: String
@@ -89,16 +85,11 @@ struct ApartmentDeliveryMap: View {
         }
     }
     private func coverage(_ pins: [Pin]) -> String {
-        if group.remainingCount == 0 { return "Completed delivery locations" }
-        if pins.contains(where: { $0.buildingReference && !$0.stop.completed }) { return "Building references · doors not mapped" }
-        let located = Set(pins.map { $0.stop.id })
+        if group.remainingCount == 0 { return "Completed locations" }
+        let located = Set(pins.filter { !$0.buildingReference }.map { $0.stop.id })
         let missing = group.stops.filter { !$0.completed && !located.contains($0.id) }.count
-        if missing > 0 { return missing == 1 ? "1 door not mapped" : "\(missing) doors not mapped" }
-        if pins.contains(where: { !$0.ready && !$0.stop.completed && $0.place.entranceSideEstimate != nil }) {
-            return "Estimated entry areas - doorways unverified"
-        }
-        if pins.contains(where: { !$0.ready && !$0.stop.completed && $0.place.verification == .estimated }) { return "⚠ Estimated pins — check on arrival" }
-        return pins.contains { !$0.ready && !$0.stop.completed } ? "Orange pins need checking" : "Teal pins: checked doors"
+        if missing > 0 { return "\(missing) \(missing == 1 ? "unit" : "units") not mapped" }
+        return pins.contains { !$0.ready && !$0.stop.completed } ? "Mapped locations" : "Checked doors"
     }
 
     var body: some View {
@@ -130,6 +121,11 @@ struct ApartmentDeliveryMap: View {
                         Marker("Community area", systemImage: "building.2", coordinate: center.cl).tint(.secondary)
                     }
                 }
+                if let locker = store.digitalLocker(groupID: group.id), locker.status == .present, let point = locker.point {
+                    Annotation("Digital package lockers", coordinate: point.coordinate.cl, anchor: .bottom) {
+                        DigitalLockerMapPin(evidence: locker).accessibilityIdentifier("mini.digitalLocker")
+                    }
+                }
                 if let fix = location.fix, fix.usable(at: .now) {
                     Annotation("You", coordinate: fix.coordinate.cl) {
                         MapLocationDirection(direction: location.direction, mapHeading: mapHeading,
@@ -148,9 +144,6 @@ struct ApartmentDeliveryMap: View {
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 4) {
                     coverageLabel(pins)
-                    if pins.contains(where: { $0.place.entranceSideEstimate != nil }) {
-                        Text("Orange regions: uncalibrated working search areas").font(.caption2)
-                    }
                     if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
                     if pins.isEmpty {
                         Text(!contextAreas.isEmpty ? "Building areas only · unit location unknown" : group.coordinate == nil ? "Community location not mapped" : "Community area · doors not mapped").font(.caption2)
@@ -312,8 +305,7 @@ struct ApartmentDeliveryMap: View {
         Button { select(pin.stop.id) } label: {
             DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                            color: pin.color, selected: focusedStopID == pin.stop.id, estimated: pin.place.verification == .estimated,
-                           referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · \(pin.place.referenceKind == .operatorMapBuildingArea ? "Approx" : "Legal") B\(pin.place.building) area" : nil),
-                           referenceDisclaimer: pin.place.entranceSideEstimate == nil ? "Not a door" : "Doorway unverified")
+                           referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · B\(pin.place.building) area" : nil))
                 .contentShape(ProjectedDeliveryPinHitRegion(point: point, viewport: viewport))
         }.buttonStyle(.plain)
             .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")

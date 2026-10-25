@@ -33,6 +33,8 @@ public struct Community: Codable, Identifiable, Hashable, Sendable {
     public var deliveryAddresses: [String]? = nil
     public var aliases: [String]
     public var sourceIDs: [String]
+    public var digitalLocker: DigitalLockerEvidence? = nil
+    public var digitalLockerStatus: DigitalLockerEvidence.Status { digitalLocker?.status ?? .unknown }
     public var researchStatus: String
     public var gapNotes: [String]
     public var latitude: Double?

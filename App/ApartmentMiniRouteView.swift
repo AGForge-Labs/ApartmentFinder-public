@@ -177,6 +177,7 @@ struct ApartmentMiniRouteView: View {
         List {
             Section {
                 Text(group.address).foregroundStyle(.secondary)
+                DigitalLockerStatusView(evidence: store.digitalLocker(groupID: groupID), sources: store.pack?.catalog.sources ?? [])
                 Text(group.remainingCount == 1 ? "1 delivery left" : "\(group.remainingCount) deliveries left").font(.title2.bold())
                 Button(group.nextStop == nil ? "View Mini Route" : "Start Mini Route", systemImage: "figure.walk") {
                     selection.select(group.nextStop?.id, followingQueue: true)
@@ -230,6 +231,7 @@ struct ApartmentMiniRouteView: View {
                 } else if let last = group.stops.last(where: \.completed) {
                     Button("Undo last delivery") { undo(last) }.font(.subheadline).disabled(completionPending)
                 }
+                DigitalLockerStatusView(evidence: store.digitalLocker(groupID: groupID), sources: store.pack?.catalog.sources ?? [])
                 completionControls(group)
             }
             .padding(16).frame(maxWidth: .infinity, alignment: .leading)
@@ -342,45 +344,54 @@ struct ApartmentMiniRouteView: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
-            ForEach(match.buildingAssociations) { association in
-                Text("\(association.identifierKind.label) \(association.building)\(association.mapFloor.map { " · Map floor \($0)" } ?? "") · signs unverified")
-                    .font(.subheadline).accessibilityIdentifier("mini.buildingAssociation.\(association.id)")
-                if association.historicalLegalAlias == true {
-                    Text("Historical legal alias · \(association.historicalFloor.map { "\($0.rawValue) floor from recorded plat interpretation · " } ?? "")current signage unverified")
-                        .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.historicalAliasWarning")
-                }
-            }
-            ForEach(match.floorReferences) { reference in
-                Text("County floor \(reference.floor)\(reference.sourceRevision.map { " (\($0))" } ?? "") · tower unknown · current signage unverified")
-                    .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.floorOnlyReference")
-            }
-            if !match.buildingReferences.isEmpty {
-                Text(match.buildingReferences.contains(where: { $0.referenceKind == .operatorMapBuildingArea }) ?
-                     "Approximate operator building area · working uncertainty \(Int(match.buildingReferences.compactMap(\.estimatedHorizontalUncertaintyM).max() ?? 20)) m, not guaranteed accuracy · not a unit position, entrance or door" :
-                     "Approximate legal-building area · may include courtyard/open space · accuracy unknown · not a unit position, entrance or door")
-                    .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.buildingReferenceWarning")
-            } else if !match.buildingAssociations.isEmpty {
-                Text("Building and door locations not mapped")
-                    .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.associationWithoutPoint")
-            }
-            if match.readyDoor == nil && match.candidates.contains(where: { $0.sourceUnitID != nil }) {
-                Text("Operator unit reference · source floor label · physical accuracy unmeasured · not an entrance or door")
-                    .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.sourceUnitWarning")
-            }
-            if match.readyDoor == nil {
-                ForEach(match.candidates.filter { $0.entranceSideEstimate != nil }) { candidate in
-                    if let estimate = candidate.entranceSideEstimate {
-                        EntranceSideEstimateNotice(estimate: estimate)
-                            .accessibilityIdentifier("mini.entranceSideWarning")
+            Text(match.pinEvidenceLabel).font(.caption).foregroundStyle(.secondary)
+                .accessibilityIdentifier("mini.evidenceStatus")
+            if !match.candidates.isEmpty || !match.buildingAssociations.isEmpty || !match.floorReferences.isEmpty {
+                DisclosureGroup("Evidence details") {
+                    ForEach(match.buildingAssociations) { association in
+                        Text("\(association.identifierKind.label) \(association.building)\(association.mapFloor.map { " · Map floor \($0)" } ?? "") · signs unverified")
+                            .font(.subheadline).accessibilityIdentifier("mini.buildingAssociation.\(association.id)")
+                        if association.historicalLegalAlias == true {
+                            Text("Historical legal alias · \(association.historicalFloor.map { "\($0.rawValue) floor from recorded plat interpretation · " } ?? "")current signage unverified")
+                                .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.historicalAliasWarning")
+                        }
                     }
-                }
-            }
-            if match.readyDoor == nil && match.candidates.contains(where: { $0.entranceSideEstimate == nil && $0.verification == .estimated }) {
-                Label("May be inaccurate · Check or correct this pin on arrival", systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.estimateWarning")
-                if match.candidates.contains(where: { $0.entranceSideEstimate == nil && $0.identityUncertain == true }) {
-                    Text("Unit number or building is also uncertain").font(.caption).foregroundStyle(.secondary)
-                }
+                    ForEach(match.floorReferences) { reference in
+                        Text("County floor \(reference.floor)\(reference.sourceRevision.map { " (\($0))" } ?? "") · tower unknown · current signage unverified")
+                            .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.floorOnlyReference")
+                    }
+                    if !match.buildingReferences.isEmpty {
+                        Text(match.buildingReferences.contains(where: { $0.referenceKind == .operatorMapBuildingArea }) ?
+                             "Approximate operator building area · working uncertainty \(Int(match.buildingReferences.compactMap(\.estimatedHorizontalUncertaintyM).max() ?? 20)) m, not guaranteed accuracy · not a unit position, entrance or door" :
+                             "Approximate legal-building area · may include courtyard/open space · accuracy unknown · not a unit position, entrance or door")
+                            .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.buildingReferenceWarning")
+                    } else if !match.buildingAssociations.isEmpty {
+                        Text("Building and door locations not mapped")
+                            .font(.caption).foregroundStyle(.secondary).accessibilityIdentifier("mini.associationWithoutPoint")
+                    }
+                    if match.readyDoor == nil && match.candidates.contains(where: { $0.sourceUnitID != nil }) {
+                        Text("Operator unit reference · source floor label · physical accuracy unmeasured · not an entrance or door")
+                            .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.sourceUnitWarning")
+                    }
+                    if match.readyDoor == nil {
+                        ForEach(match.candidates.filter { $0.entranceSideEstimate != nil }) { candidate in
+                            if let estimate = candidate.entranceSideEstimate {
+                                EntranceSideEstimateNotice(estimate: estimate)
+                                    .accessibilityIdentifier("mini.entranceSideWarning")
+                            }
+                        }
+                    }
+                    if match.readyDoor == nil && match.candidates.contains(where: { $0.entranceSideEstimate == nil && $0.verification == .estimated }) {
+                        Label("May be inaccurate · Check or correct this pin on arrival", systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption).foregroundStyle(.orange).accessibilityIdentifier("mini.estimateWarning")
+                        if match.candidates.contains(where: { $0.entranceSideEstimate == nil && $0.identityUncertain == true }) {
+                            Text("Unit number or building is also uncertain").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    ForEach(match.candidates.filter { $0.entranceSideEstimate == nil && !$0.notes.isEmpty }) { candidate in
+                        Text(candidate.notes).font(.caption).foregroundStyle(.secondary)
+                    }
+                }.font(.caption).accessibilityIdentifier("mini.evidenceDetails").id(stop.id)
             }
             if stop.completed {
                 HStack {

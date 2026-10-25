@@ -165,7 +165,7 @@ def existing_feed(output):
         unlinked_ancestors(output.parent)
         return []
     unlinked_ancestors(output)
-    require({entry.name for entry in output.iterdir()} <= {'latest.json', 'revisions'}, 'Staging feed must remain JSON-only')
+    require({entry.name for entry in output.iterdir()} <= {'latest.json', 'latest-v2.json', 'revisions'}, 'Staging feed must remain JSON-only')
     history = []
     revisions = output / 'revisions'
     if present(revisions):
@@ -175,12 +175,11 @@ def existing_feed(output):
             history.append(verify_revision(directory))
     require(len({item['revision'].casefold() for item, _ in history}) == len(history), 'Case-colliding revision directories')
     require(len({item['sequence'] for item, _ in history}) == len(history), 'Duplicate revision sequences')
-    latest = output / 'latest.json'
-    if present(latest):
+    pointers = [output / name for name in ('latest.json', 'latest-v2.json') if present(output / name)]
+    for latest in pointers:
         current, body = read_manifest(latest)
         require(any(item == current and stored == body for item, stored in history), 'Latest manifest has no identical verified revision')
-    else:
-        require(not history, 'Existing revisions have no selected manifest; inspect the incomplete staging feed')
+    require(pointers or not history, 'Existing revisions have no selected manifest; inspect the incomplete staging feed')
     return [item for item, _ in history]
 
 
@@ -191,11 +190,12 @@ def write_new(path, body):
         os.fsync(stream.fileno())
 
 
-def prepare(directory, output, revision, sequence, previous_manifest=None):
+def prepare(directory, output, revision, sequence, previous_manifest=None, latest_name="latest.json"):
     directory = Path(os.path.abspath(directory))
     output = Path(os.path.abspath(output))
     revision_segment(revision)
     positive_int64(sequence)
+    require(latest_name in ("latest.json", "latest-v2.json"), "Unsupported manifest pointer")
     source_path, output_path = directory.resolve(), output.resolve()
     require(not source_path.is_relative_to(output_path) and not output_path.is_relative_to(source_path),
             'Feed output and public input directories must not overlap')
@@ -207,6 +207,11 @@ def prepare(directory, output, revision, sequence, previous_manifest=None):
     require(all(item['revision'].casefold() != revision.casefold() for item in history), 'Revision already exists and cannot be reused')
     require(all(sequence > item['sequence'] for item in history), 'Sequence must increase beyond every retained or supplied revision')
     objects = admitted_source(directory)
+    catalog = objects['public-catalog.json']
+    legacy_zips = {'89113', '89148', '89123', '89183', '89052', '89014', '89044'}
+    if latest_name == 'latest.json':
+        require(not any('digitalLocker' in c for c in catalog['communities']) and set(catalog['scopeZIPs']) <= legacy_zips,
+                'Expanded valley and locker payloads require latest-v2.json; preserve the legacy app feed')
     bodies = {name: compact(objects[name]) for name in FILES}
     for name, body in bodies.items():
         require(len(body) <= LIMITS[name] and decode(body) == objects[name], 'Canonical payload exceeds its limit or changed JSON values')
@@ -236,7 +241,7 @@ def prepare(directory, output, revision, sequence, previous_manifest=None):
             stream.flush()
             os.fsync(stream.fileno())
         require(read_manifest(pending) == (manifest, manifest_bytes), 'Staged latest manifest failed verification')
-        os.replace(pending, output / 'latest.json')
+        os.replace(pending, output / latest_name)
     finally:
         if pending is not None and present(pending):
             pending.unlink()
@@ -252,9 +257,10 @@ def main():
     command.add_argument('--revision', required=True)
     command.add_argument('--sequence', type=int, required=True)
     command.add_argument('--previous-manifest', type=Path)
+    command.add_argument('--latest-name', choices=['latest.json', 'latest-v2.json'], default='latest.json')
     args = parser.parse_args()
     try:
-        manifest = prepare(args.directory, args.output, args.revision, args.sequence, args.previous_manifest)
+        manifest = prepare(args.directory, args.output, args.revision, args.sequence, args.previous_manifest, args.latest_name)
         print(compact(manifest).decode('utf-8'), end='')
     except (ValueError, KeyError, TypeError, OSError) as error:
         sys.exit('Public catalog feed: ' + str(error))

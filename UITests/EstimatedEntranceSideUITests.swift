@@ -33,6 +33,9 @@ final class EstimatedEntranceSideUITests: XCTestCase {
 
     func testEstimatedEntryRegionsKeepStreetFloorAndSharedDoorUncertaintyVisible() {
         open("copper-creek")
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated")
+        XCTAssertFalse(app.staticTexts["mini.entranceSideWarning"].exists)
+        expandEvidence()
         let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
         XCTAssertTrue(warning.waitForExistence(timeout: 10))
         XCTAssertTrue(warning.label.lowercased().contains("unverified"))
@@ -49,10 +52,12 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertTrue(app.maps.firstMatch.frame.intersects(frame))
         app.buttons["mini.focus.2"].tap()
         XCTAssertTrue(app.staticTexts["Unit 1022"].exists)
+        expandEvidence()
         XCTAssertTrue(warning.label.lowercased().contains("historical"))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         app.buttons["mini.prepare"].tap()
         XCTAssertTrue(app.navigationBars["Check Door Pin"].waitForExistence(timeout: 5))
+        app.descendants(matching: .any).matching(identifier: "door.evidenceDetails").firstMatch.tap()
         let reviewWarning = app.descendants(matching: .any).matching(identifier: "door.entranceSideWarning").firstMatch
         XCTAssertTrue(reviewWarning.waitForExistence(timeout: 5))
         XCTAssertTrue(reviewWarning.label.lowercased().contains("unverified"))
@@ -61,6 +66,8 @@ final class EstimatedEntranceSideUITests: XCTestCase {
 
         app.terminate()
         open("lyric")
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated shared entry")
+        expandEvidence()
         let shared = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
         XCTAssertTrue(shared.waitForExistence(timeout: 10))
         XCTAssertTrue(shared.label.contains("1013/1014"))
@@ -77,6 +84,12 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.4.")).firstMatch.exists)
         capture("Lyric pair remains ambiguous and unit 1287 has no invented point")
+    }
+
+    private func expandEvidence() {
+        let details = app.descendants(matching: .any).matching(identifier: "mini.evidenceDetails").firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        details.tap()
     }
 
     private func capture(_ name: String) {

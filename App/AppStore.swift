@@ -455,6 +455,15 @@ final class AppStore: ObservableObject {
         if previous.doorSelections != personal.doorSelections { cachedDoorMatches.removeAll() }
     }
     func apartmentGroup(_ id: String) -> ApartmentGroup? { apartmentPlan.groups.first { $0.id == id } }
+    func digitalLocker(groupID: String) -> DigitalLockerEvidence? {
+        guard let group = apartmentGroup(groupID) else { return nil }
+        let ids = Set([group.id, group.directoryCommunityID, group.legacyCommunityID].compactMap { $0 })
+        let matches = communities.filter { ids.contains($0.id) && $0.matchingAddresses.contains {
+            LocalSearch.addressKey($0) == LocalSearch.addressKey(group.address)
+        } }
+        guard matches.count == 1 else { return nil }
+        return matches.first?.digitalLocker
+    }
     func buildingAreaReferences(groupID: String) -> [Place] {
         let scoped = apartmentGroup(groupID)?.scopedPlaces(in: apartmentPlacesByCommunity) ?? apartmentPlacesByCommunity[groupID] ?? []
         return scoped.filter(\.isValidBuildingAreaReference)

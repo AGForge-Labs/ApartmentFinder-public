@@ -5,7 +5,7 @@ import FoundationNetworking
 
 public struct PublicCatalogUpdateClient: Sendable {
     public typealias Fetch = @Sendable (URL, Int) async throws -> Data
-    public static let latestURL = URL(string: "https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest.json")!
+    public static let latestURL = URL(string: "https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest-v2.json")!
     private let fetch: Fetch
     public init(fetch: @escaping Fetch = PublicCatalogUpdateTransport.fetch) { self.fetch = fetch }
 
