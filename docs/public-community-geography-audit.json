@@ -1,16 +1,16 @@
 {
   "allCatalog": {
     "buildingAreaReferences": 421,
-    "communities": 186,
+    "communities": 193,
     "communitiesWithBuildingAreas": 19,
     "estimatedEntranceSideRegions": 4603,
     "fieldVerifiedPublicDoors": 0,
-    "mappedCommunityAreas": 96,
-    "missingCommunityAreas": 90,
+    "mappedCommunityAreas": 98,
+    "missingCommunityAreas": 95,
     "unitBuildingAssociations": 8139,
-    "unitPositions": 23112
+    "unitPositions": 28037
   },
-  "catalogPackVersion": "2026.10.24.3-public-valley-directories-lockers",
+  "catalogPackVersion": "2026.10.25.13-public-valley-ventana-provider-unit-areas",
   "communities": [
     {
       "address": "2312 North Green Valley Parkway",
@@ -310,7 +310,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Allegro at La Entrada",
@@ -323,10 +323,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 262,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 262
       }
     },
     {
@@ -531,7 +531,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Arabella",
@@ -544,10 +544,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 120,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 120
       }
     },
     {
@@ -944,6 +944,49 @@
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
+      }
+    },
+    {
+      "address": "9225 W Charleston Blvd",
+      "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "avondale",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
+      "floorOnlyReferences": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Avondale",
+      "postalZIP": "89117",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "operatorSourceUnitReferences": 560,
+        "sourceMapped": 560,
+        "total": 560
       }
     },
     {
@@ -1584,6 +1627,49 @@
       }
     },
     {
+      "address": "1350 Spruce Park Drive",
+      "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "constellation",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
+      "floorOnlyReferences": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Constellation",
+      "postalZIP": "89135",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "operatorSourceUnitReferences": 124,
+        "sourceMapped": 124,
+        "total": 124
+      }
+    },
+    {
       "address": "9490 Bermuda Road",
       "buildingAreaReferences": {
         "approximateOperatorArea": 0,
@@ -1839,7 +1925,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Croix Townhomes",
@@ -1852,10 +1938,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 137,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 137
       }
     },
     {
@@ -3229,7 +3315,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Horizon Ridge Apartments",
@@ -3242,10 +3328,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 192,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 192
       }
     },
     {
@@ -3358,7 +3444,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Invitational Apartments",
@@ -3371,10 +3457,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 180,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 180
       }
     },
     {
@@ -3681,7 +3767,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "The Layne at Peccole Ranch",
@@ -3695,9 +3781,9 @@
       },
       "unitPositions": {
         "estimated": 0,
-        "operatorSourceUnitReferences": 0,
-        "sourceMapped": 0,
-        "total": 0
+        "operatorSourceUnitReferences": 404,
+        "sourceMapped": 404,
+        "total": 404
       }
     },
     {
@@ -5433,7 +5519,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Parq on Boulder",
@@ -5446,10 +5532,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 228,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 228
       }
     },
     {
@@ -5804,7 +5890,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "Sage at Green Valley",
@@ -5817,10 +5903,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 432,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 432
       }
     },
     {
@@ -6839,6 +6925,49 @@
       }
     },
     {
+      "address": "2150 N. Tenaya Way",
+      "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "st-lucia",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
+      "floorOnlyReferences": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "St. Lucia Apartment Homes",
+      "postalZIP": "89128",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 0,
+        "operatorSourceUnitReferences": 440,
+        "sourceMapped": 440,
+        "total": 440
+      }
+    },
+    {
       "address": "2725 West Wigwam Avenue",
       "buildingAreaReferences": {
         "approximateOperatorArea": 0,
@@ -7594,6 +7723,52 @@
       }
     },
     {
+      "address": "10151 W. Dorrell Lane",
+      "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.31619914980364,
+          36.28645809888533
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "the-pavilions-by-picerne",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
+      "floorOnlyReferences": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Pavilions by Picerne",
+      "postalZIP": "89166",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 516,
+        "operatorSourceUnitReferences": 0,
+        "sourceMapped": 0,
+        "total": 516
+      }
+    },
+    {
       "address": "10250 Spencer Street",
       "buildingAreaReferences": {
         "approximateOperatorArea": 0,
@@ -7634,6 +7809,52 @@
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
         "total": 0
+      }
+    },
+    {
+      "address": "4325 W. Rome Boulevard",
+      "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": [
+          -115.20018385918885,
+          36.27831003750427
+        ],
+        "evidence": null,
+        "mapped": true
+      },
+      "communityID": "the-presidio-by-picerne",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
+      "floorOnlyReferences": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": false,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The Presidio by Picerne",
+      "postalZIP": "89084",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 580,
+        "operatorSourceUnitReferences": 0,
+        "sourceMapped": 0,
+        "total": 580
       }
     },
     {
@@ -7809,6 +8030,49 @@
       }
     },
     {
+      "address": "245 S. Gibson Road",
+      "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "the-view-at-horizon-ridge",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
+      "floorOnlyReferences": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "The View at Horizon Ridge",
+      "postalZIP": "89012",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 221,
+        "operatorSourceUnitReferences": 0,
+        "sourceMapped": 0,
+        "total": 221
+      }
+    },
+    {
       "address": "9280 W Post Rd",
       "buildingAreaReferences": {
         "approximateOperatorArea": 0,
@@ -7878,7 +8142,7 @@
       "gaps": {
         "buildingAreasMissing": true,
         "communityAreaMissing": true,
-        "unitPositionsMissing": true,
+        "unitPositionsMissing": false,
         "verifiedPublicDoorsMissing": true
       },
       "name": "The Townhomes at Horizon Ridge",
@@ -7891,10 +8155,10 @@
         "total": 0
       },
       "unitPositions": {
-        "estimated": 0,
+        "estimated": 295,
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 0,
-        "total": 0
+        "total": 295
       }
     },
     {
@@ -7992,6 +8256,49 @@
         "operatorSourceUnitReferences": 0,
         "sourceMapped": 352,
         "total": 352
+      }
+    },
+    {
+      "address": "1250 American Pacific Drive",
+      "buildingAreaReferences": {
+        "approximateOperatorArea": 0,
+        "qualifiedLegalPolygon": 0,
+        "total": 0
+      },
+      "communityArea": {
+        "coordinate": null,
+        "evidence": null,
+        "mapped": false
+      },
+      "communityID": "ventana-canyon-apartments",
+      "countyZIPs": [],
+      "doors": {
+        "fieldVerified": 0,
+        "geographicPoints": 0
+      },
+      "entrances": 0,
+      "estimatedEntranceSideRegions": 0,
+      "floorOnlyReferences": 0,
+      "gaps": {
+        "buildingAreasMissing": true,
+        "communityAreaMissing": true,
+        "unitPositionsMissing": false,
+        "verifiedPublicDoorsMissing": true
+      },
+      "name": "Ventana Canyon Apartments",
+      "postalZIP": "89074",
+      "priorityArea": false,
+      "unitBuildingAssociations": {
+        "historicalLegalAliases": 0,
+        "municipalLegal": 0,
+        "operatorMap": 0,
+        "total": 0
+      },
+      "unitPositions": {
+        "estimated": 234,
+        "operatorSourceUnitReferences": 0,
+        "sourceMapped": 0,
+        "total": 234
       }
     },
     {
@@ -8512,7 +8819,7 @@
     "mappedCommunityAreas": 36,
     "missingCommunityAreas": 63,
     "unitBuildingAssociations": 8139,
-    "unitPositions": 7124
+    "unitPositions": 7813
   },
   "priorityZIPs": [
     "89123",
