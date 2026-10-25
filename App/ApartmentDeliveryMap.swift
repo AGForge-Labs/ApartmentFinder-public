@@ -3,7 +3,7 @@ import MapKit
 import CoreLocation
 import ApartmentCore
 
-#if DEBUG
+#if DEBUG && targetEnvironment(simulator)
 /// Read-only observations of the real SwiftUI Map, injected only by native tests.
 /// No observation can set the camera, fabricate a GPS fix, or create a delivery.
 struct SyntheticMiniRouteMapObservation {
@@ -21,7 +21,7 @@ struct ApartmentDeliveryMap: View {
     @ObservedObject var location: LocationService
     let selectedStopID: String?
     let select: (String) -> Void
-    #if DEBUG
+    #if DEBUG && targetEnvironment(simulator)
     var syntheticMapObservation: ((SyntheticMiniRouteMapObservation) -> Void)? = nil
     #endif
     #if DEBUG && targetEnvironment(simulator)

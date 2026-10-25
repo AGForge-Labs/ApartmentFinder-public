@@ -228,8 +228,11 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertFalse(restored.personal.stops[0].completed)
         // A fresh public property may have only a sourced amenity point. Exercise
         // the real map cameras without converting that amenity into a door.
+        #if DEBUG && targetEnvironment(simulator)
         try await assertLockerOnlyPropertyMapsWithoutInventingDoors(at: root)
+        #endif
     }
+    #if DEBUG && targetEnvironment(simulator)
     private func assertLockerOnlyPropertyMapsWithoutInventingDoors(at root: URL) async throws {
         let target = Coordinate(latitude: 36.0417, longitude: -115.1743)
         let evidenceObject: [String: Any] = ["status": "present",
@@ -352,6 +355,7 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(snapshot.lockerCoordinate, target, "Observe the sourced amenity, never an injected camera target", file: file, line: line)
     }
 
+    #endif
     private func assertHostedMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,
         label: String, file: StaticString = #filePath, line: UInt = #line,
         inspect: (MKMapView) throws -> Void = { _ in }) async throws {
