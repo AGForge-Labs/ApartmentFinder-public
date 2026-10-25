@@ -41,15 +41,13 @@ final class CommunityMapControlsTests: XCTestCase {
         // Observe the required state after the asynchronous SwiftUI/AX update;
         // a completed tap alone does not establish the published map mode.
         let recenter = app.buttons.matching(identifier: "mini.recenter")
-        let paused = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in
-                // Resolve the current SwiftUI button and read both required
-                // fields from one fresh snapshot on every evaluation.
-                guard let snapshot = try? recenter.firstMatch.snapshot(),
-                      let value = snapshot.value as? String else { return false }
-                return snapshot.label == "Resume following" && value.hasPrefix("Paused")
-            }, object: nil)
-        let pausedResult = XCTWaiter.wait(for: [paused], timeout: 5)
+        // Resolve both required fields in the framework query. Avoid issuing
+        // an explicit snapshot RPC from a client-side predicate callback.
+        let pausedRecenter = recenter.matching(
+            NSPredicate(format: "label == %@ AND value BEGINSWITH %@",
+                        "Resume following", "Paused")).firstMatch
+        let pausedResult: XCTWaiter.Result =
+            pausedRecenter.waitForExistence(timeout: 5) ? .completed : .timedOut
         if pausedResult != .completed {
             mapStateDiagnostics(stage: "overview did not expose paused state", includeHierarchy: true)
         }

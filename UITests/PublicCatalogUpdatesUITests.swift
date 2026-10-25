@@ -162,28 +162,35 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     private func expectHittable(_ element: XCUIElement,
                                 file: StaticString = #filePath, line: UInt = #line) {
         guard let app else { XCTFail("The synthetic test app must be launched", file: file, line: line); return }
+        let deadline = ProcessInfo.processInfo.systemUptime + 5
         var lastGeometry = "No usable target/window snapshots observed"
-        let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        let geometry = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let window = app.windows.firstMatch
-            guard element.exists, window.exists else {
-                lastGeometry = "Target or application window missing"
+            guard let targetSnapshot = try? element.snapshot(),
+                  let windowSnapshot = try? window.snapshot() else {
+                lastGeometry = "Target or application window missing or snapshot unavailable"
                 return false
             }
-            // Use the element's resolved geometry; an optional diagnostic
-            // snapshot is not a readiness requirement for a real toolbar tap.
-            let frame = element.frame, windowFrame = window.frame
+            // Read the captured attributes locally before asking XCTest for a
+            // real hit point; missing or unusable geometry never qualifies.
+            let frame = targetSnapshot.frame, windowFrame = windowSnapshot.frame
             let intersection = frame.intersection(windowFrame)
-            lastGeometry = "id=\(element.identifier);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
+            lastGeometry = "id=\(targetSnapshot.identifier);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
             guard self.usableFrame(frame), self.usableFrame(windowFrame), self.usableFrame(intersection) else {
-                // Never ask XCTest to calculate an activation point for missing,
-                // empty, nonfinite or entirely off-window geometry.
                 return false
             }
-            // Geometry is readiness only: the original real hittability result
-            // remains required. No coordinate tap, navigation or input fallback.
-            return element.isHittable
+            return true
         }, object: nil)
-        let result = XCTWaiter.wait(for: [visible], timeout: 5)
+        let geometryResult = XCTWaiter.wait(for: [geometry], timeout: 5)
+        let remaining = deadline - ProcessInfo.processInfo.systemUptime
+        var hittable = false
+        if geometryResult == .completed, remaining > 0 {
+            // Geometry and the framework-owned hit wait share one deadline.
+            // A late true result cannot turn an expired wait into success.
+            hittable = element.wait(for: \.isHittable, toEqual: true, timeout: remaining)
+        }
+        let result: XCTWaiter.Result =
+            hittable && ProcessInfo.processInfo.systemUptime <= deadline ? .completed : .timedOut
         if result != .completed {
             catalogReadinessDiagnostics(stage: "hittability wait failed", targetState: lastGeometry)
         }

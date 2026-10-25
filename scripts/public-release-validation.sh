@@ -122,7 +122,7 @@ if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
 fi
 XCODE_STATUS=0
 "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
-  -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
+  -sdk iphonesimulator -destination "id=$DEVICE" -jobs 2 -parallel-testing-enabled NO \
   -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
   -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
   -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
