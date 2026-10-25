@@ -294,9 +294,12 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let manager = LockerCameraDeniedLocationManager()
         let location = LocationService(manager: manager)
         XCTAssertNil(location.fix)
+        var miniObservation: SyntheticMiniRouteMapObservation?
         let mini = ApartmentDeliveryMap(group: group, store: store, location: location,
-            selectedStopID: stop.id, select: { selections.append($0) })
-        try await assertHostedMapFramesLocker(mini, target: target, label: "No-GPS mini-route locker-only")
+            selectedStopID: stop.id, select: { selections.append($0) },
+            syntheticMapObservation: { miniObservation = $0 })
+        try await assertHostedSwiftUIMapFramesLocker(mini, target: target,
+            label: "No-GPS mini-route locker-only", observation: { miniObservation })
         XCTAssertNil(location.fix, "The camera fallback must work without a fabricated GPS fix")
         XCTAssertEqual(manager.starts, 0, "Denied synthetic GPS must not start real acquisition")
         XCTAssertTrue(selections.isEmpty)
@@ -304,6 +307,49 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertNil(store.doorMatch(stop, groupID: group.id).readyDoor)
         XCTAssertTrue(store.doorMatch(stop, groupID: group.id).candidates.isEmpty)
         XCTAssertNil(try PrivateDataPackStore(directory: directory).load())
+    }
+
+    // SwiftUI Map does not promise an MKMapView descendant. Observe its public
+    // camera context, MapReader projection and actual annotation appearance.
+    private func assertHostedSwiftUIMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,
+        label: String, observation: @escaping () -> SyntheticMiniRouteMapObservation?,
+        file: StaticString = #filePath, line: UInt = #line) async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
+                                 "The hosted app must supply its actual window scene", file: file, line: line)
+        let priorKeyWindow = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let host = UIHostingController(rootView: content)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.setNeedsLayout(); host.view.layoutIfNeeded()
+        defer {
+            window.isHidden = true; window.rootViewController = nil
+            priorKeyWindow?.makeKey()
+        }
+        let framed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let snapshot = observation(), snapshot.viewport.width > 0, snapshot.viewport.height > 0,
+                  snapshot.lockerAnnotationAppeared, let projected = snapshot.lockerProjectedPoint else { return false }
+            return Geometry.distance(snapshot.center, target) < 120 &&
+                snapshot.span.latitudeDelta > 0 && snapshot.span.latitudeDelta < 0.03 &&
+                snapshot.span.longitudeDelta > 0 && snapshot.span.longitudeDelta < 0.05 &&
+                CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains(projected)
+        }, object: nil)
+        await fulfillment(of: [framed], timeout: 5)
+        let snapshot = try XCTUnwrap(observation(), "\(label): actual SwiftUI Map camera was not observed", file: file, line: line)
+        let projected = try XCTUnwrap(snapshot.lockerProjectedPoint,
+                                     "The real MapReader must project the sourced amenity", file: file, line: line)
+        print("LOCKER-CAMERA \(label) SwiftUI center=\(snapshot.center.latitude),\(snapshot.center.longitude) span=\(snapshot.span.latitudeDelta),\(snapshot.span.longitudeDelta) annotationAppeared=\(snapshot.lockerAnnotationAppeared)")
+        XCTAssertLessThan(Geometry.distance(snapshot.center, target), 120,
+                          "\(label): actual camera must initially frame the sourced amenity", file: file, line: line)
+        XCTAssertGreaterThan(snapshot.span.latitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(snapshot.span.latitudeDelta, 0.03, "A world view cannot satisfy property framing", file: file, line: line)
+        XCTAssertGreaterThan(snapshot.span.longitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(snapshot.span.longitudeDelta, 0.05, "A wide regional view cannot satisfy property framing", file: file, line: line)
+        XCTAssertTrue(CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains(projected),
+                      "The amenity must project inside the actual visible map", file: file, line: line)
+        XCTAssertTrue(snapshot.lockerAnnotationAppeared, "The real map must instantiate the locker annotation", file: file, line: line)
+        XCTAssertEqual(snapshot.lockerCoordinate, target, "Observe the sourced amenity, never an injected camera target", file: file, line: line)
     }
 
     private func assertHostedMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,

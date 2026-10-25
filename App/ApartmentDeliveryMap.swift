@@ -3,12 +3,32 @@ import MapKit
 import CoreLocation
 import ApartmentCore
 
+#if DEBUG
+/// Read-only observations of the real SwiftUI Map, injected only by native tests.
+/// No observation can set the camera, fabricate a GPS fix, or create a delivery.
+struct SyntheticMiniRouteMapObservation {
+    let center: Coordinate
+    let span: MKCoordinateSpan
+    let viewport: CGSize
+    let lockerCoordinate: Coordinate
+    let lockerProjectedPoint: CGPoint?
+    let lockerAnnotationAppeared: Bool
+}
+#endif
 struct ApartmentDeliveryMap: View {
     let group: ApartmentGroup
     @ObservedObject var store: AppStore
     @ObservedObject var location: LocationService
     let selectedStopID: String?
     let select: (String) -> Void
+    #if DEBUG
+    var syntheticMapObservation: ((SyntheticMiniRouteMapObservation) -> Void)? = nil
+    #endif
+    #if DEBUG && targetEnvironment(simulator)
+    @State private var syntheticCameraRegion: MKCoordinateRegion?
+    @State private var syntheticCameraCenter: Coordinate?
+    @State private var syntheticLockerAnnotationAppeared = false
+    #endif
     @Namespace private var mapScope
     @State private var camera: MapCameraPosition = .automatic
     @State private var following = MiniRouteMapFollowingState()
@@ -128,6 +148,14 @@ struct ApartmentDeliveryMap: View {
                 if let locker = store.digitalLocker(groupID: group.id), locker.status == .present, let point = locker.point {
                     Annotation("Digital package lockers", coordinate: point.coordinate.cl, anchor: .bottom) {
                         DigitalLockerMapPin(evidence: locker).accessibilityIdentifier("mini.digitalLocker")
+                            #if DEBUG && targetEnvironment(simulator)
+                            .onAppear {
+                                if syntheticMapObservation != nil { syntheticLockerAnnotationAppeared = true }
+                            }
+                            .onDisappear {
+                                if syntheticMapObservation != nil { syntheticLockerAnnotationAppeared = false }
+                            }
+                            #endif
                     }
                 }
                 if let fix = location.fix, fix.usable(at: .now) {
@@ -184,6 +212,14 @@ struct ApartmentDeliveryMap: View {
                         .onChange(of: geometry.size) { _, size in
                             viewport = size; following.viewportChanged(); followLocation()
                         }
+                        #if DEBUG && targetEnvironment(simulator)
+                        .onChange(of: pinProjectionRevision) { _, _ in
+                            emitSyntheticMapObservation(proxy: proxy, size: geometry.size)
+                        }
+                        .onChange(of: syntheticLockerAnnotationAppeared) { _, _ in
+                            emitSyntheticMapObservation(proxy: proxy, size: geometry.size)
+                        }
+                        #endif
                 }
             }
             .onAppear { followLocation() }
@@ -192,6 +228,12 @@ struct ApartmentDeliveryMap: View {
                 mapDistance = context.camera.distance
                 // A pan can change projection without changing heading or distance.
                 pinProjectionRevision &+= 1
+                #if DEBUG && targetEnvironment(simulator)
+                if syntheticMapObservation != nil {
+                    syntheticCameraRegion = context.region
+                    syntheticCameraCenter = Coordinate(context.camera.centerCoordinate)
+                }
+                #endif
                 if camera.positionedByUser || following.mode == .manual {
                     following.userMoved(distance: context.camera.distance)
                 }
@@ -218,6 +260,19 @@ struct ApartmentDeliveryMap: View {
         }
     }
 
+    #if DEBUG && targetEnvironment(simulator)
+    private func emitSyntheticMapObservation(proxy: MapProxy, size: CGSize) {
+        guard let observe = syntheticMapObservation,
+              group.id == "fictional-locker-only",
+              let region = syntheticCameraRegion, let center = syntheticCameraCenter,
+              let locker = store.digitalLocker(groupID: group.id), locker.status == .present,
+              let point = locker.point else { return }
+        observe(SyntheticMiniRouteMapObservation(center: center, span: region.span,
+            viewport: size, lockerCoordinate: point.coordinate,
+            lockerProjectedPoint: proxy.convert(point.coordinate.cl, to: .local),
+            lockerAnnotationAppeared: syntheticLockerAnnotationAppeared))
+    }
+    #endif
     private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
         GeometryReader { geometry in
             ForEach(pins) { pin in
