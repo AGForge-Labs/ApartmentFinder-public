@@ -124,7 +124,13 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertEqual(initialValue, "Collapsed", file: file, line: line)
         details.tap()
         let expanded = XCTWaiter.wait(for: [
-            XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Expanded"), object: details)
+            XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                // Query a fresh accessibility snapshot on each evaluation. The
+                // same five-second waiter still requires the actual header's
+                // Expanded value; later diagnostic state cannot satisfy it.
+                guard let snapshot = try? headers.firstMatch.snapshot() else { return false }
+                return (snapshot.value as? String) == "Expanded"
+            }, object: nil)
         ], timeout: 5)
         if expanded != .completed { evidenceDiagnostics(identifier, stage: "tap did not expand header") }
         XCTAssertEqual(expanded, .completed, "Evidence header must become Expanded after tap", file: file, line: line)

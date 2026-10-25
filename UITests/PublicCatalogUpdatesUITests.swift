@@ -37,11 +37,12 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Communities"].waitForExistence(timeout: 5))
         let tuscano = app.buttons["finder.community.tuscano"]
         for _ in 0..<16 {
-            if tuscano.exists && tuscano.isHittable { break }
+            if pickerRowFullyVisible(tuscano) { break }
             app.swipeUp()
         }
         XCTAssertTrue(tuscano.waitForExistence(timeout: 5))
         XCTAssertTrue(tuscano.isHittable)
+        XCTAssertTrue(pickerRowFullyVisible(tuscano), "The entire community row must be inside the app window before its single tap")
         tuscano.tap()
         // The Finder button also exists behind this sheet; its existence is not
         // a dismissal signal. Wait for the actual presentation boundary.
@@ -136,6 +137,18 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(status.label.localizedCaseInsensitiveContains("offline"))
         app.buttons["catalogUpdates.close"].tap()
         XCTAssertTrue(app.buttons["apartments.import"].isEnabled)
+    }
+
+    private func pickerRowFullyVisible(_ row: XCUIElement) -> Bool {
+        guard let app else { return false }
+        let window = app.windows.firstMatch
+        guard row.exists, window.exists else { return false }
+        let frame = row.frame, windowFrame = window.frame
+        // A partly clipped List row can be hittable while its default tap
+        // center lies outside the window. Keep scrolling the real picker until
+        // the complete finite row is visible; do not retry the selection tap.
+        guard usableFrame(frame), usableFrame(windowFrame), windowFrame.contains(frame) else { return false }
+        return row.isHittable
     }
 
     private func expectPinEditor() {
