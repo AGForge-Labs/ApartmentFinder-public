@@ -22,6 +22,29 @@ def module(name, path):
     return value
 
 
+def workflow_failure_collector_prelude(workflow):
+    """Keep extracted result/cleanup fixtures attached to their real dependency."""
+    start = workflow.index('          FAILURE_DIAGNOSTICS_COLLECTED=0\n')
+    end = workflow.index('          cleanup() {\n', start)
+    return textwrap.dedent(workflow[start:end])
+
+
+def failure_collector_command_fixture():
+    """Fake only the external collector command; execute the real shell guard."""
+    return r'''
+record_failure_collector_command() {
+  [[ "$#" == 18 && "$1" == -B && "$2" == scripts/public-test-failure-diagnostics.py ]] || return 99
+  [[ "$3" == --temp-root && "$4" == "$RUNNER_TEMP" && "$5" == --device && "$6" == "$DEVICE" ]] || return 99
+  [[ "$7" == --source-commit && "$8" == "$GITHUB_SHA" && "$9" == --xcode-status ]] || return 99
+  [[ "${10}" == "${XCODE_STATUS:-$EXPECTED_ORIGINAL_STATUS}" && "${11}" == --result-status && "${12}" == "${RESULT_STATUS:-1}" ]] || return 99
+  [[ "${13}" == --start-epoch && "${14}" == "$FAILURE_TEST_START" && "${15}" == --end-epoch ]] || return 99
+  [[ "${16}" =~ ^[0-9]+$ && "${16}" != 0 && "${17}" == --deadline-epoch && "${18}" == 0 ]] || return 99
+  printf 'failure-collector:%s\n' "$*" >> "$CALLS"
+  return "$COLLECTOR_STATUS"
+}
+'''
+
+
 class PublicPreflightTests(unittest.TestCase):
     def test_diagnostic_witness_is_opt_in_simulator_only_and_data_minimized(self):
         support = (ROOT / 'App/UITestSupport.swift').read_text()
@@ -347,10 +370,72 @@ class PublicPreflightTests(unittest.TestCase):
             with self.subTest(original=original, cleanup=cleanup_result):
                 script = ('set -euo pipefail\nPUBLIC_SYNTHETIC_SCOPE=activation-diagnostics\n'
                           'DIAGNOSTICS_COLLECTED=1\nDEVICE=synthetic-only\n'
-                          f'python3() {{ return {cleanup_result}; }}\n' + cleanup +
+                          f'python3() {{ return {cleanup_result}; }}\n' +
+                          workflow_failure_collector_prelude(workflow) + cleanup +
                           f'\ntrap cleanup EXIT\nexit {original}\n')
                 result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=2)
                 self.assertEqual(result.returncode, expected, result.stderr)
+
+        # The real EXIT cleanup must collect before simulator cleanup, once at most,
+        # and preserve the original status even if the collector command fails.
+        cases = (
+            ('community-area-controls-regression', 0, 0, 0, 1, False, 0, 0),
+            ('community-area-controls-regression', 65, 0, 0, 1, False, 65, 1),
+            ('community-area-controls-regression', 124, 0, 9, 1, False, 124, 1),
+            ('community-area-controls-regression', 65, 0, 9, 1, True, 65, 1),
+            ('community-area-controls-regression', 65, 0, 0, 0, False, 65, 0),
+            ('activation-diagnostics', 65, 0, 9, 1, False, 65, 0),
+            ('activation-diagnostics', 0, 1, 9, 1, False, 1, 0),
+        )
+        for scope, original, cleanup_result, collector_result, started, precollect, expected, collections in cases:
+            with self.subTest(scope=scope, original=original, cleanup=cleanup_result,
+                              collector=collector_result, started=started, precollect=precollect):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    script = r'''set -euo pipefail
+DIAGNOSTICS_COLLECTED=0
+DEVICE=synthetic-only
+python3() {
+  if [[ "$1" == -B && "${2:-}" == scripts/public-test-failure-diagnostics.py ]]; then
+    record_failure_collector_command "$@"
+  elif [[ "$*" == '-B scripts/public-synthetic-diagnostics.py collect --device synthetic-only' ]]; then
+    printf 'activation-collect\n' >> "$CALLS"
+  elif [[ "$*" == '-B - synthetic-only' ]]; then
+    cat > /dev/null
+    printf 'activation-cleanup\n' >> "$CALLS"
+    return "$CLEANUP_STATUS"
+  else
+    return 99
+  fi
+}
+xcrun() {
+  [[ "$#" == 3 && "$1" == simctl && "$3" == synthetic-only ]] || return 99
+  [[ "$2" == shutdown || "$2" == delete ]] || return 99
+  printf 'simulator-cleanup:%s\n' "$2" >> "$CALLS"
+}
+'''
+                    script += failure_collector_command_fixture() + workflow_failure_collector_prelude(workflow) + cleanup
+                    script += f'\nFAILURE_TEST_START={started}\nFAILURE_TEST_END=0\n'
+                    if precollect:
+                        script += f'collect_test_failure_diagnostics {original}\n'
+                    script += f'trap cleanup EXIT\nexit {original}\n'
+                    result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=2,
+                        env={**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': scope, 'RUNNER_TEMP': str(root),
+                             'CALLS': str(root / 'calls'), 'COLLECTOR_STATUS': str(collector_result),
+                             'CLEANUP_STATUS': str(cleanup_result), 'EXPECTED_ORIGINAL_STATUS': str(original),
+                             'GITHUB_SHA': '9f10492869298be046baf819c35da10af1d9e9a5'})
+                    calls = (root / 'calls').read_text().splitlines()
+                self.assertEqual(result.returncode, expected, result.stderr)
+                collector_calls = [item for item in calls if item.startswith('failure-collector:')]
+                self.assertEqual(len(collector_calls), collections, calls)
+                if scope == 'community-area-controls-regression':
+                    self.assertEqual([item for item in calls if item.startswith('simulator-cleanup:')],
+                                     ['simulator-cleanup:shutdown', 'simulator-cleanup:delete'])
+                    if collections:
+                        self.assertLess(calls.index(collector_calls[0]), calls.index('simulator-cleanup:shutdown'))
+                    self.assertNotIn('activation-collect', calls)
+                else:
+                    self.assertEqual(calls, ['activation-collect', 'activation-cleanup'])
 
     def test_debug_manifest_buttons_are_individual_native_toolbar_controls(self):
         support = (ROOT / 'App/UITestSupport.swift').read_text()
@@ -515,26 +600,36 @@ class WorkflowResultProcessingTests(unittest.TestCase):
         'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport',
         'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
     ]
+    community_identities = [
+        'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport',
+        'ApartmentFinderTests/PublicCatalogBundleStoreTests/testSavedPackSupplementPreservesGenerationAndPersonalBytesAcrossReopen',
+        'ApartmentFinderUITests/CommunityMapControlsTests/testPausedControlsStayCompactAndKeepTheirActions',
+        'ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors',
+        'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
+        'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch',
+    ]
 
     def run_result_block(self, build_status=0, result_exists=True,
-                         summary_status=0, tests_status=0, summary=None, tree=None):
+                         summary_status=0, tests_status=0, summary=None, tree=None,
+                         scope='activation-diagnostics', collector_status=0):
         workflow = (ROOT / '.github/workflows/public-synthetic-check.yml').read_text()
         block = workflow.split('            DIAGNOSTICS_COLLECTED=1\n          fi\n', 1)[1]
         block = block.split('\n      - name:', 1)[0]
+        identities = self.community_identities if scope == 'community-area-controls-regression' else self.identities
         summary = summary if summary is not None else {
-            'totalTestCount': 3, 'passedTests': 3, 'failedTests': 0,
+            'totalTestCount': len(identities), 'passedTests': len(identities), 'failedTests': 0,
             'skippedTests': 0, 'expectedFailures': 0,
         }
         tree = tree if tree is not None else {'testNodes': [
             {'nodeType': 'Test Case', 'nodeIdentifier': identity + '()', 'result': 'Passed'}
-            for identity in self.identities
+            for identity in identities
         ]}
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / 'summary-source.json').write_text(json.dumps(summary))
             (root / 'tests-source.json').write_text(json.dumps(tree))
             (root / 'selected-tests.json').write_text(json.dumps({
-                'native': self.identities[:2], 'ui': self.identities[2:],
+                'native': identities[:2], 'ui': identities[2:],
             }))
             script = r'''set -euo pipefail
 WORK=(bounded_work)
@@ -564,7 +659,9 @@ xcrun() {
   return "$TESTS_STATUS"
 }
 python3() {
-  if [[ "$*" == '-B scripts/validate-checkout.py '* ]]; then
+  if [[ "$1" == -B && "${2:-}" == scripts/public-test-failure-diagnostics.py ]]; then
+    record_failure_collector_command "$@"
+  elif [[ "$*" == '-B scripts/validate-checkout.py '* ]]; then
     printf 'checkout-validation\n' >> "$CALLS"
   else
     printf 'identity-and-count-gates\n' >> "$CALLS"
@@ -572,16 +669,32 @@ python3() {
   fi
 }
 '''
-            result = subprocess.run(['bash'], input=script + textwrap.dedent(block),
+            result = subprocess.run(['bash'], input=script +
+                failure_collector_command_fixture() + workflow_failure_collector_prelude(workflow) +
+                # Exercise the real guard again on exit, as the real cleanup does.
+                'trap \'collect_test_failure_diagnostics "$?"\' EXIT\n' + textwrap.dedent(block),
                 cwd=ROOT, text=True, capture_output=True, timeout=5,
                 env={**os.environ, 'RUNNER_TEMP': str(root), 'CALLS': str(root / 'calls'),
-                     'REAL_PYTHON': sys.executable, 'PUBLIC_SYNTHETIC_SCOPE': 'activation-diagnostics',
+                     'REAL_PYTHON': sys.executable, 'PUBLIC_SYNTHETIC_SCOPE': scope,
+                     'GITHUB_SHA': '9f10492869298be046baf819c35da10af1d9e9a5',
+                     'COLLECTOR_STATUS': str(collector_status), 'EXPECTED_ORIGINAL_STATUS': str(build_status),
                      'BUILD_STATUS': str(build_status), 'RESULT_EXISTS': str(int(result_exists)),
                      'SUMMARY_STATUS': str(summary_status), 'TESTS_STATUS': str(tests_status)})
             calls = (root / 'calls').read_text().splitlines()
             extracted = {name: json.loads((root / (name + '.json')).read_text())
                          for name in ('summary', 'tests') if (root / (name + '.json')).exists()}
         return result, calls, extracted
+
+    def assert_failure_collection(self, calls, count, result_exists=True):
+        collected = [item for item in calls if item.startswith('failure-collector:')]
+        self.assertEqual(len(collected), count, calls)
+        if collected:
+            self.assertLess(calls.index('build'), calls.index(collected[0]))
+            if result_exists:
+                summary = next(item for item in calls if 'xcresulttool get test-results summary ' in item)
+                tests = next(item for item in calls if 'xcresulttool get test-results tests ' in item)
+                self.assertLess(calls.index(summary), calls.index(tests))
+                self.assertLess(calls.index(tests), calls.index(collected[0]))
 
     def test_failed_xcodebuild_still_extracts_existing_results_and_keeps_original_status(self):
         for build_status in (65, 124):
@@ -595,6 +708,23 @@ python3() {
                     self.assertEqual(sum('xcresulttool get test-results tests ' in item for item in calls), 1)
                     self.assertNotIn('checkout-validation', calls)
                     self.assertNotIn('"passed":', result.stdout)
+                    self.assert_failure_collection(calls, 0)
+
+        for build_status in (65, 124):
+            for summary_status, tests_status in ((0, 0), (7, 0), (0, 8), (7, 8)):
+                for collector_status in (0, 9):
+                    with self.subTest(scope='community', build=build_status, summary=summary_status,
+                                      tests=tests_status, collector=collector_status):
+                        result, calls, extracted = self.run_result_block(
+                            build_status=build_status, summary_status=summary_status, tests_status=tests_status,
+                            scope='community-area-controls-regression', collector_status=collector_status)
+                        self.assertEqual(result.returncode, build_status, result.stderr)
+                        self.assertEqual(set(extracted), {'summary', 'tests'})
+                        self.assertEqual(sum('xcresulttool get test-results summary ' in item for item in calls), 1)
+                        self.assertEqual(sum('xcresulttool get test-results tests ' in item for item in calls), 1)
+                        self.assert_failure_collection(calls, 1)
+                        self.assertNotIn('checkout-validation', calls)
+                        self.assertNotIn('"passed":', result.stdout)
 
     def test_failed_result_data_cannot_replace_the_original_xcodebuild_status(self):
         tree = {'testNodes': [{'nodeType': 'Test Case',
@@ -604,6 +734,14 @@ python3() {
         self.assertEqual(set(extracted), {'summary', 'tests'})
         self.assertNotIn('identity-and-count-gates', calls)
         self.assertNotIn('checkout-validation', calls)
+        self.assert_failure_collection(calls, 0)
+        result, calls, extracted = self.run_result_block(build_status=65, tree=tree,
+            scope='community-area-controls-regression', collector_status=9)
+        self.assertEqual(result.returncode, 65, result.stderr)
+        self.assertEqual(set(extracted), {'summary', 'tests'})
+        self.assertNotIn('identity-and-count-gates', calls)
+        self.assertNotIn('checkout-validation', calls)
+        self.assert_failure_collection(calls, 1)
 
     def test_missing_result_keeps_failure_and_cannot_pass_a_successful_build(self):
         for build_status in (0, 65, 124):
@@ -614,6 +752,18 @@ python3() {
                 self.assertEqual(extracted, {})
                 self.assertFalse(any('xcresulttool' in item for item in calls))
                 self.assertNotIn('checkout-validation', calls)
+                self.assert_failure_collection(calls, 0, result_exists=False)
+        for build_status in (0, 65, 124):
+            for collector_status in (0, 9):
+                with self.subTest(scope='community', build=build_status, collector=collector_status):
+                    result, calls, extracted = self.run_result_block(build_status=build_status,
+                        result_exists=False, scope='community-area-controls-regression',
+                        collector_status=collector_status)
+                    self.assertEqual(result.returncode, build_status or 1, result.stderr)
+                    self.assertEqual(extracted, {})
+                    self.assertFalse(any('xcresulttool' in item for item in calls))
+                    self.assertNotIn('checkout-validation', calls)
+                    self.assert_failure_collection(calls, 1, result_exists=False)
 
     def test_success_still_requires_both_extractions_and_exact_identity_count_gates(self):
         result, calls, extracted = self.run_result_block()
@@ -666,6 +816,31 @@ python3() {
                 self.assertNotEqual(result.returncode, 0)
                 self.assertNotIn('checkout-validation', calls)
                 self.assertNotIn('"passed":', result.stdout)
+
+        for collector_status in (0, 9):
+            with self.subTest(scope='community', success=True, collector=collector_status):
+                result, calls, extracted = self.run_result_block(
+                    scope='community-area-controls-regression', collector_status=collector_status)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(set(extracted), {'summary', 'tests'})
+                self.assertEqual(json.loads(result.stdout), {
+                    'scope': 'public-synthetic-community-area-controls-regression', 'passed': 6,
+                    'full_acceptance': False, 'release_eligible': False,
+                })
+                self.assertIn('identity-and-count-gates', calls)
+                self.assertIn('checkout-validation', calls)
+                self.assert_failure_collection(calls, 0)
+        community_summary = {'totalTestCount': 6, 'passedTests': 5, 'failedTests': 1,
+                             'skippedTests': 0, 'expectedFailures': 0}
+        for changes, expected_status in (({'summary_status': 7}, 7), ({'tests_status': 8}, 8),
+                                         ({'tree': {'testNodes': []}}, 1), ({'summary': community_summary}, 1)):
+            with self.subTest(scope='community', invalid=changes):
+                result, calls, _ = self.run_result_block(scope='community-area-controls-regression',
+                    collector_status=9, **changes)
+                self.assertEqual(result.returncode, expected_status, result.stderr)
+                self.assertNotIn('checkout-validation', calls)
+                self.assertNotIn('"passed":', result.stdout)
+                self.assert_failure_collection(calls, 1)
 
 
 if __name__ == '__main__':
