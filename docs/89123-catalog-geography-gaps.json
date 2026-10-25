@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "checkedAtUTC": "2026-10-21T06:44:14.152456+00:00",
-  "scope": "31 communities whose postalZIP is 89123 in the pinned public catalog audit; not a census of all ZIP housing",
-  "catalogCommunities": 31,
-  "communitiesWithSomeUnitOrBuildingGeography": 19,
+  "scope": "32 communities whose postalZIP is 89123 in the pinned public catalog audit; not a census of all ZIP housing",
+  "catalogCommunities": 32,
+  "communitiesWithSomeUnitOrBuildingGeography": 20,
   "communitiesWithoutUnitOrBuildingGeography": 12,
   "completeZIPCoverage": false,
   "verifiedDoorsAdded": 0,
@@ -163,5 +163,6 @@
       "checkedFinding": "No new explicit unit/building-to-map evidence recovered; absence across the full web is not asserted.",
       "nextEvidenceNeeded": "An exact-address labeled operator siteplan or explicit unit/building geographic crosswalk; no property-center duplication."
     }
-  ]
+  ],
+  "catalogPackVersion": "2026.10.24.3-public-valley-directories-lockers"
 }

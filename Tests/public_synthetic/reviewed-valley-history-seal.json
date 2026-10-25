@@ -1,0 +1,228 @@
+{
+  "baselineCommit": "76d74b9c39fbee91c23361381654c28a737ea972",
+  "communityInversePatches": {
+    "23twelve": {
+      "remove": [
+        "digitalLocker"
+      ],
+      "restore": {
+        "sourceIDs": [
+          "pub20261020-23twelve-0",
+          "pub20261020-23twelve-1"
+        ]
+      }
+    },
+    "ascent-at-silverado": {
+      "remove": [],
+      "restore": {
+        "sourceIDs": [
+          "public-ascent-at-silverado"
+        ]
+      }
+    },
+    "cyan-at-green-valley": {
+      "remove": [
+        "digitalLocker"
+      ],
+      "restore": {
+        "sourceIDs": [
+          "pub20261020-cyan-at-green-valley-0",
+          "pub20261020-cyan-at-green-valley-1"
+        ]
+      }
+    },
+    "empire": {
+      "remove": [
+        "digitalLocker"
+      ],
+      "restore": {
+        "sourceIDs": [
+          "pub20261020-empire-0"
+        ]
+      }
+    },
+    "rancho-serene": {
+      "remove": [
+        "digitalLocker"
+      ],
+      "restore": {
+        "sourceIDs": [
+          "public-rancho-serene",
+          "map-rancho-serene",
+          "pub20261020-rancho-serene-county-assessor-0",
+          "pub20261020-rancho-serene-polygon-0"
+        ]
+      }
+    },
+    "revolution": {
+      "remove": [
+        "digitalLocker"
+      ],
+      "restore": {
+        "sourceIDs": [
+          "pub20261020-revolution-0",
+          "pub20261020-revolution-1"
+        ]
+      }
+    }
+  },
+  "files": {
+    "known-addresses.json": {
+      "baselineFileSHA256": "8eaf70dfdb7aa3ba294b9525793a74070772b7b6d001065655cd6ff7cc245628",
+      "baselineMetadata": {
+        "packVersion": "2026.10.22.2-public-data-refresh"
+      },
+      "collections": {
+        "entries": {
+          "addedSuffixSHA256": "269486d7f3bd50cf5d01587c5ca74327056fbe35e228748b38859f8f6021583d",
+          "baselineCount": 162,
+          "baselineSHA256": "cbd6de3d52dea4312711e953c1317d457499341442707688ff2c33122abcadab",
+          "reviewedCount": 186,
+          "reviewedPrefixSHA256": "cbd6de3d52dea4312711e953c1317d457499341442707688ff2c33122abcadab"
+        }
+      },
+      "keys": [
+        "entries",
+        "packVersion",
+        "schemaVersion"
+      ],
+      "reviewedMetadata": {
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers"
+      }
+    },
+    "public-catalog.json": {
+      "baselineFileSHA256": "61435e5c9f1a24e58229801db30e40e42e4e2425fa517fe10087b82ff0a19b29",
+      "baselineMetadata": {
+        "generatedAt": "2026-10-22T11:32:13.906044+00:00",
+        "packVersion": "2026.10.22.2-public-data-refresh",
+        "scopeZIPs": [
+          "89014",
+          "89044",
+          "89052",
+          "89113",
+          "89123",
+          "89148",
+          "89183"
+        ]
+      },
+      "collections": {
+        "communities": {
+          "addedSuffixSHA256": "44a0bd5406539593efbd10cd076762d36115ac8b989d00c0b992d5ee0376b54e",
+          "baselineCount": 162,
+          "baselineSHA256": "ea51ba622170eb07b7276b55f406e3b97539a28af1f32b84d7f90d07430c3818",
+          "reviewedCount": 186,
+          "reviewedPrefixSHA256": "628c7bbe7b03fd20d5062b60251b7d69156061134b5c61b962289f3fb51a8236"
+        },
+        "sources": {
+          "addedSuffixSHA256": "0d9bd8e55a998d194aeb8b37b948384c3def5113010d076740aa466c31f0836e",
+          "baselineCount": 778,
+          "baselineSHA256": "6a06a9d0a9081e1af140341c4a35b13cbafc2f8adb8af4db92238119a68f6f20",
+          "reviewedCount": 939,
+          "reviewedPrefixSHA256": "6a06a9d0a9081e1af140341c4a35b13cbafc2f8adb8af4db92238119a68f6f20"
+        },
+        "unitBuildingAssociations": {
+          "addedSuffixSHA256": "d48feafa3d7345ef794591cc2923ed8e08e2eb461cbc0d78e6e158e4e635b1c5",
+          "baselineCount": 8015,
+          "baselineSHA256": "4b7551ff7d577284a350855569a238718615a1cdeed50275cca1561e9aa4c600",
+          "reviewedCount": 8139,
+          "reviewedPrefixSHA256": "4b7551ff7d577284a350855569a238718615a1cdeed50275cca1561e9aa4c600"
+        },
+        "unitFloorReferences": {
+          "addedSuffixSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "baselineCount": 359,
+          "baselineSHA256": "51c1b883ba1bb6270b0a56ec273717e8baf53a609e3fdac2d31295376d2a55d0",
+          "reviewedCount": 359,
+          "reviewedPrefixSHA256": "51c1b883ba1bb6270b0a56ec273717e8baf53a609e3fdac2d31295376d2a55d0"
+        }
+      },
+      "keys": [
+        "communities",
+        "coverage",
+        "deliveryAreaExceptions",
+        "generatedAt",
+        "packVersion",
+        "schemaVersion",
+        "scopeZIPs",
+        "sources",
+        "unitBuildingAssociations",
+        "unitFloorReferences"
+      ],
+      "reviewedMetadata": {
+        "generatedAt": "2026-10-25T03:28:31.037072+00:00",
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers",
+        "scopeZIPs": [
+          "89011",
+          "89012",
+          "89014",
+          "89015",
+          "89032",
+          "89044",
+          "89052",
+          "89074",
+          "89081",
+          "89084",
+          "89108",
+          "89113",
+          "89117",
+          "89118",
+          "89122",
+          "89123",
+          "89130",
+          "89148",
+          "89149",
+          "89183"
+        ]
+      }
+    },
+    "public-locations.geojson": {
+      "baselineFileSHA256": "cf6985496ca75a80574a34ca78fdf0caef909e2acb58b8676bb5902bff316b3b",
+      "baselineMetadata": {
+        "packVersion": "2026.10.22.2-public-data-refresh"
+      },
+      "collections": {
+        "features": {
+          "addedSuffixSHA256": "e070b9b1bd75811a183aa58fb1dd50b57a427256d282b9a686a4fa18ae0f53aa",
+          "baselineCount": 16064,
+          "baselineSHA256": "64963a43f841cb1103276519f2e3fd3204024539a7aeaff58a33fad4c464f2e0",
+          "reviewedCount": 23533,
+          "reviewedPrefixSHA256": "64963a43f841cb1103276519f2e3fd3204024539a7aeaff58a33fad4c464f2e0"
+        }
+      },
+      "keys": [
+        "features",
+        "packVersion",
+        "schemaVersion",
+        "type"
+      ],
+      "reviewedMetadata": {
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers"
+      }
+    },
+    "public-paths.geojson": {
+      "baselineFileSHA256": "c75ca228604c71e8ade140790dac4772978e9037ec4ccf54ecc71028a85e47e4",
+      "baselineMetadata": {
+        "packVersion": "2026.10.22.2-public-data-refresh"
+      },
+      "collections": {
+        "features": {
+          "addedSuffixSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "baselineCount": 17,
+          "baselineSHA256": "5f601eba93b5bd25d7a624e40d3e5231c0ecea98dd3faa42b2d7ef73af8280ff",
+          "reviewedCount": 17,
+          "reviewedPrefixSHA256": "5f601eba93b5bd25d7a624e40d3e5231c0ecea98dd3faa42b2d7ef73af8280ff"
+        }
+      },
+      "keys": [
+        "features",
+        "packVersion",
+        "schemaVersion",
+        "type"
+      ],
+      "reviewedMetadata": {
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers"
+      }
+    }
+  },
+  "reviewedCommit": "298e8a1c505b10b9671099c40b7fa54085aba4c0",
+  "schemaVersion": 1
+}

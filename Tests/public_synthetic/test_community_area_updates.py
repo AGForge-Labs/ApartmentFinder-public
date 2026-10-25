@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 import unittest
 
+from reviewed_bundle_history import historical_resources
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -28,10 +30,12 @@ class CommunityAreaUpdateTests(unittest.TestCase):
         self.assertNotEqual(communities['lyric'].get('longitude'), communities['trend'].get('longitude'))
 
     def test_silverado_estimates_have_separate_unit_evidence_and_never_reuse_community_centers_as_doors(self):
-        catalog = json.loads((ROOT / 'data/public-catalog.json').read_bytes())
+        # These exact six original entrance estimates retain their full qualifiers.
+        historical = historical_resources()
+        catalog = historical['public-catalog.json']
         communities = {c['id']: c for c in catalog['communities']}
         sources = {s['id']: s for s in catalog['sources']}
-        features = json.loads((ROOT / 'data/public-locations.geojson').read_bytes())['features']
+        features = historical['public-locations.geojson']['features']
         expected = {
             'lyric': ('304 E SILVERADO RANCH BLVD', {'1014': ('2', '', None)}),
             'trend': ('240 E SILVERADO RANCH BLVD', {

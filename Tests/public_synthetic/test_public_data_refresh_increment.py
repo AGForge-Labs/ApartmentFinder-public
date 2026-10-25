@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import unittest
 
+from reviewed_bundle_history import historical_resources
+
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = '2026.10.22.2-public-data-refresh'
@@ -31,7 +33,7 @@ def fingerprint(value):
 
 
 def read(name):
-    return json.loads((ROOT / 'data' / name).read_bytes())
+    return historical_resources()[name]
 
 
 class PublicDataRefreshIncrementTests(unittest.TestCase):
@@ -113,7 +115,7 @@ class PublicDataRefreshIncrementTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self.assertEqual(module.validate(ROOT / 'data'),
-                         {'communities': 162, 'positions': 16064, 'paths': 17, 'sources': 778})
+                         {'communities': 186, 'positions': 23533, 'paths': 17, 'sources': 939})
 
 
 if __name__ == '__main__':
