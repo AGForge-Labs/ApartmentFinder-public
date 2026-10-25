@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import unittest
 
-from reviewed_bundle_history import historical_resources
+from reviewed_release_bundle_history import historical_resources
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -115,7 +115,7 @@ class PublicDataRefreshIncrementTests(unittest.TestCase):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self.assertEqual(module.validate(ROOT / 'data'),
-                         {'communities': 186, 'positions': 23533, 'paths': 17, 'sources': 939})
+                         {'communities': 193, 'positions': 28458, 'paths': 17, 'sources': 1076})
 
 
 if __name__ == '__main__':

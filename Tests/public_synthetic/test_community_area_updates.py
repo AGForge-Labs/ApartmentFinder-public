@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import unittest
 
-from reviewed_bundle_history import historical_resources
+from reviewed_release_bundle_history import historical_resources
 
 ROOT = Path(__file__).resolve().parents[2]
 

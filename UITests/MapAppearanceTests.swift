@@ -109,7 +109,7 @@ final class MapAppearanceTests: XCTestCase {
                    withVelocity: .slow, thenHoldForDuration: 0.5)
         // MapKit can keep moving after XCTest reports the drag complete. Measure
         // the settled pan, not a transient frame before the style menu opens.
-        let pannedPinFrames = waitForSettledPins([firstPin, secondPin], in: app)
+        let pannedPinFrames = waitForSettledPins([firstPin, secondPin], in: app, movingFrom: initialPinFrames)
         guard pannedPinFrames.count == 2 else { return }
         let originalTip = CGPoint(x: pannedPinFrames[0].midX, y: pannedPinFrames[0].maxY)
         let secondTip = CGPoint(x: pannedPinFrames[1].midX, y: pannedPinFrames[1].maxY)
@@ -183,6 +183,7 @@ final class MapAppearanceTests: XCTestCase {
     }
 
     private func waitForSettledPins(_ pins: [XCUIElement], in app: XCUIApplication,
+                                    movingFrom baseline: [CGRect]? = nil,
                                     file: StaticString = #filePath, line: UInt = #line) -> [CGRect] {
         var previous: [CGRect] = []
         var settledFrames: [CGRect] = []
@@ -203,6 +204,15 @@ final class MapAppearanceTests: XCTestCase {
                     return false
                 }
                 frames.append(frame)
+            }
+            // Unchanged pre-gesture snapshots are not evidence of a settled pan.
+            // Keep the existing movement threshold and the same total wait budget.
+            if let baseline {
+                guard frames.count == baseline.count, let first = frames.first,
+                      let original = baseline.first, abs(first.midX - original.midX) > 5 else {
+                    previous = []; settledFrames = frames; stableSince = nil
+                    return false
+                }
             }
             let unchanged = frames.count == previous.count && zip(frames, previous).allSatisfy { current, prior in
                 abs(current.midX - prior.midX) < 1 && abs(current.maxY - prior.maxY) < 1

@@ -4,7 +4,7 @@ import hashlib
 import json
 import unittest
 
-from reviewed_bundle_history import historical_resources, load_reviewed_resources
+from reviewed_release_bundle_history import historical_resources, load_reviewed_resources
 
 
 def fingerprint(value):

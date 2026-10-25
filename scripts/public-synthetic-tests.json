@@ -181,7 +181,15 @@
     "Stop44ImportTests/testDistinctUnitsAtSameStreetAndPrinted44SurviveFullImportAndBackup",
     "Stop44ImportTests/testExistingSavedUnmatchedRepeatedUnitIsRecognizedOnPlanRefreshWithoutChangingProgress",
     "Stop44ImportTests/testRepeatedStandaloneUnitInsideOneAddressDoesNotLoseSecondContactOrInventThirdStop",
-    "Stop44ImportTests/testTwoGenuinePackagesAtTheSameUnitRemainSeparateRows"
+    "Stop44ImportTests/testTwoGenuinePackagesAtTheSameUnitRemainSeparateRows",
+    "DigitalLockerTests/testCompactPinEvidenceCannotTurnResearchIntoACheckedDoor",
+    "DigitalLockerTests/testExplicitElectronicEvidenceMayHaveNoPublishedBrand",
+    "DigitalLockerTests/testLegacyCommunityIsUnknownAndExistenceEvidenceDoesNotInventAPoint",
+    "DigitalLockerTests/testLockerEvidenceRequiresElectronicIdentitySourcesAndSeparateLocationEvidence",
+    "DigitalLockerTests/testLockerPointSummaryKeepsPrecisionAlongsideOptionalPlacement",
+    "DigitalLockerTests/testRefreshUsesV2PointerWhileLegacyPayloadStillAdmits",
+    "DigitalLockerTests/testStrictPublicAdmissionRetainsOptionalLockerAndRejectsPrivateOrUnjoinedFields",
+    "DigitalLockerTests/testSupplementAddsLocationSourcesWithoutReplacingPrivateEvidenceOrOtherStreet"
   ],
   "native": [
     "ApartmentFinderTests/ApartmentRouteFollowupTests/testAddingAfterBatchCompletionPreservesUndoThroughPersistentStoreReopen",

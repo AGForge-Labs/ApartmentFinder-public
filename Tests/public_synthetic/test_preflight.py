@@ -530,7 +530,7 @@ xcrun() {
         iteration = module('public_preflight_iteration', ROOT / 'scripts/iterate.py')
         self.assertEqual(selection['schema_version'], 1)
         for key, folder, target, count in (
-            ('core', 'Tests/ApartmentCoreTests', '', 180),
+            ('core', 'Tests/ApartmentCoreTests', '', 188),
             ('native', 'NativeTests', 'ApartmentFinderTests/', 75),
             ('ui', 'UITests', 'ApartmentFinderUITests/', 10),
         ):
@@ -538,6 +538,17 @@ xcrun() {
             self.assertEqual(len(values), count)
             self.assertEqual(len(values), len(set(values)))
             self.assertTrue(set(values) <= {target + item for item in iteration.test_ids(ROOT, folder)})
+        self.assertEqual({item for item in selection['core'] if item.startswith('DigitalLockerTests/')}, {
+            'DigitalLockerTests/testCompactPinEvidenceCannotTurnResearchIntoACheckedDoor',
+            'DigitalLockerTests/testExplicitElectronicEvidenceMayHaveNoPublishedBrand',
+            'DigitalLockerTests/testLegacyCommunityIsUnknownAndExistenceEvidenceDoesNotInventAPoint',
+            'DigitalLockerTests/testLockerEvidenceRequiresElectronicIdentitySourcesAndSeparateLocationEvidence',
+            'DigitalLockerTests/testLockerPointSummaryKeepsPrecisionAlongsideOptionalPlacement',
+            'DigitalLockerTests/testRefreshUsesV2PointerWhileLegacyPayloadStillAdmits',
+            'DigitalLockerTests/testStrictPublicAdmissionRetainsOptionalLockerAndRejectsPrivateOrUnjoinedFields',
+            'DigitalLockerTests/testSupplementAddsLocationSourcesWithoutReplacingPrivateEvidenceOrOtherStreet',
+        })
+        self.assertNotIn('DigitalLockerTests/testOptionalExactPublicRevisionDecodesWithoutPromotingResearchToDoors', selection['core'])
         self.assertEqual({item for item in selection['core'] if item.startswith('PublicCatalogBudgetTests/')}, {
             'PublicCatalogBudgetTests/testBundledCatalogAcceptsReviewedGrowthThroughExactPublicBoundary',
             'PublicCatalogBudgetTests/testPublicBoundaryStillRejectsOversizeSymlinksDirectoriesAndMalformedSchema',

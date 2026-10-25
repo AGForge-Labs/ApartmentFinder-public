@@ -18,20 +18,36 @@ final class PublicCatalogResourceTests: XCTestCase {
             "estimated-unit-area:", "southpark:unit-area:", "operator-room-area:",
             "cyan-at-green-valley:directory-unit:", "ascent-at-silverado:directory-unit:",
             "ascend-heartland-source-unit-", "the-solena-source-unit-",
-            "north-park-living-source-unit-", "north-ridge-apartments-source-unit-"]
+            "north-park-living-source-unit-", "north-ridge-apartments-source-unit-",
+            "constellation-source-unit-",
+            "layne-peccole-source-unit-",
+            "st-lucia-source-unit-",
+            "avondale-source-unit-",
+            "arabella-directory-estimate-",
+            "parq-on-boulder-",
+            "allegro-at-la-entrada-directory-estimate-",
+            "townhomes-at-horizon-ridge-unit-area-estimate-",
+            "horizon-ridge-apartments-unit-area-",
+            "invitational-apartments-unit-area-",
+            "sage-at-green-valley-unit-area-estimate-",
+            "croix-townhomes-unit-area-estimate-",
+            "the-pavilions-by-picerne-unit-area-estimate-",
+            "the-presidio-by-picerne-unit-area-estimate-",
+            "the-view-at-horizon-ridge-unit-area-estimate-",
+            "ventana-canyon-apartments-unit-area-estimate-"]
         return data.places.filter { place in
             place.entranceSideEstimate == nil && !laterNamespaces.contains { place.id.hasPrefix($0) }
         }
     }
     func testPublicPackDecodesQualifiedPositionsAndKeepsRileyAndRussellStreetsSeparate() throws {
         let data = try pack()
-        XCTAssertEqual(data.catalog.packVersion, "2026.10.24.3-public-valley-directories-lockers")
-        XCTAssertEqual(data.catalog.communities.count, 186)
-        XCTAssertEqual(data.places.count, 23_533)
-        XCTAssertEqual(Set(data.places.map(\.id)).count, 23_533)
-        XCTAssertEqual(data.places.filter { $0.verification == .sourceMapped }.count, 16_342)
-        XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 7_191)
-        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 23_112)
+        XCTAssertEqual(data.catalog.packVersion, "2026.10.25.13-public-valley-ventana-provider-unit-areas")
+        XCTAssertEqual(data.catalog.communities.count, 193)
+        XCTAssertEqual(data.places.count, 28_458)
+        XCTAssertEqual(Set(data.places.map(\.id)).count, 28_458)
+        XCTAssertEqual(data.places.filter { $0.verification == .sourceMapped }.count, 17_870)
+        XCTAssertEqual(data.places.filter { $0.verification == .estimated }.count, 10_588)
+        XCTAssertEqual(data.places.filter { $0.kind == .unitPosition }.count, 28_037)
         let originalPlaces = frozenB09Places(in: data)
         XCTAssertEqual(originalPlaces.count, 15_420, "The frozen b09 catalog remains separate from new estimates")
         XCTAssertEqual(originalPlaces.filter { $0.verification == .sourceMapped }.count, 14_678)
@@ -46,7 +62,7 @@ final class PublicCatalogResourceTests: XCTestCase {
         XCTAssertEqual(data.places.filter { $0.referenceKind == .operatorMapBuildingArea }.count, 82)
         XCTAssertEqual(data.catalog.unitBuildingAssociations?.count, 8_139)
         XCTAssertEqual(data.catalog.unitBuildingAssociations?.filter { $0.referencePlaceID != nil }.count, 6_042)
-        XCTAssertEqual(data.catalog.sources.count, 939)
+        XCTAssertEqual(data.catalog.sources.count, 1_076)
         let newMapNamespaces = ["cyan-at-green-valley:directory-unit:", "ascent-at-silverado:directory-unit:",
             "the-solena-source-unit-", "north-park-living-source-unit-", "north-ridge-apartments-source-unit-"]
         let newMapPositions = data.places.filter { place in newMapNamespaces.contains { place.id.hasPrefix($0) } }

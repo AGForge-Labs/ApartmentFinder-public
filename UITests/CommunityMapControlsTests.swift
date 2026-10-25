@@ -38,6 +38,16 @@ final class CommunityMapControlsTests: XCTestCase {
         openRoute("tuscano", fixture: "--tuscano-manifest")
         assertCompactControls()
         app.buttons["Show all stops"].tap()
+        // Observe the required state after the asynchronous SwiftUI/AX update;
+        // a completed tap alone does not establish the published map mode.
+        let paused = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@ AND value BEGINSWITH %@", "Resume following", "Paused"),
+            object: app.buttons["mini.recenter"])
+        let pausedResult = XCTWaiter.wait(for: [paused], timeout: 5)
+        if pausedResult != .completed {
+            mapStateDiagnostics(stage: "overview did not expose paused state", includeHierarchy: true)
+        }
+        XCTAssertEqual(pausedResult, .completed, "Show all stops must expose the paused map state")
         XCTAssertEqual(app.buttons["mini.recenter"].label, "Resume following")
         assertCompactControls()
         capture("Paused controls leave the map clear")

@@ -84,16 +84,16 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let store = AppStore(storeURL: url, resourceBundle: .main, packDirectory: directory)
         XCTAssertNil(store.errorMessage)
         XCTAssertFalse(store.requiresPrivatePack)
-        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.24.3-public-valley-directories-lockers")
-        XCTAssertEqual(store.communities.count, 186)
-        XCTAssertEqual(store.places.count, 23_533)
+        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.25.13-public-valley-ventana-provider-unit-areas")
+        XCTAssertEqual(store.communities.count, 193)
+        XCTAssertEqual(store.places.count, 28_458)
         XCTAssertEqual(store.paths.count, 17)
         // The immutable resource retains research provenance, while AppStore
         // projects only sources referenced by admitted records.
         let bundled = try XCTUnwrap(PublicCatalogSupplement.read(from: .main))
-        XCTAssertEqual(bundled.catalog.sources.count, 939)
+        XCTAssertEqual(bundled.catalog.sources.count, 1_076)
         let loadedSources = try XCTUnwrap(store.pack).catalog.sources
-        XCTAssertEqual(loadedSources.count, 935)
+        XCTAssertEqual(loadedSources.count, 1_072)
         let unreferencedSourceIDs: Set<String> = [
             "lyric-estimate-20261023-map-region1", "lyric-estimate-20261023-map-region2",
             "lyric-estimate-20261023-map-region3", "mc-emerald-operator-page"]
