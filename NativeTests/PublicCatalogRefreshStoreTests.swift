@@ -55,7 +55,7 @@ final class PublicCatalogRefreshStoreTests: XCTestCase {
     }
     private func client(_ payload: PublicCatalogUpdatePayload) -> PublicCatalogUpdateClient {
         PublicCatalogUpdateClient { url, _ in
-            if url.lastPathComponent == "latest.json" { return payload.manifestData }
+            if url.lastPathComponent == "latest-v2.json" { return payload.manifestData }
             guard let bytes = payload.files[url.lastPathComponent] else { throw CoreError("Unknown fictional file") }
             return bytes
         }
@@ -159,7 +159,7 @@ final class PublicCatalogRefreshStoreTests: XCTestCase {
         let started = expectation(description: "Fictional fetch started"), gate = DispatchSemaphore(value: 0)
         defer { gate.signal() }
         let client = PublicCatalogUpdateClient { url, _ in
-            if url.lastPathComponent == "latest.json" {
+            if url.lastPathComponent == "latest-v2.json" {
                 started.fulfill()
                 guard gate.wait(timeout: .now() + 5) == .success else { throw CoreError("Fictional gate timed out") }
                 return next.manifestData
@@ -186,7 +186,7 @@ final class PublicCatalogRefreshStoreTests: XCTestCase {
         let first = try payload("fictional-r1", sequence: 1), next = try payload("fictional-r2", sequence: 2, newStreet: true)
         _ = try cache.install(first)
         let client = PublicCatalogUpdateClient { url, _ in
-            url.lastPathComponent == "latest.json" ? next.manifestData : Data("invalid fictional bytes".utf8)
+            url.lastPathComponent == "latest-v2.json" ? next.manifestData : Data("invalid fictional bytes".utf8)
         }
         let store = AppStore(storeURL: root.appendingPathComponent("test.store"), resourceBundle: try emptyBundle(root),
             publicCatalogStore: cache, publicCatalogClient: client)

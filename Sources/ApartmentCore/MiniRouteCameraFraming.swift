@@ -22,7 +22,7 @@ public enum MiniRouteCameraFraming {
         let center = nearby ? usable!.coordinate : property
         let radius = pins.map { Geometry.distance(center, $0) }.max() ?? 0
         let w = width.isFinite && width >= 240 ? width : 390
-        let h = height.isFinite && height >= 240 ? height : 500
+        let h = height.isFinite && height > 0 ? height : 500
         // Heading-independent circle fits every rotation. Reserve room for top
         // status and bottom controls; the stop card uses a safe-area inset.
         let horizontal = max(24, w/2-76)/(h/2)

@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import unittest
 
+from reviewed_release_bundle_history import historical_resources
+
 ROOT = Path(__file__).resolve().parents[2]
 ADDED_COMMUNITIES = {'ensemble-ii', 'budget-suites-las-vegas-strip', 'one-las-vegas',
                      'st-james-place', 'southpark', 'paragon-lofts'}
@@ -33,7 +35,8 @@ def fingerprint(value):
 
 
 def resources():
-    return [json.loads((ROOT / 'data' / name).read_bytes()) for name in
+    historical = historical_resources()
+    return [historical[name] for name in
             ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson')]
 
 
@@ -258,7 +261,7 @@ class PublicCatalogResourceTests(unittest.TestCase):
         catalog, locations, paths = resources()
         proof = json.loads((ROOT/'docs/estimated-entrance-side-preservation.json').read_bytes())
         self.assertEqual(proof['baseSource'], 'b09e5d1fdd745e8748c817b76aff9cde11371eae')
-        index = json.loads((ROOT/'data/known-addresses.json').read_bytes())
+        index = historical_resources()['known-addresses.json']
         self.assertEqual(index['packVersion'], catalog['packVersion'])
         self.assertEqual(fingerprint(index['entries']),
                          'cbd6de3d52dea4312711e953c1317d457499341442707688ff2c33122abcadab')

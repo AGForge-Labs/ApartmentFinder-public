@@ -16,7 +16,7 @@ public struct LocalDataPack: Sendable {
         }
         let communityIDs = Set(catalog.communities.map(\.id)), sourceIDs = Set(catalog.sources.map(\.id))
         let scopeZIPs = Set(catalog.scopeZIPs)
-        let supportedZIPs: Set<String> = ["89113", "89148", "89123", "89183", "89052", "89014", "89044"]
+        let supportedZIPs = DeliveryAreaScope.supportedZIPs
         guard communityIDs.count == catalog.communities.count, sourceIDs.count == catalog.sources.count,
               Set(points.features.map(\.id)).count == points.features.count,
               Set(lines.features.map(\.id)).count == lines.features.count,
@@ -56,6 +56,9 @@ public struct LocalDataPack: Sendable {
                 throw CoreError("Community outside the requested delivery area.")
             }
             try validate(community.id, community.sourceIDs)
+            if let locker = community.digitalLocker, !locker.isValid(sourceIDs: sourceIDs) {
+                throw CoreError("Invalid electronic package locker evidence or separately sourced location.")
+            }
             if let coordinate = community.coordinate, !coordinate.isValid { throw CoreError("Invalid community coordinates.") }
         }
         for source in catalog.sources {

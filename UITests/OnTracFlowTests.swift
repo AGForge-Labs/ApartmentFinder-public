@@ -31,6 +31,9 @@ final class OnTracFlowTests: XCTestCase {
     }
     override func tearDown() {
         if let app {
+            if (testRun?.totalFailureCount ?? 0) > 0 {
+                onTracMapStateDiagnostics(stage: "failure tearDown before existing capture", includeHierarchy: true)
+            }
             capture("Final screen")
             if !syntheticDiagnosticsEnabled && (testRun?.totalFailureCount ?? 0) > 0 {
                 let hierarchy = XCTAttachment(string: app.debugDescription)
@@ -40,6 +43,53 @@ final class OnTracFlowTests: XCTestCase {
         }
         super.tearDown()
     }
+
+    private func onTracMapStateDiagnostics(stage: String, context: String = "",
+                                          includeHierarchy: Bool = false) {
+        // Retain the legacy toolbar probe's fixed-scalar-only diagnostics mode.
+        guard app != nil, !syntheticDiagnosticsEnabled,
+              app.launchArguments.contains("--uitesting"),
+              let storeIndex = app.launchArguments.firstIndex(of: "--test-store"),
+              storeIndex + 1 < app.launchArguments.count,
+              UUID(uuidString: app.launchArguments[storeIndex + 1]) != nil else { return }
+        let state = app.state
+        let foreground = state == .runningForeground
+        func describe(_ element: XCUIElement) -> String {
+            guard foreground, element.exists, let snapshot = try? element.snapshot() else {
+                return "app not foreground, missing element, or unavailable snapshot"
+            }
+            let frame = snapshot.frame
+            let finite = [frame.minX, frame.minY, frame.width, frame.height].allSatisfy { $0.isFinite }
+            return "type=\(snapshot.elementType.rawValue);id=\(snapshot.identifier);label=\(snapshot.label);value=\(String(describing: snapshot.value));frame=\(frame);finite=\(finite)"
+        }
+        // State still prints if the app terminated; never request a dead app's AX tree.
+        let pins = foreground ? app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.")).allElementsBoundByIndex : []
+        let pinState = pins.map(describe).joined(separator: "\n")
+        let hierarchy = includeHierarchy && foreground ? app.debugDescription : "not requested or app not foreground"
+        let diagnostics = """
+        stage=\(stage);appState=\(state.rawValue);foreground=\(foreground);\(context)
+        window=\(describe(app.windows.firstMatch))
+        mapAXFrame=\(describe(app.maps.firstMatch))
+        nextCard=\(describe(app.staticTexts["mini.next"]))
+        camera=\(describe(app.buttons["mini.recenter"]))
+        mapStyle=\(describe(app.buttons["mini.mapStyle"]))
+        coverage=\(describe(app.staticTexts["mini.coverage"]))
+        pinCount=\(pins.count)
+        \(pinState)
+        \(hierarchy)
+        """
+        let payload = "ONTRAC-MAP-STATE-DIAGNOSTIC \(diagnostics)"
+        // Safe decoding adds at most two replacement bytes; print adds one newline.
+        let boundedPayload = String(decoding: payload.utf8.prefix(32_764), as: UTF8.self)
+        print(boundedPayload)
+        if includeHierarchy {
+            let attachment = XCTAttachment(string: boundedPayload)
+            attachment.name = "Synthetic OnTrac map state"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
     private func capture(_ name: String) {
         if syntheticDiagnosticsEnabled { return }
         let image = XCTAttachment(screenshot: app.screenshot())
@@ -284,8 +334,11 @@ final class OnTracFlowTests: XCTestCase {
         }
         guard let blankX else { XCTFail("No unobstructed map gesture path"); return }
         let start = CGVector(dx: blankX, dy: startY), end = CGVector(dx: blankX, dy: endY)
+        onTracMapStateDiagnostics(stage: "before existing map pan",
+            context: "map=\(mapFrame);visible=\(gestureBounds);start=\(start);end=\(end);beforePin=\(beforePanFrame)")
         map.coordinate(withNormalizedOffset: start)
             .press(forDuration: 0.1, thenDragTo: map.coordinate(withNormalizedOffset: end))
+        onTracMapStateDiagnostics(stage: "after existing map pan, before original Paused expectation")
         let paused = NSPredicate(format: "value BEGINSWITH %@", "Paused")
         expectation(for: paused, evaluatedWith: app.buttons["mini.recenter"])
         waitForExpectations(timeout: 5)

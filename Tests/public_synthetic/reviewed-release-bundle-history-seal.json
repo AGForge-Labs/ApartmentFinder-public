@@ -1,0 +1,435 @@
+{
+  "schemaVersion": 1,
+  "sourceBase": "19a8f6ac772b7365e570c1a55e695cf3b5b6a5cc",
+  "currentRevision": "2026.10.25.13",
+  "previousPackVersion": "2026.10.24.3-public-valley-directories-lockers",
+  "readerVerifiedDataCommit": "f5e16947fd2f0dc9c20d80d1b2187ac16260f28b",
+  "rawFiles": {
+    "known-addresses.json": {
+      "bytes": 14960,
+      "sha256": "aa9b0dcaf27462e80d34c210cbba578398ac6775a3b7145ac03de22490240019"
+    },
+    "public-catalog-review.json": {
+      "bytes": 915,
+      "sha256": "993760608d467be644d80f3f3d9c375e55581c70c9e030c2dfed7a6b080fd7df"
+    },
+    "public-catalog.json": {
+      "bytes": 2851638,
+      "sha256": "39ce30071bb60c32b9f11b802ebd92448169ba357dbb6e6ec4f58d4794a47c15"
+    },
+    "public-locations.geojson": {
+      "bytes": 29023021,
+      "sha256": "27b40b8f57fb1018a7d4a7d5ef4bc7705a1e61a5637c23f55f63d1b96db2ad72"
+    },
+    "public-paths.geojson": {
+      "bytes": 8968,
+      "sha256": "3df0e3abcbb3ce91ceaa41b7c81927554a6a685f91218b888fa04887104fa047"
+    }
+  },
+  "files": {
+    "public-catalog.json": {
+      "keys": [
+        "communities",
+        "coverage",
+        "deliveryAreaExceptions",
+        "generatedAt",
+        "packVersion",
+        "schemaVersion",
+        "scopeZIPs",
+        "sources",
+        "unitBuildingAssociations",
+        "unitFloorReferences"
+      ],
+      "currentFileSHA256": "90fcc3db8afdfa8ed6a0774c87de0bf8aeeb4056033f2b8051fd1b8547f3090c",
+      "previousFileSHA256": "ecf8e080bfa55b6f4c9037317edb14c42b8a947582fe94c28b0aac8699ddce00",
+      "collections": {
+        "sources": {
+          "previousCount": 939,
+          "currentCount": 1076,
+          "currentPrefixSHA256": "69b4d882ecfa0fb55d710dc15fb26b868f651e143b52e4d5be07b8895f3424b3",
+          "completeAddedSuffixSHA256": "c60fe66ee05c53776fcaa4c4227a0206622f9565f0cd04169952714adf572b8b",
+          "previousSHA256": "69b4d882ecfa0fb55d710dc15fb26b868f651e143b52e4d5be07b8895f3424b3"
+        },
+        "communities": {
+          "previousCount": 186,
+          "currentCount": 193,
+          "currentPrefixSHA256": "a42eebe10cff6cba6dce0e45ed253449b5be4384a6a0b731c19521d48ad4aded",
+          "completeAddedSuffixSHA256": "32eb1e1cd533e7bc78151f31b2e96268be5fea2bba5dfb300fe1b0e4f32a0a0c",
+          "previousSHA256": "5b00149a492e2a8a3fb5fbe2c688756b3a30e12aa3985e3e866e1cf26eba7aba"
+        },
+        "unitBuildingAssociations": {
+          "previousCount": 8139,
+          "currentCount": 8139,
+          "currentPrefixSHA256": "4e1f010e93e37ea8d8763cf7e0c572febb46c39f51829c9a0c1f168c1e232469",
+          "completeAddedSuffixSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "previousSHA256": "4e1f010e93e37ea8d8763cf7e0c572febb46c39f51829c9a0c1f168c1e232469"
+        },
+        "unitFloorReferences": {
+          "previousCount": 359,
+          "currentCount": 359,
+          "currentPrefixSHA256": "51c1b883ba1bb6270b0a56ec273717e8baf53a609e3fdac2d31295376d2a55d0",
+          "completeAddedSuffixSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "previousSHA256": "51c1b883ba1bb6270b0a56ec273717e8baf53a609e3fdac2d31295376d2a55d0"
+        }
+      },
+      "previousMetadata": {
+        "coverage": {
+          "inventoryComplete": false,
+          "notes": [
+            "Public source-derived apartment and multifamily inventory. This is not a certified exhaustive inventory.",
+            "Published unit positions retain their source confidence. Estimated positions may be inaccurate; no exact doors or entrances are established.",
+            "New Silverado-area records may have only a verified property name and street address. Missing unit maps remain explicit research gaps.",
+            "Public map geometry is unconfirmed. OpenStreetMap contributors attribution and ODbL requirements apply to retained OSM paths."
+          ]
+        },
+        "deliveryAreaExceptions": [
+          {
+            "address": "5355 S Rainbow Blvd",
+            "boundarySourceID": "spanish-wells-property-boundary",
+            "cadastralSourceID": "spanish-wells-cadastral-map",
+            "communityID": "spanish-wells",
+            "countySourceID": "spanish-wells-current-county",
+            "currentCountyAPN": "16327710181",
+            "identitySourceID": "spanish-wells-official-identity",
+            "postalZIP": "89118",
+            "propertyAPN": "16327710000"
+          }
+        ],
+        "generatedAt": "2026-10-25T03:28:31.037072+00:00",
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers",
+        "schemaVersion": 1,
+        "scopeZIPs": [
+          "89011",
+          "89012",
+          "89014",
+          "89015",
+          "89032",
+          "89044",
+          "89052",
+          "89074",
+          "89081",
+          "89084",
+          "89108",
+          "89113",
+          "89117",
+          "89118",
+          "89122",
+          "89123",
+          "89130",
+          "89148",
+          "89149",
+          "89183"
+        ]
+      }
+    },
+    "public-locations.geojson": {
+      "keys": [
+        "features",
+        "packVersion",
+        "schemaVersion",
+        "type"
+      ],
+      "currentFileSHA256": "e9d0ccb28fad669e436b1f0c8ee922c0c4ab1a7551023407d738e6d5db535b2c",
+      "previousFileSHA256": "6f3e6dbefc2b74f3d7d46517e65db53fa33a545be006bc333fab64845a2b8a8a",
+      "collections": {
+        "features": {
+          "previousCount": 23533,
+          "currentCount": 28458,
+          "currentPrefixSHA256": "1b44210a6b8ffec67f7c16ffcd21753f24722d05edb0394e7551439c98be08ab",
+          "completeAddedSuffixSHA256": "94c10eb03e41bc289045a498c0d9ef13d5e659ef9d30bffc3f55e18b12324e68",
+          "previousSHA256": "1b44210a6b8ffec67f7c16ffcd21753f24722d05edb0394e7551439c98be08ab"
+        }
+      },
+      "previousMetadata": {
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers",
+        "schemaVersion": 1,
+        "type": "FeatureCollection"
+      }
+    },
+    "public-paths.geojson": {
+      "keys": [
+        "features",
+        "packVersion",
+        "schemaVersion",
+        "type"
+      ],
+      "currentFileSHA256": "5c41cbb25d4d57255951f12be3b593c3fa99775dfac799d5c6b48142942e29a5",
+      "previousFileSHA256": "23100524a9e93cf1db516f823a9038f9f0d9a5cec9d44029ed2d52439c2f6fa3",
+      "collections": {
+        "features": {
+          "previousCount": 17,
+          "currentCount": 17,
+          "currentPrefixSHA256": "5f601eba93b5bd25d7a624e40d3e5231c0ecea98dd3faa42b2d7ef73af8280ff",
+          "completeAddedSuffixSHA256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "previousSHA256": "5f601eba93b5bd25d7a624e40d3e5231c0ecea98dd3faa42b2d7ef73af8280ff"
+        }
+      },
+      "previousMetadata": {
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers",
+        "schemaVersion": 1,
+        "type": "FeatureCollection"
+      }
+    },
+    "known-addresses.json": {
+      "keys": [
+        "entries",
+        "packVersion",
+        "schemaVersion"
+      ],
+      "currentFileSHA256": "efe0448c9f7b97af378d3a147967469bf1390f345aa7a91f13953e3e90a40ed4",
+      "previousFileSHA256": "35b110e2b08a235b03984627355249c15250926b25b9e3d19bfaf6880321f6d3",
+      "collections": {
+        "entries": {
+          "previousCount": 186,
+          "currentCount": 193,
+          "currentPrefixSHA256": "411e8994e9de3e7196106b805f67440c612d1370e7f41b1fb23d199f04906b42",
+          "completeAddedSuffixSHA256": "a930071d845a1e6736c089349206d3f552fbb0b26c344d9dcd944293f2c737d7",
+          "previousSHA256": "411e8994e9de3e7196106b805f67440c612d1370e7f41b1fb23d199f04906b42"
+        }
+      },
+      "previousMetadata": {
+        "schemaVersion": 1,
+        "packVersion": "2026.10.24.3-public-valley-directories-lockers"
+      }
+    }
+  },
+  "communityInversePatches": {
+    "arca": {
+      "restore": {
+        "sourceIDs": [
+          "arca-identity",
+          "arca-page-2",
+          "arca-page-3",
+          "arca-page-4",
+          "arca-embed",
+          "arca-geo-0",
+          "arca-map-api-0",
+          "arca-building-groups-0"
+        ]
+      },
+      "remove": [
+        "digitalLocker"
+      ]
+    },
+    "cabrillo": {
+      "restore": {
+        "sourceIDs": [
+          "cabrillo-identity",
+          "cabrillo-page-2",
+          "cabrillo-page-3",
+          "cabrillo-registered-plan",
+          "cabrillo-registered-reference",
+          "cabrillo-registered-membership",
+          "county-zip-boundaries",
+          "county-gilis20",
+          "spanish-wells-property-boundary",
+          "county-17604712000-3"
+        ]
+      },
+      "remove": [
+        "digitalLocker"
+      ]
+    },
+    "level25-durango": {
+      "restore": {
+        "sourceIDs": [
+          "level25-durango-identity",
+          "level25-durango-page-2",
+          "level25-durango-page-3",
+          "level25-durango-page-4",
+          "level25-durango-estimated-source-0",
+          "level25-durango-estimated-source-1",
+          "spanish-wells-property-boundary",
+          "county-zip-boundaries",
+          "county-gilis20",
+          "county-16329701025-3",
+          "level25-durango-pixel-0",
+          "level25-durango-pixel-1",
+          "level25-durango-pixel-2",
+          "level25-durango-pixel-3",
+          "level25-durango-pixel-4"
+        ]
+      },
+      "remove": [
+        "digitalLocker"
+      ]
+    },
+    "level25-sunset": {
+      "restore": {
+        "sourceIDs": [
+          "level25-sunset-identity",
+          "level25-sunset-page-2",
+          "level25-sunset-page-3",
+          "level25-sunset-page-4",
+          "level25-sunset-registered-plan",
+          "level25-sunset-registered-reference",
+          "level25-sunset-registered-property",
+          "level25-sunset-estimated-source-1",
+          "level25-sunset-estimated-source-2",
+          "level25-sunset-estimated-source-3",
+          "level25-sunset-estimated-source-4",
+          "level25-sunset-estimated-source-5",
+          "level25-sunset-estimated-source-6",
+          "level25-sunset-estimated-source-7",
+          "level25-sunset-estimated-source-8",
+          "level25-sunset-pixel-4",
+          "level25-sunset-pixel-5"
+        ]
+      },
+      "remove": [
+        "digitalLocker"
+      ]
+    },
+    "heirloom-at-pebble": {
+      "restore": {
+        "sourceIDs": [
+          "public-heirloom-at-pebble",
+          "map-heirloom-at-pebble",
+          "pubv3-heirloom-configuration-61f67013a9a24896",
+          "pubv3-heirloom-configuration-988f538cbc3d91a1",
+          "pubv3-heirloom-configuration-c21c13128765dbc9",
+          "pubv3-heirloom-configuration-8b0e9edf1567f45f",
+          "pubv3-heirloom-configuration-3fceaa9cb24827b9",
+          "pubv3-heirloom-configuration-6e10c621c0aa42a6",
+          "pubv3-heirloom-configuration-340ded7cd1335d11"
+        ]
+      },
+      "remove": [
+        "digitalLocker"
+      ]
+    },
+    "paramount": {
+      "restore": {
+        "sourceIDs": [
+          "public-paramount",
+          "pub20261020-paramount-official-map-0",
+          "g21-paramount-868b263d0375"
+        ]
+      },
+      "remove": [
+        "digitalLocker"
+      ]
+    },
+    "parkside-villas": {
+      "restore": {
+        "sourceIDs": [
+          "public-parkside-villas",
+          "g21-parkside-villas-7af66dd55071"
+        ]
+      },
+      "remove": [
+        "digitalLocker"
+      ]
+    },
+    "sage-at-green-valley": {
+      "restore": {
+        "sourceIDs": [
+          "pub20261020-sage-at-green-valley-0",
+          "pub20261020-sage-at-green-valley-1",
+          "pub20261020-sage-at-green-valley-2"
+        ]
+      },
+      "remove": []
+    },
+    "croix-townhomes": {
+      "restore": {
+        "sourceIDs": [
+          "p4-6245ba30c626a8a0",
+          "p4-7754ca7d6471f591"
+        ]
+      },
+      "remove": []
+    },
+    "townhomes-at-horizon-ridge": {
+      "restore": {
+        "sourceIDs": [
+          "henderson-townhomes-horizon-amenities"
+        ]
+      },
+      "remove": []
+    },
+    "arabella": {
+      "restore": {
+        "sourceIDs": [
+          "henderson-arabella-amenities",
+          "henderson-arabella-map-page"
+        ]
+      },
+      "remove": []
+    },
+    "element-12-at-cadence": {
+      "restore": {
+        "digitalLocker": {
+          "status": "present",
+          "sourceIDs": [
+            "henderson-element12-faq",
+            "henderson-element12-home"
+          ],
+          "checkedAt": "2026-10-24",
+          "brand": "Parcel Pending",
+          "placementDescription": "Location not mapped."
+        },
+        "sourceIDs": [
+          "henderson-element12-faq",
+          "henderson-element12-home"
+        ]
+      },
+      "remove": []
+    },
+    "allegro-at-la-entrada": {
+      "restore": {
+        "sourceIDs": [
+          "henderson-allegro-map-page",
+          "henderson-allegro-amenities"
+        ]
+      },
+      "remove": []
+    },
+    "parq-on-boulder": {
+      "restore": {
+        "sourceIDs": [
+          "henderson-parq-floorplan",
+          "henderson-parq-amenities"
+        ]
+      },
+      "remove": []
+    },
+    "horizon-ridge-apartments": {
+      "restore": {
+        "sourceIDs": [
+          "henderson-horizon-home"
+        ]
+      },
+      "remove": []
+    },
+    "invitational-apartments": {
+      "restore": {
+        "sourceIDs": [
+          "henderson-invitational-home"
+        ]
+      },
+      "remove": []
+    },
+    "layne-peccole": {
+      "restore": {
+        "sourceIDs": [
+          "layne-peccole",
+          "layne-peccole-floorplans",
+          "layne-peccole-sightmap",
+          "layne-peccole-map-data",
+          "layne-peccole-map-data-geojson_url",
+          "layne-peccole-map-data-url",
+          "layne-peccole-map-data-background_image_url",
+          "valley20261024-layne-layne-peccole-imagery-jpg",
+          "valley20261024-layne-layne-peccole-parcels-geojson",
+          "valley20261024-layne-layne-peccole-imagery-identify-json"
+        ]
+      },
+      "remove": []
+    }
+  },
+  "unchangedLegacyInputs": {
+    "reviewed_bundle_history.py": "262aa1bc99bbb6c820a355232aecc605fc199ad35323c7b45204a158c81bfb36",
+    "reviewed-valley-history-seal.json": "f3804100f8608db6888b6516d3c29e59eb071e43cda597bbe2732815eca1bf17"
+  }
+}

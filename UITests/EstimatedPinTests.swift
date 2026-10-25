@@ -16,12 +16,12 @@ final class EstimatedPinTests: XCTestCase {
         app.buttons["apartment.level25-durango"].tap()
         app.buttons["mini.start"].tap()
         XCTAssertTrue(app.maps.firstMatch.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["mini.estimateWarning"].exists)
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated")
         let pin = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.1.")).firstMatch
         XCTAssertTrue(pin.waitForExistence(timeout: 5))
         XCTAssertTrue(pin.label.contains("1002"))
         XCTAssertTrue(pin.label.contains("building 1"))
-        XCTAssertTrue(pin.label.contains("May be inaccurate"))
+        XCTAssertTrue(pin.label.contains("Estimated"))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         capture(app, "Durango estimates with per-unit warning")
         app.buttons["mini.prepare"].tap()
@@ -47,7 +47,7 @@ final class EstimatedPinTests: XCTestCase {
         editorMap.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.55)).tap()
         app.buttons["door.confirm"].tap()
         XCTAssertTrue(app.buttons["mini.navigate"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["mini.estimateWarning"].exists)
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Checked door")
         XCTAssertTrue(pin.label.contains("Checked door"))
         app.terminate()
         app.launchArguments.removeAll { $0 == "--reset-test-inbox" }
@@ -56,10 +56,10 @@ final class EstimatedPinTests: XCTestCase {
         app.buttons["apartment.level25-durango"].tap()
         app.buttons["mini.start"].tap()
         XCTAssertTrue(app.buttons["mini.navigate"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["mini.estimateWarning"].exists)
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Checked door")
         app.buttons["mini.delivered"].tap()
         XCTAssertEqual(app.staticTexts["mini.next"].label, "Next · Stop 2")
-        XCTAssertTrue(app.staticTexts["mini.estimateWarning"].exists)
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated")
         capture(app, "Corrected door persists and next estimate remains marked")
     }
 

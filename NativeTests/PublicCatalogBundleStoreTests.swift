@@ -1,4 +1,8 @@
 import XCTest
+import SwiftUI
+import UIKit
+import MapKit
+import CoreLocation
 import SwiftData
 import ApartmentCore
 @testable import ApartmentFinder
@@ -49,6 +53,17 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         }
         return try XCTUnwrap(Bundle(url: url))
     }
+    private func rawPublicBundle(at root: URL, catalog: Data, locations: Data, paths: Data) throws -> Bundle {
+        let url = root.appendingPathComponent("\(UUID().uuidString).bundle", isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        let info = ["CFBundleIdentifier": "org.example.public-catalog.\(UUID().uuidString)", "CFBundlePackageType": "BNDL"]
+        try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: url.appendingPathComponent("Info.plist"))
+        for (name, bytes) in [("public-catalog.json", catalog), ("public-locations.geojson", locations), ("public-paths.geojson", paths)] {
+            try bytes.write(to: url.appendingPathComponent(name))
+        }
+        // Bundle creation follows all writes so resource discovery sees the complete fixture.
+        return try XCTUnwrap(Bundle(url: url))
+    }
     private func documents(at url: URL) throws -> [String: Data] {
         let container = try ModelContainer(for: StoredDocument.self, configurations: ModelConfiguration(url: url, cloudKitDatabase: .none))
         return Dictionary(uniqueKeysWithValues: try ModelContext(container).fetch(FetchDescriptor<StoredDocument>()).map { ($0.key, $0.payload) })
@@ -84,13 +99,25 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let store = AppStore(storeURL: url, resourceBundle: .main, packDirectory: directory)
         XCTAssertNil(store.errorMessage)
         XCTAssertFalse(store.requiresPrivatePack)
-        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.22.2-public-data-refresh")
-        XCTAssertEqual(store.communities.count, 162)
-        XCTAssertEqual(store.places.count, 16_064)
+        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.25.13-public-valley-ventana-provider-unit-areas")
+        XCTAssertEqual(store.communities.count, 193)
+        XCTAssertEqual(store.places.count, 28_458)
         XCTAssertEqual(store.paths.count, 17)
-        XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 8_015)
+        // The immutable resource retains research provenance, while AppStore
+        // projects only sources referenced by admitted records.
+        let bundled = try XCTUnwrap(PublicCatalogSupplement.read(from: .main))
+        XCTAssertEqual(bundled.catalog.sources.count, 1_076)
+        let loadedSources = try XCTUnwrap(store.pack).catalog.sources
+        XCTAssertEqual(loadedSources.count, 1_072)
+        let unreferencedSourceIDs: Set<String> = [
+            "lyric-estimate-20261023-map-region1", "lyric-estimate-20261023-map-region2",
+            "lyric-estimate-20261023-map-region3", "mc-emerald-operator-page"]
+        XCTAssertEqual(Set(bundled.catalog.sources.map(\.id)).subtracting(loadedSources.map(\.id)), unreferencedSourceIDs)
+        XCTAssertEqual(loadedSources, bundled.catalog.sources.filter { !unreferencedSourceIDs.contains($0.id) })
+        XCTAssertFalse(store.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified })
+        XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 8_139)
         let estimates = store.places.filter { $0.entranceSideEstimate != nil }
-        XCTAssertEqual(estimates.count, 644)
+        XCTAssertEqual(estimates.count, 4_603)
         XCTAssertTrue(estimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.verification == .estimated && $0.kind == .unitPosition })
         let copper = store.doorMatch(DeliveryStop(sequence: 1, address: "9400 Bermuda Road", unit: "126"), groupID: "copper-creek")
         XCTAssertEqual(copper.candidates.count, 1)
@@ -104,7 +131,11 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(shared.candidates.first?.entranceSideEstimate?.sharedUnits, ["1013", "1014"])
         XCTAssertNil(shared.readyDoor)
         let unresolved = store.doorMatch(DeliveryStop(sequence: 1, address: "304 E Silverado Ranch Blvd", unit: "1287"), groupID: "lyric")
-        XCTAssertTrue(unresolved.candidates.isEmpty)
+        XCTAssertEqual(unresolved.candidates.count, 1)
+        XCTAssertTrue(unresolved.candidates.first?.isValidEntranceSideEstimate == true)
+        XCTAssertEqual(unresolved.candidates.first?.verification, .estimated)
+        XCTAssertEqual(unresolved.candidates.first?.entranceSideEstimate?.sharedUnits, ["1287", "1288"])
+        XCTAssertNil(unresolved.readyDoor)
         XCTAssertEqual(store.communities.first { $0.id == "lyric" }?.coordinate, Coordinate(latitude: 36.01408, longitude: -115.159018))
         XCTAssertEqual(store.communities.first { $0.id == "trend" }?.coordinate, Coordinate(latitude: 36.01422151644452, longitude: -115.16156023077903))
         let legal = store.doorMatch(DeliveryStop(sequence: 1, address: "2300 E Silverado Ranch Blvd", unit: "1037"), groupID: "latigo")
@@ -113,8 +144,15 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertTrue(legal.candidates.isEmpty); XCTAssertNil(legal.readyDoor)
         XCTAssertNil(legal.supportedIdentityForNewPin)
         let schematic = store.doorMatch(DeliveryStop(sequence: 2, address: "304 E Silverado Ranch Blvd", unit: "1189"), groupID: "lyric")
-        XCTAssertEqual(schematic.buildingAssociations.first?.identifierKind, .operatorMap)
-        XCTAssertTrue(schematic.buildingReferences.isEmpty); XCTAssertTrue(schematic.candidates.isEmpty)
+        let schematicAssociation = store.pack?.catalog.unitBuildingAssociations?.first {
+            $0.communityID == "lyric" && $0.unit == "1189"
+        }
+        XCTAssertEqual(schematicAssociation?.identifierKind, .operatorMap)
+        XCTAssertTrue(schematic.buildingAssociations.isEmpty); XCTAssertTrue(schematic.buildingReferences.isEmpty)
+        XCTAssertEqual(schematic.candidates.count, 1)
+        XCTAssertTrue(schematic.candidates.first?.isValidEntranceSideEstimate == true)
+        XCTAssertEqual(schematic.candidates.first?.verification, .estimated)
+        XCTAssertEqual(schematic.candidates.first?.entranceSideEstimate?.sharedUnits, ["1189", "1190"])
         XCTAssertNil(schematic.readyDoor)
         for (communityID, street, unit, building) in [
             ("parkside-villas", "8400 S Maryland Parkway", "1018", "5"),
@@ -126,10 +164,21 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
                 XCTAssertEqual(match.candidates.first?.floor, "1")
                 XCTAssertTrue(match.buildingReferences.isEmpty)
             } else {
-                XCTAssertEqual(match.buildingAssociations.first?.identifierKind, .operatorMap)
-                XCTAssertEqual(match.buildingAssociations.first?.building, building)
-                XCTAssertNil(match.buildingAssociations.first?.mapFloor)
-                XCTAssertEqual(match.buildingReferences.count, 1); XCTAssertTrue(match.candidates.isEmpty)
+                let retainedAssociation = try XCTUnwrap(store.pack?.catalog.unitBuildingAssociations?.first {
+                    $0.communityID == communityID && $0.unit == unit
+                })
+                XCTAssertEqual(retainedAssociation.identifierKind, .operatorMap)
+                XCTAssertEqual(retainedAssociation.building, building)
+                XCTAssertNil(retainedAssociation.mapFloor)
+                let retainedArea = try XCTUnwrap(store.places.first { $0.id == retainedAssociation.referencePlaceID })
+                XCTAssertTrue(retainedArea.matchesBuildingAssociation(retainedAssociation))
+                XCTAssertTrue(match.buildingAssociations.isEmpty); XCTAssertTrue(match.buildingReferences.isEmpty)
+                XCTAssertEqual(match.candidates.first?.building, building)
+                XCTAssertEqual(match.candidates.count, 1)
+                XCTAssertEqual(match.candidates.first?.verification, .estimated)
+                XCTAssertEqual(match.candidates.first?.identityUncertain, true)
+                XCTAssertTrue(match.candidates.first?.floor.isEmpty == true)
+                XCTAssertTrue(match.candidates.first?.notes.contains("not a verified door or entrance") == true)
             }
             XCTAssertNil(match.readyDoor)
         }
@@ -177,7 +226,130 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let restored = AppStore(storeURL: routeURL, resourceBundle: bundle, packDirectory: routePacks)
         XCTAssertTrue(restored.communities.contains { $0.id == group.id })
         XCTAssertFalse(restored.personal.stops[0].completed)
+        // A fresh public property may have only a sourced amenity point. Exercise
+        // the real map cameras without converting that amenity into a door.
+        try await assertLockerOnlyPropertyMapsWithoutInventingDoors(at: root)
     }
+    private func assertLockerOnlyPropertyMapsWithoutInventingDoors(at root: URL) async throws {
+        let target = Coordinate(latitude: 36.0417, longitude: -115.1743)
+        let evidenceObject: [String: Any] = ["status": "present",
+            "placementDescription": "Fictional synthetic locker location", "sourceIDs": ["fictional-source"],
+            "checkedAt": "2026-10-25", "point": ["longitude": target.longitude, "latitude": target.latitude,
+                "locationSourceIDs": ["fictional-source"], "precision": "approximate"]]
+        let evidence = try JSONDecoder().decode(DigitalLockerEvidence.self,
+            from: JSONSerialization.data(withJSONObject: evidenceObject))
+        XCTAssertTrue(evidence.isValid(sourceIDs: ["fictional-source"]))
+        let base = try payload("fictional-locker-camera-v1")
+        var catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: base.catalog) as? [String: Any])
+        catalog["scopeZIPs"] = ["89183"]
+        let lockerObject = try JSONSerialization.jsonObject(with: JSONEncoder().encode(evidence))
+        catalog["communities"] = [["id": "fictional-locker-only", "name": "Fictional locker-only property",
+            "address": "700 Fictional Camera Rd", "zip": "89183", "aliases": [], "sourceIDs": ["fictional-source"],
+            "researchStatus": "synthetic amenity only", "gapNotes": ["No unit or community reference coordinates"],
+            "digitalLocker": lockerObject]]
+        let empty = try JSONSerialization.data(withJSONObject: ["type": "FeatureCollection", "schemaVersion": 1,
+            "packVersion": "fictional-locker-camera-v1", "features": []])
+        // This is an immutable public bundle, not a user-selected private pack.
+        // Keep the real public loader path: a locker-only property has no doors.
+        let resourceBundle = try rawPublicBundle(at: root,
+            catalog: JSONSerialization.data(withJSONObject: catalog), locations: empty, paths: empty)
+        let admittedPublic = try XCTUnwrap(PublicCatalogSupplement.read(from: resourceBundle))
+        XCTAssertEqual(admittedPublic.catalog.communities.map(\.id), ["fictional-locker-only"])
+        XCTAssertTrue(admittedPublic.places.isEmpty)
+        XCTAssertTrue(admittedPublic.paths.isEmpty)
+        let directory = root.appendingPathComponent("locker-camera-packs")
+        let store = AppStore(storeURL: root.appendingPathComponent("locker-camera.store"), resourceBundle: resourceBundle, packDirectory: directory)
+        XCTAssertNil(store.errorMessage)
+        let community = try XCTUnwrap(store.communities.first { $0.id == "fictional-locker-only" })
+        XCTAssertNil(community.coordinate)
+        XCTAssertTrue(store.places.isEmpty)
+        XCTAssertTrue(store.paths.isEmpty)
+        XCTAssertEqual(community.digitalLocker, evidence)
+        try store.importManifest(ManifestDocument(name: "Fictional locker camera route",
+            result: try RouteCSV.parse("sequence,address,unit,notes\n1,700 Fictional Camera Rd,F099,\n")))
+        let group = try XCTUnwrap(store.apartmentGroup(community.id))
+        let stop = try XCTUnwrap(group.stops.first)
+        XCTAssertNil(group.coordinate)
+        XCTAssertEqual(group.stops.count, 1)
+        let match = store.doorMatch(stop, groupID: group.id)
+        XCTAssertNil(match.readyDoor)
+        XCTAssertTrue(match.candidates.isEmpty)
+        XCTAssertTrue(match.buildingReferences.isEmpty)
+        XCTAssertEqual(store.digitalLocker(groupID: group.id), evidence)
+        let before = store.personal
+        var selections: [String] = []
+        let finder = CommunityMap(places: [], paths: [], focus: nil, fix: nil, selectedID: nil,
+            offline: false, digitalLocker: evidence, onSelect: { selections.append($0) }, onPosition: nil)
+        try await assertHostedMapFramesLocker(finder, target: target, label: "Finder locker-only") { finderMap in
+            let amenity = try XCTUnwrap(finderMap.annotations.first { annotation in
+                !(annotation is MKUserLocation) &&
+                abs(annotation.coordinate.latitude - target.latitude) < 0.000001 &&
+                abs(annotation.coordinate.longitude - target.longitude) < 0.000001
+            })
+            XCTAssertEqual(finderMap.annotations.filter { !($0 is MKUserLocation) }.count, 1,
+                           "The sole map annotation is the amenity, never an invented unit")
+            finderMap.selectAnnotation(amenity, animated: false)
+            XCTAssertTrue(selections.isEmpty, "Selecting locker hardware must not select a delivery")
+        }
+        let manager = LockerCameraDeniedLocationManager()
+        let location = LocationService(manager: manager)
+        XCTAssertNil(location.fix)
+        let mini = ApartmentDeliveryMap(group: group, store: store, location: location,
+            selectedStopID: stop.id, select: { selections.append($0) })
+        try await assertHostedMapFramesLocker(mini, target: target, label: "No-GPS mini-route locker-only")
+        XCTAssertNil(location.fix, "The camera fallback must work without a fabricated GPS fix")
+        XCTAssertEqual(manager.starts, 0, "Denied synthetic GPS must not start real acquisition")
+        XCTAssertTrue(selections.isEmpty)
+        XCTAssertEqual(store.personal, before, "Camera framing cannot create pins or mutate manifest/completion state")
+        XCTAssertNil(store.doorMatch(stop, groupID: group.id).readyDoor)
+        XCTAssertTrue(store.doorMatch(stop, groupID: group.id).candidates.isEmpty)
+        XCTAssertNil(try PrivateDataPackStore(directory: directory).load())
+    }
+
+    private func assertHostedMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,
+        label: String, file: StaticString = #filePath, line: UInt = #line,
+        inspect: (MKMapView) throws -> Void = { _ in }) async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
+                                 "The hosted app must supply its actual window scene", file: file, line: line)
+        let priorKeyWindow = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let host = UIHostingController(rootView: content)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.setNeedsLayout(); host.view.layoutIfNeeded()
+        defer {
+            window.isHidden = true; window.rootViewController = nil
+            priorKeyWindow?.makeKey()
+        }
+        func descendants(_ view: UIView) -> [MKMapView] {
+            (view as? MKMapView).map { [$0] } ?? view.subviews.flatMap { descendants($0) }
+        }
+        var observed: MKMapView?
+        let framed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let map = descendants(host.view).first, map.bounds.width > 0, map.bounds.height > 0 else { return false }
+            observed = map
+            let center = Coordinate(map.centerCoordinate)
+            let projected = map.convert(target.cl, toPointTo: map)
+            return Geometry.distance(center, target) < 120 &&
+                map.region.span.latitudeDelta > 0 && map.region.span.latitudeDelta < 0.03 &&
+                map.region.span.longitudeDelta > 0 && map.region.span.longitudeDelta < 0.05 &&
+                map.bounds.insetBy(dx: 20, dy: 20).contains(projected)
+        }, object: nil)
+        await fulfillment(of: [framed], timeout: 5)
+        let map = try XCTUnwrap(observed, "\(label): actual MKMapView was not hosted", file: file, line: line)
+        print("LOCKER-CAMERA \(label) center=\(map.centerCoordinate.latitude),\(map.centerCoordinate.longitude) span=\(map.region.span.latitudeDelta),\(map.region.span.longitudeDelta) annotations=\(map.annotations.count)")
+        XCTAssertLessThan(Geometry.distance(Coordinate(map.centerCoordinate), target), 120,
+                          "\(label): actual camera must initially frame the sourced amenity", file: file, line: line)
+        XCTAssertGreaterThan(map.region.span.latitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(map.region.span.latitudeDelta, 0.03, "A world view cannot satisfy property framing", file: file, line: line)
+        XCTAssertGreaterThan(map.region.span.longitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(map.region.span.longitudeDelta, 0.05, "A wide regional view cannot satisfy property framing", file: file, line: line)
+        XCTAssertTrue(map.bounds.insetBy(dx: 20, dy: 20).contains(map.convert(target.cl, toPointTo: map)),
+                      "The amenity must project inside the actual visible map", file: file, line: line)
+        try inspect(map)
+    }
+
     func testSavingPublicOnlyPathPersistsExactStreetIdentityWithoutOverwritingRules() throws {
         let root = try root(), url = root.appendingPathComponent("path.store"), directory = root.appendingPathComponent("packs")
         let bundle = try bundle(at: root, publicPayload: payload("public-v2", includeNewCommunity: true))
@@ -377,4 +549,23 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertNotNil(store.errorMessage)
         XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("active.json")), damaged)
     }
+}
+
+/// Test-only no-fix manager. It cannot request permissions or acquire a location.
+private final class LockerCameraDeniedLocationManager: LocationManaging {
+    weak var delegate: CLLocationManagerDelegate?
+    let authorizationStatus: CLAuthorizationStatus = .denied
+    var desiredAccuracy: CLLocationAccuracy = 0
+    var distanceFilter: CLLocationDistance = 0
+    var activityType: CLActivityType = .other
+    var pausesLocationUpdatesAutomatically = true
+    var allowsBackgroundLocationUpdates = false
+    var showsBackgroundLocationIndicator = false
+    private(set) var starts = 0
+    func requestWhenInUseAuthorization() {}
+    func requestAlwaysAuthorization() {}
+    func startUpdatingLocation() { starts += 1 }
+    func stopUpdatingLocation() {}
+    func startUpdatingHeading() {}
+    func stopUpdatingHeading() {}
 }

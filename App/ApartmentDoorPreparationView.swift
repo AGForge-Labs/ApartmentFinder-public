@@ -63,15 +63,8 @@ struct ApartmentDoorPreparationView: View {
                                     } label: {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text([candidate.building.isEmpty ? "Building unknown" : "Building \(candidate.building)", candidate.floor.isEmpty ? nil : "Floor \(candidate.floor)"].compactMap { $0 }.joined(separator: " · "))
-                                            if let estimate = candidate.entranceSideEstimate {
-                                                EntranceSideEstimateNotice(estimate: estimate)
-                                            } else {
-                                                Text(candidate.kind == .door && candidate.verification == .fieldVerified ? "Saved door pin" : "Suggested unit location").font(.caption).foregroundStyle(.secondary)
-                                            }
-                                            if candidate.entranceSideEstimate == nil && candidate.verification == .estimated {
-                                                Label("May be inaccurate", systemImage: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(.orange)
-                                                if candidate.identityUncertain == true { Text("Unit number or building is also uncertain").font(.caption).foregroundStyle(.secondary) }
-                                            }
+                                            Text(candidate.pinEvidenceLabel).font(.caption).foregroundStyle(.secondary)
+
                                         }
                                     }.accessibilityIdentifier("door.candidate.\(candidate.id)")
                                 }
@@ -80,15 +73,13 @@ struct ApartmentDoorPreparationView: View {
                         } else {
                             Section {
                                 if let estimate = chosen?.entranceSideEstimate {
-                                    EntranceSideEstimateNotice(estimate: estimate)
-                                        .accessibilityIdentifier("door.entranceSideWarning")
-                                    Text("Check the actual unit label and doorway in person, then move the pin to that doorway before confirming. A shared entry area does not identify which doorway serves this unit.")
-                                        .font(.caption)
+                                    PinEvidenceDetails(accessibilityID: "door.evidenceDetails") {
+                                        EntranceSideEstimateNotice(estimate: estimate).accessibilityIdentifier("door.entranceSideWarning")
+                                    }.font(.caption).id(chosen?.id)
+                                    Text("Check the unit and move the pin to its doorway before confirming.").font(.caption)
                                 } else if hasEstimatedLocation || hasUncertainIdentity {
-                                    Label("May be inaccurate", systemImage: "exclamationmark.triangle.fill")
-                                        .foregroundStyle(.orange).accessibilityIdentifier("door.estimateWarning")
-                                    Text("This is an estimated unit location. Check the building and doorway in person, then tap the map to correct it. Your confirmed door is saved for future manifests.")
-                                        .font(.caption)
+                                    Text("Estimated · check the unit and doorway").font(.caption)
+                                        .accessibilityIdentifier("door.estimateWarning")
                                     if hasUncertainIdentity {
                                         Text("The directory conflicts on this unit number or building. Confirm both before saving a door.").font(.caption).foregroundStyle(.orange)
                                     }

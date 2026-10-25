@@ -228,7 +228,7 @@ final class PublicCatalogUpdateTests: XCTestCase {
         let client = PublicCatalogUpdateClient { url, maximum in
             XCTAssertEqual(url.scheme, "https"); XCTAssertEqual(url.host, "raw.githubusercontent.com")
             XCTAssertNil(url.user); XCTAssertNil(url.password); XCTAssertNil(url.query)
-            if url.lastPathComponent == "latest.json" { XCTAssertEqual(maximum, 16_384); return header }
+            if url.lastPathComponent == "latest-v2.json" { XCTAssertEqual(maximum, 16_384); return header }
             XCTAssertTrue(url.path.contains("/catalog-data/revisions/revision-1/"))
             let bytes = try XCTUnwrap(raw[url.lastPathComponent]); XCTAssertLessThanOrEqual(bytes.count, maximum); return bytes
         }

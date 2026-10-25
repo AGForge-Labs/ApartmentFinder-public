@@ -38,6 +38,22 @@ final class MiniRouteCameraFramingTests: XCTestCase {
         XCTAssertGreaterThan(small.distance,large.distance)
         let fallback=try XCTUnwrap(MiniRouteCameraFraming.frame(pins:[user],fix:fix(user),at:now,width:0,height:.nan))
         XCTAssertTrue(fallback.distance.isFinite);XCTAssertGreaterThanOrEqual(fallback.distance,650)
+        // A measured 239-point map must fit the same padded circle as a taller map.
+        // These catalog representative estimates are geometry inputs, not verified doors.
+        let shortPins = [Coordinate(latitude:36.01355,longitude:-115.15802),
+                         Coordinate(latitude:36.0152899,longitude:-115.1595856)]
+        let short = try XCTUnwrap(MiniRouteCameraFraming.frame(pins:shortPins,fix:nil,at:now,width:390,height:239))
+        let shortRadius = try XCTUnwrap(shortPins.map { Geometry.distance(short.center,$0) }.max())
+        // At width 390 and height 239, the narrow padded half-axis is the existing
+        // 24-point minimum; the actual half-height is 119.5, not the fallback 250.
+        XCTAssertGreaterThanOrEqual(short.distance*tan(.pi/12)*(24.0/119.5)+1e-9,shortRadius)
+        let threshold = try XCTUnwrap(MiniRouteCameraFraming.frame(pins:shortPins,fix:nil,at:now,width:390,height:240))
+        XCTAssertGreaterThanOrEqual(threshold.distance*tan(.pi/12)*(24.0/120.0)+1e-9,shortRadius)
+        let defaultHeight = try XCTUnwrap(MiniRouteCameraFraming.frame(pins:pins,fix:fix(user),at:now,width:390,height:500))
+        for invalidHeight in [0.0,-1.0,Double.nan,Double.infinity] {
+            let invalid = try XCTUnwrap(MiniRouteCameraFraming.frame(pins:pins,fix:fix(user),at:now,width:390,height:invalidHeight))
+            XCTAssertEqual(invalid.distance,defaultHeight.distance)
+        }
     }
     func testRepeatedGPSAndHeadingFramesDoNotKeepOverwritingInitialZoom() {
         var state=MiniRouteMapFollowingState()

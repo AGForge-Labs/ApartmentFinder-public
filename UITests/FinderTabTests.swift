@@ -73,9 +73,10 @@ final class FinderTabTests: XCTestCase {
             expectHittable(app.buttons["finder.correct.\(id)"])
             XCTAssertEqual(app.staticTexts["finder.matchCount"].label, "1 saved match")
             XCTAssertTrue(app.staticTexts["Unit \(unit)"].exists)
-            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:
-                "label CONTAINS %@ AND label CONTAINS %@", "Building 14", "Floor unknown")).firstMatch.exists)
-            XCTAssertTrue(app.staticTexts["May be inaccurate"].exists)
+            XCTAssertTrue(app.staticTexts["Building 14"].firstMatch.exists)
+            XCTAssertFalse(app.staticTexts["Floor 1"].exists)
+            XCTAssertFalse(app.staticTexts["Floor 2"].exists)
+            XCTAssertTrue(app.staticTexts["Estimated"].exists)
             XCTAssertFalse(app.staticTexts["Field verified"].exists)
             screenshot("Clubs estimated unit \(unit) with unknown floor")
         }

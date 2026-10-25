@@ -42,7 +42,7 @@ final class PublicCatalogSupplementTests: XCTestCase {
         }
     }
     func testBoundedZIPScopeRejectsEmptyDuplicateOtherAndUndeclaredCommunityZIP() {
-        for scope in [[], ["89148", "89148"], ["89118"], ["89123", "99999"]] {
+        for scope in [[], ["89148", "89148"], ["90210"], ["89123", "99999"]] {
             XCTAssertThrowsError(try read(pack([], scope: scope)))
         }
         XCTAssertThrowsError(try read(pack([community("outside", address: "100 Fictional Rd", zip: "89183")], scope: ["89123"])))
