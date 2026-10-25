@@ -91,19 +91,22 @@ struct ApartmentMiniRouteView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                HStack(spacing: 12) {
-                    Button {
-                        guard !completionPending, let group else { return }
-                        let selected = group.stops.first { $0.id == selectedStopID } ?? group.nextStop ?? group.stops.first
-                        addingStop = MiniRouteStopAddition(manifestID: store.personal.activeManifest?.id,
-                            groupID: groupID, address: selected?.address ?? group.address)
-                    } label: { Image(systemName: "plus") }
-                        .disabled(completionPending || group == nil)
-                        .accessibilityLabel("Add stop or unit").accessibilityIdentifier("mini.add")
-                    if onSwitchApartment != nil {
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            nextApartmentButton(at: context.date, manifestID: store.personal.activeManifest?.id)
-                        }
+                Button {
+                    guard !completionPending, let group else { return }
+                    let selected = group.stops.first { $0.id == selectedStopID } ?? group.nextStop ?? group.stops.first
+                    addingStop = MiniRouteStopAddition(manifestID: store.personal.activeManifest?.id,
+                        groupID: groupID, address: selected?.address ?? group.address)
+                } label: { Image(systemName: "plus") }
+                    .disabled(completionPending || group == nil)
+                    .accessibilityLabel("Add stop or unit").accessibilityIdentifier("mini.add")
+            }
+            if onSwitchApartment != nil {
+                if #available(iOS 26.0, *) {
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        nextApartmentButton(at: context.date, manifestID: store.personal.activeManifest?.id)
                     }
                 }
             }
