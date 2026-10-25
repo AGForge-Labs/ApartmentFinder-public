@@ -19,7 +19,23 @@ final class Reviewed89123GeographyTests: XCTestCase {
             "estimated-unit-area:", "southpark:unit-area:", "operator-room-area:",
             "cyan-at-green-valley:directory-unit:", "ascent-at-silverado:directory-unit:",
             "ascend-heartland-source-unit-", "the-solena-source-unit-",
-            "north-park-living-source-unit-", "north-ridge-apartments-source-unit-"]
+            "north-park-living-source-unit-", "north-ridge-apartments-source-unit-",
+            "constellation-source-unit-",
+            "layne-peccole-source-unit-",
+            "st-lucia-source-unit-",
+            "avondale-source-unit-",
+            "arabella-directory-estimate-",
+            "parq-on-boulder-",
+            "allegro-at-la-entrada-directory-estimate-",
+            "townhomes-at-horizon-ridge-unit-area-estimate-",
+            "horizon-ridge-apartments-unit-area-",
+            "invitational-apartments-unit-area-",
+            "sage-at-green-valley-unit-area-estimate-",
+            "croix-townhomes-unit-area-estimate-",
+            "the-pavilions-by-picerne-unit-area-estimate-",
+            "the-presidio-by-picerne-unit-area-estimate-",
+            "the-view-at-horizon-ridge-unit-area-estimate-",
+            "ventana-canyon-apartments-unit-area-estimate-"]
         return data.places.filter { place in !laterNamespaces.contains { place.id.hasPrefix($0) } }
     }
 
