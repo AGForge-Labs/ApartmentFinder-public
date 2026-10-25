@@ -347,7 +347,7 @@ struct ApartmentMiniRouteView: View {
             Text(match.pinEvidenceLabel).font(.caption).foregroundStyle(.secondary)
                 .accessibilityIdentifier("mini.evidenceStatus")
             if !match.candidates.isEmpty || !match.buildingAssociations.isEmpty || !match.floorReferences.isEmpty {
-                DisclosureGroup("Evidence details") {
+                PinEvidenceDetails(accessibilityID: "mini.evidenceDetails") {
                     ForEach(match.buildingAssociations) { association in
                         Text("\(association.identifierKind.label) \(association.building)\(association.mapFloor.map { " · Map floor \($0)" } ?? "") · signs unverified")
                             .font(.subheadline).accessibilityIdentifier("mini.buildingAssociation.\(association.id)")
@@ -391,7 +391,7 @@ struct ApartmentMiniRouteView: View {
                     ForEach(match.candidates.filter { $0.entranceSideEstimate == nil && !$0.notes.isEmpty }) { candidate in
                         Text(candidate.notes).font(.caption).foregroundStyle(.secondary)
                     }
-                }.font(.caption).accessibilityIdentifier("mini.evidenceDetails").id(stop.id)
+                }.font(.caption).id(stop.id)
             }
             if stop.completed {
                 HStack {

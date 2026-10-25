@@ -73,9 +73,9 @@ struct ApartmentDoorPreparationView: View {
                         } else {
                             Section {
                                 if let estimate = chosen?.entranceSideEstimate {
-                                    DisclosureGroup("Evidence details") {
+                                    PinEvidenceDetails(accessibilityID: "door.evidenceDetails") {
                                         EntranceSideEstimateNotice(estimate: estimate).accessibilityIdentifier("door.entranceSideWarning")
-                                    }.font(.caption).accessibilityIdentifier("door.evidenceDetails")
+                                    }.font(.caption).id(chosen?.id)
                                     Text("Check the unit and move the pin to its doorway before confirming.").font(.caption)
                                 } else if hasEstimatedLocation || hasUncertainIdentity {
                                     Text("Estimated · check the unit and doorway").font(.caption)

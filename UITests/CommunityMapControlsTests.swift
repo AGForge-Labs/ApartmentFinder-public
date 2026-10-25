@@ -77,10 +77,9 @@ final class CommunityMapControlsTests: XCTestCase {
                 XCTAssertEqual(app.staticTexts["mini.coverage"].label, "Mapped locations")
                 for sequence in [1, 2] {
                     app.buttons["mini.focus.\(sequence)"].tap()
-                    let details = app.descendants(matching: .any).matching(identifier: "mini.evidenceDetails").firstMatch
-                    XCTAssertTrue(details.waitForExistence(timeout: 5)); details.tap()
+                    expandEvidence()
                     let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
-                    XCTAssertTrue(warning.waitForExistence(timeout: 5))
+                    XCTAssertTrue(evidenceAppears(warning, timeout: 5))
                     XCTAssertTrue(warning.label.lowercased().contains("unverified"))
                     XCTAssertTrue(warning.label.lowercased().contains("uncalibrated"))
                     XCTAssertTrue(warning.label.lowercased().contains("floor unknown"))
@@ -109,21 +108,83 @@ final class CommunityMapControlsTests: XCTestCase {
         }
     }
 
+    private func expandEvidence(_ identifier: String = "mini.evidenceDetails",
+                                file: StaticString = #filePath, line: UInt = #line) {
+        let headers = app.buttons.matching(identifier: identifier)
+        let details = headers.firstMatch
+        let found = details.waitForExistence(timeout: 5)
+        if !found { evidenceDiagnostics(identifier, stage: "header missing") }
+        XCTAssertTrue(found, "Evidence header must exist", file: file, line: line)
+        guard found else { return }
+        let headerCount = headers.count
+        if headerCount != 1 { evidenceDiagnostics(identifier, stage: "header is not unique") }
+        XCTAssertEqual(headerCount, 1, "Evidence header must be unique", file: file, line: line)
+        let hittable = details.isHittable
+        if !hittable { evidenceDiagnostics(identifier, stage: "header is not hittable") }
+        XCTAssertTrue(hittable, "Evidence header must be hittable", file: file, line: line)
+        let initialValue = details.value as? String
+        if initialValue != "Collapsed" { evidenceDiagnostics(identifier, stage: "header did not reset to Collapsed") }
+        XCTAssertEqual(initialValue, "Collapsed", file: file, line: line)
+        details.tap()
+        let expanded = XCTWaiter.wait(for: [
+            XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Expanded"), object: details)
+        ], timeout: 5)
+        if expanded != .completed { evidenceDiagnostics(identifier, stage: "tap did not expand header") }
+        XCTAssertEqual(expanded, .completed, "Evidence header must become Expanded after tap", file: file, line: line)
+    }
+
+    private func evidenceAppears(_ element: XCUIElement, timeout: TimeInterval,
+                                 headerID: String = "mini.evidenceDetails") -> Bool {
+        let found = element.waitForExistence(timeout: timeout)
+        if !found { evidenceDiagnostics(headerID, stage: "evidence child missing") }
+        return found
+    }
+
+    private func evidenceDiagnostics(_ identifier: String, stage: String) {
+        // Every caller uses an isolated synthetic test store. Never attach an
+        // accessibility dump from a production or owner-store launch.
+        guard app.launchArguments.contains("--uitesting"),
+              app.launchArguments.contains("--test-store") else { return }
+        let headerMatches = app.descendants(matching: .any).matching(identifier: identifier)
+        let warningID = identifier.hasPrefix("door.") ? "door.entranceSideWarning" : "mini.entranceSideWarning"
+        let warnings = app.descendants(matching: .any).matching(identifier: warningID)
+        func describe(_ element: XCUIElement) -> String {
+            guard element.exists, let snapshot = try? element.snapshot() else { return "missing or unavailable snapshot" }
+            return "type=\(snapshot.elementType.rawValue);id=\(snapshot.identifier);value=\(String(describing: snapshot.value));frame=\(snapshot.frame);hittable=\(element.exists && element.isHittable)"
+        }
+        let headerState = headerMatches.allElementsBoundByIndex.map(describe).joined(separator: "\n")
+        let warningState = warnings.allElementsBoundByIndex.map(describe).joined(separator: "\n")
+        let diagnostics = String("""
+        stage=\(stage);headerID=\(identifier);typedButtons=\(app.buttons.matching(identifier: identifier).count)
+        headers=\(headerMatches.count)
+        \(headerState)
+        warnings=\(warnings.count)
+        \(warningState)
+        \(app.debugDescription)
+        """.prefix(32_768))
+        print("PIN-EVIDENCE-DIAGNOSTIC \(diagnostics)")
+        let attachment = XCTAttachment(string: diagnostics)
+        attachment.name = "Synthetic evidence disclosure diagnostics"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     private func assertCompactControls(file: StaticString = #filePath, line: UInt = #line) {
         let controls = [app.buttons["mini.mapStyle"], app.buttons["Show all stops"], app.buttons["mini.recenter"]]
+        let layoutTolerance: CGFloat = 1e-6
         var union = CGRect.null
         for control in controls {
             XCTAssertTrue(control.exists && control.isHittable, file: file, line: line)
             let frame = control.frame
             XCTAssertTrue([frame.minX, frame.minY, frame.width, frame.height].allSatisfy(\.isFinite), file: file, line: line)
-            XCTAssertGreaterThanOrEqual(frame.width, 44, file: file, line: line)
-            XCTAssertGreaterThanOrEqual(frame.height, 44, file: file, line: line)
-            XCTAssertLessThanOrEqual(frame.width, 48, "Visible map controls must not expand with the paused label: \(frame)", file: file, line: line)
-            XCTAssertLessThanOrEqual(frame.height, 48, file: file, line: line)
+            XCTAssertGreaterThanOrEqual(frame.width, 44 - layoutTolerance, file: file, line: line)
+            XCTAssertGreaterThanOrEqual(frame.height, 44 - layoutTolerance, file: file, line: line)
+            XCTAssertLessThanOrEqual(frame.width, 48 + layoutTolerance, "Visible map controls must not expand with the paused label: \(frame)", file: file, line: line)
+            XCTAssertLessThanOrEqual(frame.height, 48 + layoutTolerance, file: file, line: line)
             union = union.union(frame)
         }
-        XCTAssertLessThanOrEqual(union.width, 56, "The floating controls must remain a narrow column", file: file, line: line)
-        XCTAssertLessThanOrEqual(union.height, 172, file: file, line: line)
+        XCTAssertLessThanOrEqual(union.width, 56 + layoutTolerance, "The floating controls must remain a narrow column", file: file, line: line)
+        XCTAssertLessThanOrEqual(union.height, 172 + layoutTolerance, file: file, line: line)
         print("COMMUNITY-MAP-CONTROLS bounds=\(union), buttonFrames=\(controls.map(\.frame))")
     }
 

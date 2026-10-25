@@ -37,7 +37,7 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["mini.entranceSideWarning"].exists)
         expandEvidence()
         let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
-        XCTAssertTrue(warning.waitForExistence(timeout: 10))
+        XCTAssertTrue(evidenceAppears(warning, timeout: 10))
         XCTAssertTrue(warning.label.lowercased().contains("unverified"))
         XCTAssertTrue(warning.label.lowercased().contains("uncalibrated"))
         XCTAssertTrue(warning.label.lowercased().contains("floor unknown"))
@@ -57,9 +57,9 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         app.buttons["mini.prepare"].tap()
         XCTAssertTrue(app.navigationBars["Check Door Pin"].waitForExistence(timeout: 5))
-        app.descendants(matching: .any).matching(identifier: "door.evidenceDetails").firstMatch.tap()
+        expandEvidence("door.evidenceDetails")
         let reviewWarning = app.descendants(matching: .any).matching(identifier: "door.entranceSideWarning").firstMatch
-        XCTAssertTrue(reviewWarning.waitForExistence(timeout: 5))
+        XCTAssertTrue(evidenceAppears(reviewWarning, timeout: 5, headerID: "door.evidenceDetails"))
         XCTAssertTrue(reviewWarning.label.lowercased().contains("unverified"))
         XCTAssertFalse(app.buttons["door.confirm"].isEnabled)
         capture("Copper Creek estimates retain exact streets and qualified floors")
@@ -69,7 +69,7 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated shared entry")
         expandEvidence()
         let shared = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
-        XCTAssertTrue(shared.waitForExistence(timeout: 10))
+        XCTAssertTrue(evidenceAppears(shared, timeout: 10))
         XCTAssertTrue(shared.label.contains("1013/1014"))
         XCTAssertTrue(shared.label.lowercased().contains("shared"))
         XCTAssertTrue(shared.label.lowercased().contains("floor unknown"))
@@ -82,7 +82,7 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Unit 1287"].exists)
         XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated shared entry")
         expandEvidence()
-        XCTAssertTrue(shared.waitForExistence(timeout: 5))
+        XCTAssertTrue(evidenceAppears(shared, timeout: 5))
         XCTAssertTrue(shared.label.contains("1287/1288"))
         XCTAssertTrue(shared.label.lowercased().contains("unverified"))
         XCTAssertTrue(shared.label.lowercased().contains("uncalibrated"))
@@ -96,10 +96,65 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         capture("Both Lyric shared entry estimates retain unknown floors and unverified doors")
     }
 
-    private func expandEvidence() {
-        let details = app.descendants(matching: .any).matching(identifier: "mini.evidenceDetails").firstMatch
-        XCTAssertTrue(details.waitForExistence(timeout: 5))
+    private func expandEvidence(_ identifier: String = "mini.evidenceDetails",
+                                file: StaticString = #filePath, line: UInt = #line) {
+        let headers = app.buttons.matching(identifier: identifier)
+        let details = headers.firstMatch
+        let found = details.waitForExistence(timeout: 5)
+        if !found { evidenceDiagnostics(identifier, stage: "header missing") }
+        XCTAssertTrue(found, "Evidence header must exist", file: file, line: line)
+        guard found else { return }
+        let headerCount = headers.count
+        if headerCount != 1 { evidenceDiagnostics(identifier, stage: "header is not unique") }
+        XCTAssertEqual(headerCount, 1, "Evidence header must be unique", file: file, line: line)
+        let hittable = details.isHittable
+        if !hittable { evidenceDiagnostics(identifier, stage: "header is not hittable") }
+        XCTAssertTrue(hittable, "Evidence header must be hittable", file: file, line: line)
+        let initialValue = details.value as? String
+        if initialValue != "Collapsed" { evidenceDiagnostics(identifier, stage: "header did not reset to Collapsed") }
+        XCTAssertEqual(initialValue, "Collapsed", file: file, line: line)
         details.tap()
+        let expanded = XCTWaiter.wait(for: [
+            XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Expanded"), object: details)
+        ], timeout: 5)
+        if expanded != .completed { evidenceDiagnostics(identifier, stage: "tap did not expand header") }
+        XCTAssertEqual(expanded, .completed, "Evidence header must become Expanded after tap", file: file, line: line)
+    }
+
+    private func evidenceAppears(_ element: XCUIElement, timeout: TimeInterval,
+                                 headerID: String = "mini.evidenceDetails") -> Bool {
+        let found = element.waitForExistence(timeout: timeout)
+        if !found { evidenceDiagnostics(headerID, stage: "evidence child missing") }
+        return found
+    }
+
+    private func evidenceDiagnostics(_ identifier: String, stage: String) {
+        // Every caller uses an isolated synthetic test store. Never attach an
+        // accessibility dump from a production or owner-store launch.
+        guard app.launchArguments.contains("--uitesting"),
+              app.launchArguments.contains("--test-store") else { return }
+        let headerMatches = app.descendants(matching: .any).matching(identifier: identifier)
+        let warningID = identifier.hasPrefix("door.") ? "door.entranceSideWarning" : "mini.entranceSideWarning"
+        let warnings = app.descendants(matching: .any).matching(identifier: warningID)
+        func describe(_ element: XCUIElement) -> String {
+            guard element.exists, let snapshot = try? element.snapshot() else { return "missing or unavailable snapshot" }
+            return "type=\(snapshot.elementType.rawValue);id=\(snapshot.identifier);value=\(String(describing: snapshot.value));frame=\(snapshot.frame);hittable=\(element.exists && element.isHittable)"
+        }
+        let headerState = headerMatches.allElementsBoundByIndex.map(describe).joined(separator: "\n")
+        let warningState = warnings.allElementsBoundByIndex.map(describe).joined(separator: "\n")
+        let diagnostics = String("""
+        stage=\(stage);headerID=\(identifier);typedButtons=\(app.buttons.matching(identifier: identifier).count)
+        headers=\(headerMatches.count)
+        \(headerState)
+        warnings=\(warnings.count)
+        \(warningState)
+        \(app.debugDescription)
+        """.prefix(32_768))
+        print("PIN-EVIDENCE-DIAGNOSTIC \(diagnostics)")
+        let attachment = XCTAttachment(string: diagnostics)
+        attachment.name = "Synthetic evidence disclosure diagnostics"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func capture(_ name: String) {

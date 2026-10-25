@@ -88,7 +88,17 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(store.communities.count, 186)
         XCTAssertEqual(store.places.count, 23_533)
         XCTAssertEqual(store.paths.count, 17)
-        XCTAssertEqual(store.pack?.catalog.sources.count, 939)
+        // The immutable resource retains research provenance, while AppStore
+        // projects only sources referenced by admitted records.
+        let bundled = try XCTUnwrap(PublicCatalogSupplement.read(from: .main))
+        XCTAssertEqual(bundled.catalog.sources.count, 939)
+        let loadedSources = try XCTUnwrap(store.pack).catalog.sources
+        XCTAssertEqual(loadedSources.count, 935)
+        let unreferencedSourceIDs: Set<String> = [
+            "lyric-estimate-20261023-map-region1", "lyric-estimate-20261023-map-region2",
+            "lyric-estimate-20261023-map-region3", "mc-emerald-operator-page"]
+        XCTAssertEqual(Set(bundled.catalog.sources.map(\.id)).subtracting(loadedSources.map(\.id)), unreferencedSourceIDs)
+        XCTAssertEqual(loadedSources, bundled.catalog.sources.filter { !unreferencedSourceIDs.contains($0.id) })
         XCTAssertFalse(store.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified })
         XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 8_139)
         let estimates = store.places.filter { $0.entranceSideEstimate != nil }

@@ -15,6 +15,10 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     }
 
     override func tearDown() {
+        guard let app else { super.tearDown(); return }
+        if (testRun?.totalFailureCount ?? 0) > 0 {
+            catalogReadinessDiagnostics(stage: "tearDown after failure")
+        }
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Public pin data offline refresh final screen"
         screenshot.lifetime = .keepAlways
@@ -73,7 +77,8 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             let observedValue = unit.value as? String
             let valueQuerySeconds = ProcessInfo.processInfo.systemUptime - observedAt
             print("PublicCatalogInputFailure wait=\(entryWaitResult.rawValue) value=\(String(reflecting: observedValue)) valueQuerySeconds=\(valueQuerySeconds)")
-            print("PublicCatalogInputFailure placeholder=\(String(reflecting: unit.placeholderValue)) exists=\(unit.exists) hittable=\(unit.isHittable) keyboardExists=\(app.keyboards.firstMatch.exists)")
+            print("PublicCatalogInputFailure placeholder=\(String(reflecting: unit.placeholderValue)) exists=\(unit.exists) keyboardExists=\(app.keyboards.firstMatch.exists)")
+            catalogReadinessDiagnostics(stage: "typed unit value wait failed")
             print("PublicCatalogInputFailure field=\(unit.debugDescription)")
         }
         XCTAssertEqual(entryWaitResult, .completed)
@@ -141,9 +146,73 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertFalse(app.alerts.firstMatch.exists)
     }
 
-    private func expectHittable(_ element: XCUIElement) {
-        let visible = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: element)
-        XCTAssertEqual(XCTWaiter.wait(for: [visible], timeout: 5), .completed)
+    private func expectHittable(_ element: XCUIElement,
+                                file: StaticString = #filePath, line: UInt = #line) {
+        guard let app else { XCTFail("The synthetic test app must be launched", file: file, line: line); return }
+        var lastGeometry = "No usable target/window snapshots observed"
+        var printedBeforeHittability = false
+        let visible = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let window = app.windows.firstMatch
+            guard element.exists, let target = try? element.snapshot(),
+                  window.exists, let windowSnapshot = try? window.snapshot() else {
+                lastGeometry = "Target or application window missing, or snapshot unavailable"
+                return false
+            }
+            let frame = target.frame, windowFrame = windowSnapshot.frame
+            let intersection = frame.intersection(windowFrame)
+            lastGeometry = "id=\(target.identifier);type=\(target.elementType.rawValue);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
+            guard self.usableFrame(frame), self.usableFrame(windowFrame), self.usableFrame(intersection) else {
+                // Never ask XCTest to calculate an activation point for missing,
+                // empty, nonfinite or entirely off-window geometry.
+                return false
+            }
+            if !printedBeforeHittability {
+                self.catalogReadinessDiagnostics(stage: "before first hittability query", targetState: lastGeometry)
+                printedBeforeHittability = true
+            }
+            // Geometry is readiness only: the original real hittability result
+            // remains required. No coordinate tap, navigation or input fallback.
+            return element.isHittable
+        }, object: nil)
+        let result = XCTWaiter.wait(for: [visible], timeout: 5)
+        if result != .completed {
+            catalogReadinessDiagnostics(stage: "hittability wait failed", targetState: lastGeometry)
+        }
+        XCTAssertEqual(result, .completed, "The control must become hittable; \(lastGeometry)", file: file, line: line)
+    }
+
+    private func usableFrame(_ frame: CGRect) -> Bool {
+        !frame.isNull && !frame.isEmpty &&
+            [frame.minX, frame.minY, frame.maxX, frame.maxY].allSatisfy { $0.isFinite }
+    }
+
+    private func catalogReadinessDiagnostics(stage: String, targetState: String = "") {
+        guard let app, app.launchArguments.contains("--uitesting"),
+              app.launchArguments.contains("--test-store") else { return }
+        // Emit the stage first in case a subsequent AX snapshot itself stalls.
+        print("PUBLIC-CATALOG-READINESS-DIAGNOSTIC stage=\(stage); target=\(String(targetState.prefix(2_048)))")
+        func state(_ name: String, _ element: XCUIElement) -> String {
+            guard element.exists, let snapshot = try? element.snapshot() else {
+                return "\(name): missing or snapshot unavailable"
+            }
+            return "\(name): id=\(snapshot.identifier);type=\(snapshot.elementType.rawValue);frame=\(snapshot.frame);value=\(String(describing: snapshot.value))"
+        }
+        let geometry = [
+            state("window", app.windows.firstMatch),
+            state("finder.page", app.scrollViews["finder.page"]),
+            state("finder.unit", app.textFields["finder.unit"]),
+            state("finder.address", app.textFields["finder.address"]),
+            state("finder.editSearch", app.buttons["finder.editSearch"]),
+            state("navigation", app.navigationBars.firstMatch),
+            state("tabBar", app.tabBars.firstMatch),
+            state("keyboard", app.keyboards.firstMatch)
+        ].joined(separator: "\n")
+        let diagnostics = String("stage=\(stage);target=\(targetState)\n\(geometry)\n\(app.debugDescription)".prefix(32_768))
+        print("PUBLIC-CATALOG-READINESS-DIAGNOSTIC \(diagnostics)")
+        let attachment = XCTAttachment(string: diagnostics)
+        attachment.name = "Public catalog Finder readiness"
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     private func reveal(_ element: XCUIElement) {
