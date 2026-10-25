@@ -57,25 +57,32 @@ final class Reviewed89123GeographyUITests: XCTestCase {
             "Expected \(count) physical map annotations; found \(query.count)", file: file, line: line)
     }
     func testPebbleUsesOneApproximateMarkerPerBuildingAndRetainsUnitFloorSelection() {
+        // The current bundle has three individual estimated sectors here. Keep
+        // this selected identity and assert their actual public provenance.
         open("destinations-pebble")
-        let markers = pins(containing: "destinations-pebble:building:")
-        waitForCount(markers, 2)
-        XCTAssertTrue(markers.allElementsBoundByIndex.allSatisfy { $0.label.contains("Directory building") })
-        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Directory building")
-        expandEvidence()
-        XCTAssertTrue(app.staticTexts["mini.buildingReferenceWarning"].label.contains("20 m"))
-        XCTAssertTrue(app.staticTexts["mini.buildingReferenceWarning"].label.contains("not guaranteed"))
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Map floor 1")).firstMatch.exists)
-        XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
-        app.buttons["mini.focus.2"].tap()
-        XCTAssertTrue(app.staticTexts["Unit 1001"].exists)
-        waitForCount(markers, 2)
-        XCTAssertTrue(markers.matching(NSPredicate(format: "label CONTAINS %@", "unit 1001")).firstMatch.exists)
-        app.buttons["mini.focus.3"].tap()
-        XCTAssertTrue(app.staticTexts["Unit 1159"].exists)
-        expandEvidence()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Operator map building 10")).firstMatch.exists)
-        XCTAssertFalse(app.staticTexts["Community location not mapped"].exists)
+        let markers = pins(containing: "directory-unit-sector:destinations-pebble:")
+        waitForCount(markers, 3)
+        for (sequence, unit, sourceUnit) in [(1, "1000", "1864704"), (2, "1001", "1864705"), (3, "1159", "1864863")] {
+            app.buttons["mini.focus.\(sequence)"].tap()
+            XCTAssertTrue(app.staticTexts["Unit \(unit)"].exists)
+            let pin = app.buttons["mini.pin.\(sequence).directory-unit-sector:destinations-pebble:1450-e-pebble-rd:unit-\(unit)"]
+            XCTAssertTrue(pin.waitForExistence(timeout: 5))
+            XCTAssertTrue(pin.label.contains("unit \(unit)"))
+            XCTAssertTrue(pin.label.contains("Estimated"))
+            XCTAssertFalse(pin.label.contains("Checked door"))
+            XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated")
+            expandEvidence()
+            XCTAssertTrue(app.staticTexts["mini.estimateWarning"].label.contains("May be inaccurate"))
+            let notes = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Approximate directory unit sector")).firstMatch
+            XCTAssertTrue(notes.waitForExistence(timeout: 5))
+            for qualifier in ["not a verified door or entrance", "20 m", "uncalibrated", "not guaranteed accuracy",
+                              "Published directory dwelling-floor label: 1", "actual entrance floor remains unknown", "Source unit ID \(sourceUnit)"] {
+                XCTAssertTrue(notes.label.contains(qualifier), "Missing current directory qualifier: \(qualifier)")
+            }
+            XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
+            XCTAssertFalse(app.buttons["mini.navigate"].exists)
+        }
+        waitForCount(markers, 3)
         let camera = app.buttons["mini.recenter"].value as? String ?? ""
         let center = camera.components(separatedBy: ", map center ").last?.components(separatedBy: ", camera revision ").first?.split(separator: ",") ?? []
         XCTAssertEqual(center.count, 2)
@@ -83,44 +90,93 @@ final class Reviewed89123GeographyUITests: XCTestCase {
             XCTAssertTrue((36.028...36.032).contains(latitude) && (-115.135 ... -115.131).contains(longitude), "The real map must frame Pebble: \(camera)")
         } else { XCTFail("Missing native camera center: \(camera)") }
         print("89123-PEBBLE camera=\(camera), markers=\(markers.allElementsBoundByIndex.map { ($0.identifier, $0.frame, $0.label) })")
-        capture("Pebble two approximate building areas, three selected source units")
+        capture("Pebble three estimated unit sectors retain source floors and uncertainty")
     }
+
     func testStackedSourceUnitFloorsAndRecoveredSummerLabelsRemainUnverified() {
         open("prosper-150")
         waitForCount(pins(containing: "sightmap:38241:unit:"), 2)
-        XCTAssertTrue(app.staticTexts["Unit 101"].exists)
-        expandEvidence()
-        XCTAssertTrue(app.staticTexts["mini.sourceUnitWarning"].label.contains("not an entrance or door"))
-        let ground = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.4.")).firstMatch
-        XCTAssertTrue(ground.isHittable)
-        ground.tap()
-        XCTAssertTrue(app.staticTexts["Unit 101"].exists)
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Floor 1")).firstMatch.exists)
-        app.buttons["mini.focus.5"].tap()
-        XCTAssertTrue(app.staticTexts["Unit 201"].exists)
-        let upper = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.5.")).firstMatch
-        XCTAssertTrue(upper.isHittable)
-        upper.tap()
-        XCTAssertTrue(app.staticTexts["Unit 201"].exists)
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Floor 2")).firstMatch.exists)
-        XCTAssertEqual(app.buttons["mini.prepare"].label, "Check suggested pin")
-        capture("Prosper overlapping source positions retain independent floor selection")
+        waitForCount(pins(containing: "entrance-estimate:prosper-150:"), 2)
+        for (sequence, unit, sourceID, floor) in [(4, "101", "12804155", "1"), (5, "201", "12804185", "2")] {
+            app.buttons["mini.focus.\(sequence)"].tap()
+            let source = app.buttons["mini.pin.\(sequence).sightmap:38241:unit:\(sourceID)"]
+            let estimateID = "entrance-estimate:prosper-150:8680-ensworth-st:unit-\(unit)"
+            let estimate = app.buttons["mini.pin.\(sequence).\(estimateID)"]
+            XCTAssertTrue(source.waitForExistence(timeout: 5))
+            XCTAssertTrue(source.isHittable); source.tap()
+            XCTAssertTrue(source.label.contains("Directory map"))
+            XCTAssertTrue(estimate.exists)
+            XCTAssertTrue(estimate.label.contains("Estimated"))
+            XCTAssertFalse(source.label.contains("Checked door"))
+            XCTAssertFalse(estimate.label.contains("Checked door"))
+            XCTAssertTrue(app.staticTexts["Unit \(unit)"].exists)
+            XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Choose location")
+            expandEvidence()
+            XCTAssertTrue(app.staticTexts["mini.sourceUnitWarning"].label.contains("not an entrance or door"))
+            let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
+            XCTAssertTrue(warning.waitForExistence(timeout: 5))
+            XCTAssertTrue(warning.label.contains("Dwelling floor \(floor) from current source"))
+            XCTAssertTrue(warning.label.lowercased().contains("unverified"))
+            XCTAssertTrue(warning.label.lowercased().contains("uncalibrated"))
+            XCTAssertTrue(warning.label.contains("Actual entry floor, threshold elevation and accessible approach remain unknown"))
+            XCTAssertFalse(app.buttons["mini.navigate"].exists)
+            XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
+            // Multiple suggestions suppress the single-place header. The real
+            // chooser exposes each source's exact floor and provenance instead.
+            app.buttons["mini.prepare"].tap()
+            let chooser = app.navigationBars["Check Door Pin"]
+            XCTAssertTrue(chooser.waitForExistence(timeout: 5))
+            let sourceChoice = app.buttons["door.candidate.sightmap:38241:unit:\(sourceID)"]
+            let estimateChoice = app.buttons["door.candidate.\(estimateID)"]
+            XCTAssertTrue(sourceChoice.waitForExistence(timeout: 5))
+            XCTAssertTrue(sourceChoice.label.contains("Floor \(floor)"))
+            XCTAssertTrue(sourceChoice.label.contains("Directory map"))
+            XCTAssertTrue(estimateChoice.exists)
+            XCTAssertTrue(estimateChoice.label.contains("Floor \(floor)"))
+            XCTAssertTrue(estimateChoice.label.contains("Estimated"))
+            XCTAssertFalse(app.buttons["door.confirm"].isEnabled)
+            chooser.buttons["Cancel"].tap()
+            XCTAssertTrue(chooser.waitForNonExistence(timeout: 5))
+        }
+        capture("Prosper source positions and entry estimates keep independent floors and provenance")
         app.terminate(); open("summer-winds")
         waitForCount(pins(containing: "sightmap:369:unit:"), 2)
-        XCTAssertTrue(app.staticTexts["Unit 1041"].exists)
-        app.buttons["mini.focus.7"].tap(); XCTAssertTrue(app.staticTexts["Unit 1044"].exists)
-        expandEvidence()
-        XCTAssertTrue(app.staticTexts["mini.sourceUnitWarning"].label.contains("not an entrance or door"))
-        capture("Summer Winds recovered literal units 1041 and 1044")
+        for (sequence, unit, sourceID) in [(6, "1041", "108113"), (7, "1044", "108116")] {
+            app.buttons["mini.focus.\(sequence)"].tap()
+            XCTAssertTrue(app.staticTexts["Unit \(unit)"].exists)
+            let source = app.buttons["mini.pin.\(sequence).sightmap:369:unit:\(sourceID)"]
+            XCTAssertTrue(source.exists)
+            XCTAssertTrue(source.label.contains("Directory map"))
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Floor 1")).firstMatch.exists)
+            expandEvidence()
+            XCTAssertTrue(app.staticTexts["mini.sourceUnitWarning"].label.contains("not an entrance or door"))
+            XCTAssertEqual(app.buttons["mini.prepare"].label, "Check suggested pin")
+            XCTAssertFalse(app.buttons["mini.navigate"].exists)
+        }
+        capture("Summer Winds recovered literal units 1041 and 1044 retain source floor 1")
     }
+
     func testHistoricalAliasAndFloorOnlyReferenceDoNotInventATowerOrDoor() {
         open("octave-apartments")
-        waitForCount(pins(containing: "octave-building-1"), 1)
+        let estimate = app.buttons["mini.pin.8.entrance-estimate:octave-apartments:2750-west-wigwam-avenue:unit-1101"]
+        XCTAssertTrue(estimate.waitForExistence(timeout: 5))
+        waitForCount(pins(containing: "entrance-estimate:octave-apartments:"), 1)
+        XCTAssertTrue(estimate.label.contains("Estimated"))
+        XCTAssertFalse(estimate.label.contains("Checked door"))
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated")
         expandEvidence()
-        XCTAssertTrue(app.staticTexts["mini.historicalAliasWarning"].label.contains("Historical legal alias"))
-        XCTAssertTrue(app.staticTexts["mini.historicalAliasWarning"].label.contains("current signage unverified"))
-        XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
-        capture("Octave historical legal alias is qualified")
+        let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
+        XCTAssertTrue(warning.waitForExistence(timeout: 5))
+        for qualifier in ["Doorway unverified", "Dwelling floor unknown", "Actual entrance floor, elevation and ground stair approach are unknown",
+                          "10 m working allowance", "accuracy uncalibrated"] {
+            XCTAssertTrue(warning.label.contains(qualifier), "Missing current Octave qualifier: \(qualifier)")
+        }
+        XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
+        XCTAssertFalse(app.buttons["mini.navigate"].exists)
+        // The current estimate summary does not expose the retained historical
+        // alias detail. Core tests cover that provenance; this UI check verifies
+        // the unknown floor and unverified entrance, not historical-alias display.
+        capture("Octave estimate keeps its dwelling floor and entrance unverified")
         app.terminate(); open("one-las-vegas")
         waitForCount(pins(containing: ""), 0)
         expandEvidence()
@@ -128,9 +184,11 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["mini.floorOnlyReference"].label.contains("tower unknown"))
         XCTAssertTrue(app.staticTexts["mini.communityLocation"].label.contains("unit location unknown"))
         XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
+        XCTAssertFalse(app.buttons["mini.navigate"].exists)
         print("89123-ONE-LAS-VEGAS camera=\(String(describing: app.buttons["mini.recenter"].value)); routePins=0; unitTowerJoins=0")
         capture("One Las Vegas tower areas are context only, never a guessed unit destination")
     }
+
     private func expandEvidence() {
         let details = app.descendants(matching: .any).matching(identifier: "mini.evidenceDetails").firstMatch
         XCTAssertTrue(details.waitForExistence(timeout: 5))

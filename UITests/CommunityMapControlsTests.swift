@@ -57,26 +57,53 @@ final class CommunityMapControlsTests: XCTestCase {
     }
 
     func testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors() {
-        for (id, latitude, longitude) in [
-            ("lyric", 36.01408, -115.159018),
-            ("trend", 36.01422151644452, -115.16156023077903)
-        ] {
+        // Keep the selected test identity while distinguishing current estimates
+        // from the deliberately unmapped Trend units in the same fixture.
+        for id in ["lyric", "trend"] {
             openRoute(id, fixture: "--community-area-manifest")
-            assertCenter(latitude: latitude, longitude: longitude)
             XCTAssertFalse(app.staticTexts["Community location not mapped"].exists)
-            XCTAssertTrue(app.staticTexts["mini.communityLocation"].label.contains("Community area"))
-            XCTAssertTrue(app.staticTexts["mini.coverage"].label.contains("2 doors not mapped"))
-            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.")).count, 0)
-            XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
             if id == "lyric" {
-                XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Operator map building 15")).firstMatch.exists)
-                app.buttons["mini.focus.2"].tap()
-                XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Operator map building 13")).firstMatch.exists)
-                XCTAssertTrue(app.staticTexts["mini.associationWithoutPoint"].label.contains("Building and door locations"))
+                let pins = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin."))
+                let first = app.buttons["mini.pin.1.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-1193"]
+                let second = app.buttons["mini.pin.2.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-2171"]
+                XCTAssertTrue(first.waitForExistence(timeout: 5))
+                XCTAssertTrue(second.exists)
+                XCTAssertEqual(pins.count, 2)
+                XCTAssertTrue(first.label.contains("building 15"))
+                XCTAssertTrue(first.label.contains("Estimated shared entry, units 1193/1194"))
+                XCTAssertTrue(second.label.contains("building 13"))
+                XCTAssertTrue(second.label.contains("Estimated"))
+                XCTAssertFalse(pins.allElementsBoundByIndex.contains { $0.label.contains("Checked door") })
+                XCTAssertEqual(app.staticTexts["mini.coverage"].label, "Mapped locations")
+                for sequence in [1, 2] {
+                    app.buttons["mini.focus.\(sequence)"].tap()
+                    let details = app.descendants(matching: .any).matching(identifier: "mini.evidenceDetails").firstMatch
+                    XCTAssertTrue(details.waitForExistence(timeout: 5)); details.tap()
+                    let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
+                    XCTAssertTrue(warning.waitForExistence(timeout: 5))
+                    XCTAssertTrue(warning.label.lowercased().contains("unverified"))
+                    XCTAssertTrue(warning.label.lowercased().contains("uncalibrated"))
+                    XCTAssertTrue(warning.label.lowercased().contains("floor unknown"))
+                    XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
+                    XCTAssertFalse(app.buttons["mini.navigate"].exists)
+                }
+                // The estimate view exposes qualified building labels, but not
+                // the former operator-association-only fallback. Core tests
+                // retain that provenance; this UI path must not claim a door.
+                capture("Lyric estimates retain building labels and unverified entry areas")
+            } else {
+                assertCenter(latitude: 36.01422151644452, longitude: -115.16156023077903)
+                XCTAssertTrue(app.staticTexts["mini.communityLocation"].label.contains("Community area"))
+                XCTAssertEqual(app.staticTexts["mini.coverage"].label, "2 units not mapped")
+                XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.")).count, 0)
+                XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
+                XCTAssertFalse(app.buttons["mini.navigate"].exists)
+                capture("Trend unknown units retain the community area without invented pins")
             }
-            capture("\(id) official community center, no invented door pins")
             app.buttons["Show all stops"].tap()
-            assertCenter(latitude: latitude, longitude: longitude)
+            if id == "trend" {
+                assertCenter(latitude: 36.01422151644452, longitude: -115.16156023077903)
+            }
             assertCompactControls()
             app.terminate()
         }

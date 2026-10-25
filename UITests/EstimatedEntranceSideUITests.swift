@@ -80,10 +80,20 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertFalse(sharedPin.label.contains("Checked door"))
         app.buttons["mini.focus.4"].tap()
         XCTAssertTrue(app.staticTexts["Unit 1287"].exists)
-        XCTAssertFalse(shared.exists)
-        XCTAssertEqual(app.buttons["mini.prepare"].label, "Add door pin on map")
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.4.")).firstMatch.exists)
-        capture("Lyric pair remains ambiguous and unit 1287 has no invented point")
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated shared entry")
+        expandEvidence()
+        XCTAssertTrue(shared.waitForExistence(timeout: 5))
+        XCTAssertTrue(shared.label.contains("1287/1288"))
+        XCTAssertTrue(shared.label.lowercased().contains("unverified"))
+        XCTAssertTrue(shared.label.lowercased().contains("uncalibrated"))
+        XCTAssertTrue(shared.label.lowercased().contains("floor unknown"))
+        let laterSharedPin = app.buttons["mini.pin.4.entrance-estimate:lyric:304-e-silverado-ranch-blvd:unit-1287"]
+        XCTAssertTrue(laterSharedPin.waitForExistence(timeout: 5))
+        XCTAssertTrue(laterSharedPin.label.contains("Estimated shared entry, units 1287/1288"))
+        XCTAssertFalse(laterSharedPin.label.contains("Checked door"))
+        XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
+        XCTAssertFalse(app.buttons["mini.navigate"].exists)
+        capture("Both Lyric shared entry estimates retain unknown floors and unverified doors")
     }
 
     private func expandEvidence() {
