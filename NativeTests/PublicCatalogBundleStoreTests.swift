@@ -1,4 +1,8 @@
 import XCTest
+import SwiftUI
+import UIKit
+import MapKit
+import CoreLocation
 import SwiftData
 import ApartmentCore
 @testable import ApartmentFinder
@@ -211,7 +215,124 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let restored = AppStore(storeURL: routeURL, resourceBundle: bundle, packDirectory: routePacks)
         XCTAssertTrue(restored.communities.contains { $0.id == group.id })
         XCTAssertFalse(restored.personal.stops[0].completed)
+        // A fresh public property may have only a sourced amenity point. Exercise
+        // the real map cameras without converting that amenity into a door.
+        try await assertLockerOnlyPropertyMapsWithoutInventingDoors(at: root)
     }
+    private func assertLockerOnlyPropertyMapsWithoutInventingDoors(at root: URL) async throws {
+        let target = Coordinate(latitude: 36.0417, longitude: -115.1743)
+        let evidenceObject: [String: Any] = ["status": "present",
+            "placementDescription": "Fictional synthetic locker location", "sourceIDs": ["fictional-source"],
+            "checkedAt": "2026-10-25", "point": ["longitude": target.longitude, "latitude": target.latitude,
+                "locationSourceIDs": ["fictional-source"], "precision": "approximate"]]
+        let evidence = try JSONDecoder().decode(DigitalLockerEvidence.self,
+            from: JSONSerialization.data(withJSONObject: evidenceObject))
+        XCTAssertTrue(evidence.isValid(sourceIDs: ["fictional-source"]))
+        let base = try payload("fictional-locker-camera-v1")
+        var catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: base.catalog) as? [String: Any])
+        catalog["scopeZIPs"] = ["89183"]
+        let lockerObject = try JSONSerialization.jsonObject(with: JSONEncoder().encode(evidence))
+        catalog["communities"] = [["id": "fictional-locker-only", "name": "Fictional locker-only property",
+            "address": "700 Fictional Camera Rd", "zip": "89183", "aliases": [], "sourceIDs": ["fictional-source"],
+            "researchStatus": "synthetic amenity only", "gapNotes": ["No unit or community reference coordinates"],
+            "digitalLocker": lockerObject]]
+        let empty = try JSONSerialization.data(withJSONObject: ["type": "FeatureCollection", "schemaVersion": 1,
+            "packVersion": "fictional-locker-camera-v1", "features": []])
+        let publicPayload = try DataPackPayload(catalog: JSONSerialization.data(withJSONObject: catalog), locations: empty, paths: empty)
+        let resourceBundle = try bundle(at: root, publicPayload: publicPayload)
+        let directory = root.appendingPathComponent("locker-camera-packs")
+        let store = AppStore(storeURL: root.appendingPathComponent("locker-camera.store"), resourceBundle: resourceBundle, packDirectory: directory)
+        XCTAssertNil(store.errorMessage)
+        let community = try XCTUnwrap(store.communities.first { $0.id == "fictional-locker-only" })
+        XCTAssertNil(community.coordinate)
+        XCTAssertTrue(store.places.isEmpty)
+        XCTAssertTrue(store.paths.isEmpty)
+        XCTAssertEqual(community.digitalLocker, evidence)
+        try store.importManifest(ManifestDocument(name: "Fictional locker camera route",
+            result: try RouteCSV.parse("sequence,address,unit,notes\n1,700 Fictional Camera Rd,F099,\n")))
+        let group = try XCTUnwrap(store.apartmentGroup(community.id))
+        let stop = try XCTUnwrap(group.stops.first)
+        XCTAssertNil(group.coordinate)
+        XCTAssertEqual(group.stops.count, 1)
+        let match = store.doorMatch(stop, groupID: group.id)
+        XCTAssertNil(match.readyDoor)
+        XCTAssertTrue(match.candidates.isEmpty)
+        XCTAssertTrue(match.buildingReferences.isEmpty)
+        XCTAssertEqual(store.digitalLocker(groupID: group.id), evidence)
+        let before = store.personal
+        var selections: [String] = []
+        let finder = CommunityMap(places: [], paths: [], focus: nil, fix: nil, selectedID: nil,
+            offline: false, digitalLocker: evidence, onSelect: { selections.append($0) }, onPosition: nil)
+        try await assertHostedMapFramesLocker(finder, target: target, label: "Finder locker-only") { finderMap in
+            let amenity = try XCTUnwrap(finderMap.annotations.first { annotation in
+                !(annotation is MKUserLocation) &&
+                abs(annotation.coordinate.latitude - target.latitude) < 0.000001 &&
+                abs(annotation.coordinate.longitude - target.longitude) < 0.000001
+            })
+            XCTAssertEqual(finderMap.annotations.filter { !($0 is MKUserLocation) }.count, 1,
+                           "The sole map annotation is the amenity, never an invented unit")
+            finderMap.selectAnnotation(amenity, animated: false)
+            XCTAssertTrue(selections.isEmpty, "Selecting locker hardware must not select a delivery")
+        }
+        let manager = LockerCameraDeniedLocationManager()
+        let location = LocationService(manager: manager)
+        XCTAssertNil(location.fix)
+        let mini = ApartmentDeliveryMap(group: group, store: store, location: location,
+            selectedStopID: stop.id, select: { selections.append($0) })
+        try await assertHostedMapFramesLocker(mini, target: target, label: "No-GPS mini-route locker-only")
+        XCTAssertNil(location.fix, "The camera fallback must work without a fabricated GPS fix")
+        XCTAssertEqual(manager.starts, 0, "Denied synthetic GPS must not start real acquisition")
+        XCTAssertTrue(selections.isEmpty)
+        XCTAssertEqual(store.personal, before, "Camera framing cannot create pins or mutate manifest/completion state")
+        XCTAssertNil(store.doorMatch(stop, groupID: group.id).readyDoor)
+        XCTAssertTrue(store.doorMatch(stop, groupID: group.id).candidates.isEmpty)
+        XCTAssertNil(try PrivateDataPackStore(directory: directory).load())
+    }
+
+    private func assertHostedMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,
+        label: String, file: StaticString = #filePath, line: UInt = #line,
+        inspect: (MKMapView) throws -> Void = { _ in }) async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
+                                 "The hosted app must supply its actual window scene", file: file, line: line)
+        let priorKeyWindow = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let host = UIHostingController(rootView: content)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.setNeedsLayout(); host.view.layoutIfNeeded()
+        defer {
+            window.isHidden = true; window.rootViewController = nil
+            priorKeyWindow?.makeKey()
+        }
+        func descendants(_ view: UIView) -> [MKMapView] {
+            (view as? MKMapView).map { [$0] } ?? view.subviews.flatMap { descendants($0) }
+        }
+        var observed: MKMapView?
+        let framed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let map = descendants(host.view).first, map.bounds.width > 0, map.bounds.height > 0 else { return false }
+            observed = map
+            let center = Coordinate(map.centerCoordinate)
+            let projected = map.convert(target.cl, toPointTo: map)
+            return Geometry.distance(center, target) < 120 &&
+                map.region.span.latitudeDelta > 0 && map.region.span.latitudeDelta < 0.03 &&
+                map.region.span.longitudeDelta > 0 && map.region.span.longitudeDelta < 0.05 &&
+                map.bounds.insetBy(dx: 20, dy: 20).contains(projected)
+        }, object: nil)
+        await fulfillment(of: [framed], timeout: 5)
+        let map = try XCTUnwrap(observed, "\(label): actual MKMapView was not hosted", file: file, line: line)
+        print("LOCKER-CAMERA \(label) center=\(map.centerCoordinate.latitude),\(map.centerCoordinate.longitude) span=\(map.region.span.latitudeDelta),\(map.region.span.longitudeDelta) annotations=\(map.annotations.count)")
+        XCTAssertLessThan(Geometry.distance(Coordinate(map.centerCoordinate), target), 120,
+                          "\(label): actual camera must initially frame the sourced amenity", file: file, line: line)
+        XCTAssertGreaterThan(map.region.span.latitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(map.region.span.latitudeDelta, 0.03, "A world view cannot satisfy property framing", file: file, line: line)
+        XCTAssertGreaterThan(map.region.span.longitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(map.region.span.longitudeDelta, 0.05, "A wide regional view cannot satisfy property framing", file: file, line: line)
+        XCTAssertTrue(map.bounds.insetBy(dx: 20, dy: 20).contains(map.convert(target.cl, toPointTo: map)),
+                      "The amenity must project inside the actual visible map", file: file, line: line)
+        try inspect(map)
+    }
+
     func testSavingPublicOnlyPathPersistsExactStreetIdentityWithoutOverwritingRules() throws {
         let root = try root(), url = root.appendingPathComponent("path.store"), directory = root.appendingPathComponent("packs")
         let bundle = try bundle(at: root, publicPayload: payload("public-v2", includeNewCommunity: true))
@@ -411,4 +532,23 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertNotNil(store.errorMessage)
         XCTAssertEqual(try Data(contentsOf: directory.appendingPathComponent("active.json")), damaged)
     }
+}
+
+/// Test-only no-fix manager. It cannot request permissions or acquire a location.
+private final class LockerCameraDeniedLocationManager: LocationManaging {
+    weak var delegate: CLLocationManagerDelegate?
+    let authorizationStatus: CLAuthorizationStatus = .denied
+    var desiredAccuracy: CLLocationAccuracy = 0
+    var distanceFilter: CLLocationDistance = 0
+    var activityType: CLActivityType = .other
+    var pausesLocationUpdatesAutomatically = true
+    var allowsBackgroundLocationUpdates = false
+    var showsBackgroundLocationIndicator = false
+    private(set) var starts = 0
+    func requestWhenInUseAuthorization() {}
+    func requestAlwaysAuthorization() {}
+    func startUpdatingLocation() { starts += 1 }
+    func stopUpdatingLocation() {}
+    func startUpdatingHeading() {}
+    func stopUpdatingHeading() {}
 }
