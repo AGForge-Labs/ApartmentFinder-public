@@ -421,6 +421,7 @@ xcrun() {
                     script += f'trap cleanup EXIT\nexit {original}\n'
                     result = subprocess.run(['bash'], input=script, text=True, capture_output=True, timeout=2,
                         env={**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': scope, 'RUNNER_TEMP': str(root),
+                             'PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH': '0',
                              'CALLS': str(root / 'calls'), 'COLLECTOR_STATUS': str(collector_result),
                              'CLEANUP_STATUS': str(cleanup_result), 'EXPECTED_ORIGINAL_STATUS': str(original),
                              'GITHUB_SHA': '9f10492869298be046baf819c35da10af1d9e9a5'})
@@ -675,6 +676,7 @@ python3() {
                 'trap \'collect_test_failure_diagnostics "$?"\' EXIT\n' + textwrap.dedent(block),
                 cwd=ROOT, text=True, capture_output=True, timeout=5,
                 env={**os.environ, 'RUNNER_TEMP': str(root), 'CALLS': str(root / 'calls'),
+                     'PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH': '0',
                      'REAL_PYTHON': sys.executable, 'PUBLIC_SYNTHETIC_SCOPE': scope,
                      'GITHUB_SHA': '9f10492869298be046baf819c35da10af1d9e9a5',
                      'COLLECTOR_STATUS': str(collector_status), 'EXPECTED_ORIGINAL_STATUS': str(build_status),
