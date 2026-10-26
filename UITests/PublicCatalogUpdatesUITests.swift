@@ -37,16 +37,23 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Apartments"].isSelected)
         app.tabBars.buttons["Finder"].tap()
         XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
-        // Navigate the production community list without search-field focus or
-        // keyboard replacement; retain the identical Tuscano unit fixture.
+        // Use the production picker search instead of walking the full catalog.
+        // Keep the identical Tuscano fixture and one final community-row tap.
         app.buttons["finder.community"].tap()
         XCTAssertTrue(app.navigationBars["Communities"].waitForExistence(timeout: 5))
+        let communitySearch = app.searchFields.firstMatch
+        XCTAssertTrue(communitySearch.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.searchFields.count, 1, "The presented picker must expose one unambiguous production search field")
+        expectHittable(communitySearch)
+        communitySearch.tap()
+        communitySearch.typeText("Tuscano")
+        let queryEntered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Tuscano"), object: communitySearch)
+        XCTAssertEqual(XCTWaiter.wait(for: [queryEntered], timeout: 5), .completed)
         let tuscano = app.buttons["finder.community.tuscano"]
-        for _ in 0..<16 {
-            if pickerRowFullyVisible(tuscano) { break }
-            app.swipeUp()
-        }
         XCTAssertTrue(tuscano.waitForExistence(timeout: 5))
+        let filteredCommunityRows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "finder.community."))
+        XCTAssertEqual(filteredCommunityRows.count, 1, "The entered query must filter the presented list to one community")
+        XCTAssertEqual(filteredCommunityRows.firstMatch.identifier, "finder.community.tuscano")
         XCTAssertTrue(tuscano.isHittable)
         XCTAssertTrue(pickerRowFullyVisible(tuscano), "The entire community row must be inside the app window before its single tap")
         observePickerSnapshotBeforeTap()
@@ -62,6 +69,8 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             catalogReadinessDiagnostics(stage: "community picker dismissal wait failed")
         }
         XCTAssertTrue(pickerClosed, "Selecting the community must dismiss its picker before entering a unit")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5),
+                      "Dismissing the community picker must end its search editing before Finder input")
         XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["Communities"].exists)
         XCTAssertTrue(app.buttons["finder.community"].label.contains("Tuscano"))
