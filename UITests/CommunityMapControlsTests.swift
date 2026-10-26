@@ -59,9 +59,10 @@ final class CommunityMapControlsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Map"].waitForExistence(timeout: 5))
         mapStateDiagnostics(stage: "before Map choice tap")
         app.buttons["Map"].tap()
-        let selectedMap = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Map"),
-                                                     object: app.buttons["mini.mapStyle"])
-        let selectedMapResult = XCTWaiter.wait(for: [selectedMap], timeout: 5)
+        let selectedMap = app.buttons.matching(identifier: "mini.mapStyle")
+            .matching(NSPredicate(format: "value == %@", "Map")).firstMatch
+        let selectedMapResult: XCTWaiter.Result =
+            selectedMap.waitForExistence(timeout: 5) ? .completed : .timedOut
         if selectedMapResult != .completed {
             mapStateDiagnostics(stage: "Map choice did not expose selected value", includeHierarchy: true)
         }

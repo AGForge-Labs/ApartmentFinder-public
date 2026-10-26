@@ -298,11 +298,14 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let location = LocationService(manager: manager)
         XCTAssertNil(location.fix)
         var miniObservation: SyntheticMiniRouteMapObservation?
+        let cameraTiming = LockerCameraTiming(target: target)
+        defer { cameraTiming.finish() }
         let mini = ApartmentDeliveryMap(group: group, store: store, location: location,
             selectedStopID: stop.id, select: { selections.append($0) },
-            syntheticMapObservation: { miniObservation = $0 })
+            syntheticMapObservation: { miniObservation = $0; cameraTiming.observe($0) })
         try await assertHostedSwiftUIMapFramesLocker(mini, target: target,
-            label: "No-GPS mini-route locker-only", observation: { miniObservation })
+            label: "No-GPS mini-route locker-only", observation: { miniObservation },
+            waitObservation: cameraTiming.waitChanged)
         XCTAssertNil(location.fix, "The camera fallback must work without a fabricated GPS fix")
         XCTAssertEqual(manager.starts, 0, "Denied synthetic GPS must not start real acquisition")
         XCTAssertTrue(selections.isEmpty)
@@ -312,10 +315,72 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertNil(try PrivateDataPackStore(directory: directory).load())
     }
 
+    // Only this fictional native fixture uses the existing injected observer.
+    // These bounded scalar timings never fulfill an expectation or alter a map.
+    @MainActor
+    private final class LockerCameraTiming {
+        let target: Coordinate
+        private let createdAt = ProcessInfo.processInfo.systemUptime
+        private var waitStartedAt: TimeInterval?
+        private var observations = 0
+        private var emitted = 0
+        private var priorState: String?
+        private var firstFramedAt: TimeInterval?
+        private var firstFramedDuringWaitAt: TimeInterval?
+
+        init(target: Coordinate) { self.target = target }
+
+        func observe(_ snapshot: SyntheticMiniRouteMapObservation) {
+            let now = ProcessInfo.processInfo.systemUptime
+            observations = min(1_000_000, observations + 1)
+            let viewport = snapshot.viewport.width > 0 && snapshot.viewport.height > 0
+            let center = Geometry.distance(snapshot.center, target) < 120
+            let span = snapshot.span.latitudeDelta > 0 && snapshot.span.latitudeDelta < 0.03 &&
+                snapshot.span.longitudeDelta > 0 && snapshot.span.longitudeDelta < 0.05
+            let projection = snapshot.lockerProjectedPoint != nil
+            let inside = snapshot.lockerProjectedPoint.map {
+                CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains($0)
+            } ?? false
+            let framed = viewport && center && span && projection && inside && snapshot.lockerAnnotationAppeared
+            if framed {
+                firstFramedAt = firstFramedAt ?? now
+                if let start = waitStartedAt, now >= start {
+                    firstFramedDuringWaitAt = firstFramedDuringWaitAt ?? now
+                }
+            }
+            let state = "viewport=\(viewport);center=\(center);span=\(span);projection=\(projection);inside=\(inside);annotation=\(snapshot.lockerAnnotationAppeared)"
+            guard emitted < 24, state != priorState else { return }
+            priorState = state; emitted += 1
+            let phase = waitStartedAt == nil ? "beforeWait" : "afterWaitStart"
+            print("LOCKER-CAMERA-TIMING schema=1;stage=observation;event=\(emitted);phase=\(phase);elapsedMs=\(milliseconds(now-createdAt));\(state)")
+        }
+
+        func waitChanged(_ began: Bool, _ now: TimeInterval) {
+            if began { waitStartedAt = now }
+            print("LOCKER-CAMERA-TIMING schema=1;stage=\(began ? "waitBegin" : "waitEnd");elapsedMs=\(milliseconds(now-createdAt));deadlineMs=5000")
+        }
+
+        func finish() {
+            let firstFramed = firstFramedAt.map { String(milliseconds($0-createdAt)) } ?? "unobserved"
+            let duringWait = firstFramedDuringWaitAt.flatMap { time in
+                waitStartedAt.map { String(milliseconds(time-$0)) }
+            } ?? "unobserved"
+            let withinDeadline = firstFramedDuringWaitAt.flatMap { time in
+                waitStartedAt.map { time <= $0 + 5 }
+            } ?? false
+            print("LOCKER-CAMERA-TIMING schema=1;stage=summary;observations=\(observations);events=\(emitted);firstFramedMs=\(firstFramed);firstFramedAfterWaitMs=\(duringWait);firstFramedWithinDeadline=\(withinDeadline)")
+        }
+
+        private func milliseconds(_ elapsed: TimeInterval) -> Int {
+            Int(min(600_000, max(0, elapsed * 1_000)))
+        }
+    }
+
     // SwiftUI Map does not promise an MKMapView descendant. Observe its public
     // camera context, MapReader projection and actual annotation appearance.
     private func assertHostedSwiftUIMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,
         label: String, observation: @escaping () -> SyntheticMiniRouteMapObservation?,
+        waitObservation: (Bool, TimeInterval) -> Void,
         file: StaticString = #filePath, line: UInt = #line) async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
                                  "The hosted app must supply its actual window scene", file: file, line: line)
@@ -330,6 +395,7 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
             window.isHidden = true; window.rootViewController = nil
             priorKeyWindow?.makeKey()
         }
+        waitObservation(true, ProcessInfo.processInfo.systemUptime)
         let framed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             guard let snapshot = observation(), snapshot.viewport.width > 0, snapshot.viewport.height > 0,
                   snapshot.lockerAnnotationAppeared, let projected = snapshot.lockerProjectedPoint else { return false }
@@ -339,6 +405,7 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
                 CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains(projected)
         }, object: nil)
         await fulfillment(of: [framed], timeout: 5)
+        waitObservation(false, ProcessInfo.processInfo.systemUptime)
         let snapshot = try XCTUnwrap(observation(), "\(label): actual SwiftUI Map camera was not observed", file: file, line: line)
         let projected = try XCTUnwrap(snapshot.lockerProjectedPoint,
                                      "The real MapReader must project the sourced amenity", file: file, line: line)

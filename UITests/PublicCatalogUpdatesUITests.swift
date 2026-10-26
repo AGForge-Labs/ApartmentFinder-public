@@ -218,13 +218,45 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     private func expectHittable(_ element: XCUIElement,
                                 file: StaticString = #filePath, line: UInt = #line) {
         guard let app else { XCTFail("The synthetic test app must be launched", file: file, line: line); return }
-        let deadline = ProcessInfo.processInfo.systemUptime + 5
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        let deadline = startedAt + 5
+        var timingEvents = 0
+        func timing(_ stage: String, _ status: String) {
+            #if DEBUG && targetEnvironment(simulator)
+            let arguments = app.launchArguments
+            guard arguments.contains("--uitesting"),
+                  let storeFlag = arguments.firstIndex(of: "--test-store"),
+                  storeFlag + 1 < arguments.count, UUID(uuidString: arguments[storeFlag + 1]) != nil,
+                  arguments.contains("--catalog-refresh-offline"),
+                  arguments.contains("--synthetic-community-picker-trace"), timingEvents < 32 else { return }
+            timingEvents += 1
+            let elapsed = ProcessInfo.processInfo.systemUptime - startedAt
+            let milliseconds = Int(min(600_000, max(0, elapsed * 1_000)))
+            print("FINDER-HIT-TIMING schema=1;line=\(line);event=\(timingEvents);stage=\(stage);status=\(status);elapsedMs=\(milliseconds);deadlineMs=5000")
+            #endif
+        }
+        timing("geometryWait", "begin")
         var lastGeometry = "No usable target/window snapshots observed"
         let geometry = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let window = app.windows.firstMatch
-            guard let targetSnapshot = try? element.snapshot(),
-                  let windowSnapshot = try? window.snapshot() else {
-                lastGeometry = "Target or application window missing or snapshot unavailable"
+            let targetSnapshot: XCUIElementSnapshot
+            timing("targetSnapshot", "begin")
+            do {
+                targetSnapshot = try element.snapshot()
+                timing("targetSnapshot", "returned")
+            } catch {
+                lastGeometry = "Target snapshot unavailable"
+                timing("targetSnapshot", "unavailable")
+                return false
+            }
+            let windowSnapshot: XCUIElementSnapshot
+            timing("windowSnapshot", "begin")
+            do {
+                windowSnapshot = try window.snapshot()
+                timing("windowSnapshot", "returned")
+            } catch {
+                lastGeometry = "Application window snapshot unavailable"
+                timing("windowSnapshot", "unavailable")
                 return false
             }
             // Read the captured attributes locally before asking XCTest for a
@@ -233,20 +265,28 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             let intersection = frame.intersection(windowFrame)
             lastGeometry = "id=\(targetSnapshot.identifier);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
             guard self.usableFrame(frame), self.usableFrame(windowFrame), self.usableFrame(intersection) else {
+                timing("geometry", "unusable")
                 return false
             }
+            timing("geometry", "usable")
             return true
         }, object: nil)
         let geometryResult = XCTWaiter.wait(for: [geometry], timeout: 5)
+        timing("geometryWait", geometryResult == .completed ? "completed" : "failed")
         let remaining = deadline - ProcessInfo.processInfo.systemUptime
         var hittable = false
         if geometryResult == .completed, remaining > 0 {
             // Geometry and the framework-owned hit wait share one deadline.
             // A late true result cannot turn an expired wait into success.
+            timing("hitWait", "begin")
             hittable = element.wait(for: \.isHittable, toEqual: true, timeout: remaining)
+            timing("hitWait", hittable ? "returnedTrue" : "returnedFalse")
+        } else {
+            timing("hitWait", geometryResult == .completed ? "deadlineExpired" : "geometryUnavailable")
         }
         let result: XCTWaiter.Result =
             hittable && ProcessInfo.processInfo.systemUptime <= deadline ? .completed : .timedOut
+        timing("result", result == .completed ? "completed" : "failed")
         if result != .completed {
             catalogReadinessDiagnostics(stage: "hittability wait failed", targetState: lastGeometry)
         }

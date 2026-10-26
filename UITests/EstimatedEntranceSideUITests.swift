@@ -54,6 +54,8 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertTrue([frame.minX, frame.minY, frame.width, frame.height].allSatisfy(\.isFinite))
         XCTAssertTrue(app.maps.firstMatch.frame.intersects(frame))
         app.buttons["mini.focus.2"].tap()
+        XCTAssertTrue(app.staticTexts["Unit 1022"].waitForExistence(timeout: 5),
+                      "Selecting stop 2 must render its unit before inspecting its evidence")
         XCTAssertTrue(app.staticTexts["Unit 1022"].exists)
         expandEvidence()
         XCTAssertTrue(warning.label.lowercased().contains("historical"))
