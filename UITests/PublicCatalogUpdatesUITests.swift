@@ -60,10 +60,10 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertEqual(app.textFields["finder.address"].value as? String, "7255 W Sunset Rd")
         // Reveal the search card through its production toolbar control. The
         // community button can be visible while the fields above it are not.
-        let editSearch = app.buttons["finder.editSearch"]
+        let editSearch = app.navigationBars["ApartmentFinder"].buttons["finder.editSearch"]
         expectHittable(editSearch)
         editSearch.tap()
-        let unit = app.textFields["finder.unit"]
+        let unit = app.scrollViews["finder.page"].textFields["finder.unit"]
         expectHittable(unit)
         let initialUnit = unit.value as? String
         XCTAssertNotNil(initialUnit)
@@ -221,6 +221,7 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         let startedAt = ProcessInfo.processInfo.systemUptime
         let deadline = startedAt + 5
         var timingEvents = 0
+        var snapshotErrorEvents = 0
         func timing(_ stage: String, _ status: String) {
             #if DEBUG && targetEnvironment(simulator)
             let arguments = app.launchArguments
@@ -235,6 +236,33 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             print("FINDER-HIT-TIMING schema=1;line=\(line);event=\(timingEvents);stage=\(stage);status=\(status);elapsedMs=\(milliseconds);deadlineMs=5000")
             #endif
         }
+        func snapshotFailure(_ error: Error) {
+            #if DEBUG && targetEnvironment(simulator)
+            let arguments = app.launchArguments
+            guard arguments.contains("--uitesting"),
+                  let storeFlag = arguments.firstIndex(of: "--test-store"),
+                  storeFlag + 1 < arguments.count, UUID(uuidString: arguments[storeFlag + 1]) != nil,
+                  arguments.contains("--catalog-refresh-offline"),
+                  arguments.contains("--synthetic-community-picker-trace"), snapshotErrorEvents < 4 else { return }
+            snapshotErrorEvents += 1
+            let ns = error as NSError
+            let sampledDomain = String(ns.domain.prefix(97))
+            let domainPrefix = String(sampledDomain.prefix(96))
+            let domainIsIdentifier = !domainPrefix.isEmpty && domainPrefix.utf8.allSatisfy {
+                (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || [45, 46, 95].contains($0)
+            }
+            let domain = domainIsIdentifier ? domainPrefix : "nonIdentifierDomain"
+            // Inspect a bounded message only in memory; never log it or userInfo.
+            // The fixed category is a keyword hint, not an official error-code diagnosis.
+            let text = String(ns.localizedDescription.prefix(512)).lowercased()
+            let reason: String
+            if text.contains("multiple matching") || text.contains("ambiguous") { reason = "ambiguous" }
+            else if text.contains("no matches") || text.contains("no matching") { reason = "noMatches" }
+            else if text.contains("timed out") || text.contains("timeout") { reason = "timeout" }
+            else { reason = "other" }
+            print("FINDER-SNAPSHOT-ERROR schema=1;line=\(line);stage=targetSnapshot;domain=\(domain);domainTruncated=\(sampledDomain.count > 96);code=\(ns.code);reason=\(reason)")
+            #endif
+        }
         timing("geometryWait", "begin")
         var lastGeometry = "No usable target/window snapshots observed"
         let geometry = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
@@ -247,6 +275,7 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             } catch {
                 lastGeometry = "Target snapshot unavailable"
                 timing("targetSnapshot", "unavailable")
+                snapshotFailure(error)
                 return false
             }
             let windowSnapshot: XCUIElementSnapshot
