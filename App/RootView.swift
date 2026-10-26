@@ -561,7 +561,7 @@ struct CommunityPicker: View {
                     }
                 }.buttonStyle(.plain)
                     .accessibilityIdentifier("finder.community.\(community.id)")
-            }.searchable(text: $search,prompt: "Name, address or ZIP").navigationTitle("Communities")
+            }.searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: "Name, address or ZIP").navigationTitle("Communities")
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
         }
     }

@@ -74,6 +74,18 @@ final class CommunityMapControlsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)
         app.buttons["mini.recenter"].tap()
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)
+        // A completed tap does not establish the newly published AX state.
+        // Require both resumed fields before retaining the original label check.
+        let resumedRecenter = recenter.matching(
+            NSPredicate(format: "label != %@ AND value BEGINSWITH %@",
+                        "Resume following", "Following")).firstMatch
+        let resumedResult: XCTWaiter.Result =
+            resumedRecenter.waitForExistence(timeout: 5) ? .completed : .timedOut
+        if resumedResult != .completed {
+            mapStateDiagnostics(stage: "Resume following did not expose following state", includeHierarchy: true)
+        }
+        XCTAssertEqual(resumedResult, .completed,
+                       "Resume following must expose the following map state")
         XCTAssertNotEqual(app.buttons["mini.recenter"].label, "Resume following")
         assertCompactControls()
         capture("Following controls remain compact after map-style and stop changes")
