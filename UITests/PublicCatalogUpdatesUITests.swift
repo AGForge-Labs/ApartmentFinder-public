@@ -68,7 +68,7 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertEqual(app.textFields["finder.address"].value as? String, "7255 W Sunset Rd")
         // Reveal the search card through its production toolbar control. The
         // community button can be visible while the fields above it are not.
-        let editSearch = app.navigationBars["ApartmentFinder"].buttons["finder.editSearch"]
+        let editSearch = app.buttons.matching(NSPredicate(format: "identifier == %@", "finder.editSearch")).firstMatch
         expectHittable(editSearch)
         editSearch.tap()
         let unit = app.scrollViews["finder.page"].textFields["finder.unit"]
