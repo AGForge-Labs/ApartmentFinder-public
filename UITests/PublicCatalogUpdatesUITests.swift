@@ -69,7 +69,7 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         // Reveal the search card through its production toolbar control. The
         // community button can be visible while the fields above it are not.
         let editSearch = app.buttons.matching(NSPredicate(format: "identifier == %@", "finder.editSearch")).firstMatch
-        expectHittable(editSearch)
+        expectHittable(editSearch, requestedIdentifier: "finder.editSearch")
         editSearch.tap()
         let unit = app.scrollViews["finder.page"].textFields["finder.unit"]
         expectHittable(unit)
@@ -91,7 +91,7 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertEqual(unit.value as? String, "2066")
         // Use the production control to end editing and reveal the search card
         // before requiring a hit point for its Search button.
-        expectHittable(editSearch)
+        expectHittable(editSearch, requestedIdentifier: "finder.editSearch")
         editSearch.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5),
                       "Ending input must dismiss the keyboard before tapping Search")
@@ -219,12 +219,12 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     }
 
     private func expectHittable(_ element: XCUIElement,
+                                requestedIdentifier: String? = nil,
                                 file: StaticString = #filePath, line: UInt = #line) {
         guard let app else { XCTFail("The synthetic test app must be launched", file: file, line: line); return }
         let startedAt = ProcessInfo.processInfo.systemUptime
         let deadline = startedAt + 5
         var timingEvents = 0
-        var snapshotErrorEvents = 0
         func timing(_ stage: String, _ status: String) {
             #if DEBUG && targetEnvironment(simulator)
             let arguments = app.launchArguments
@@ -239,35 +239,8 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             print("FINDER-HIT-TIMING schema=1;line=\(line);event=\(timingEvents);stage=\(stage);status=\(status);elapsedMs=\(milliseconds);deadlineMs=5000")
             #endif
         }
-        func snapshotFailure(_ error: Error, stage: String) {
-            #if DEBUG && targetEnvironment(simulator)
-            let arguments = app.launchArguments
-            guard arguments.contains("--uitesting"),
-                  let storeFlag = arguments.firstIndex(of: "--test-store"),
-                  storeFlag + 1 < arguments.count, UUID(uuidString: arguments[storeFlag + 1]) != nil,
-                  arguments.contains("--catalog-refresh-offline"),
-                  arguments.contains("--synthetic-community-picker-trace"), snapshotErrorEvents < 4 else { return }
-            snapshotErrorEvents += 1
-            let ns = error as NSError
-            let sampledDomain = String(ns.domain.prefix(97))
-            let domainPrefix = String(sampledDomain.prefix(96))
-            let domainIsIdentifier = !domainPrefix.isEmpty && domainPrefix.utf8.allSatisfy {
-                (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || [45, 46, 95].contains($0)
-            }
-            let domain = domainIsIdentifier ? domainPrefix : "nonIdentifierDomain"
-            // Inspect a bounded message only in memory; never log it or userInfo.
-            // The fixed category is a keyword hint, not an official error-code diagnosis.
-            let text = String(ns.localizedDescription.prefix(512)).lowercased()
-            let reason: String
-            if text.contains("multiple matching") || text.contains("ambiguous") { reason = "ambiguous" }
-            else if text.contains("no matches") || text.contains("no matching") { reason = "noMatches" }
-            else if text.contains("timed out") || text.contains("timeout") { reason = "timeout" }
-            else { reason = "other" }
-            print("FINDER-SNAPSHOT-ERROR schema=1;line=\(line);stage=\(stage);domain=\(domain);domainTruncated=\(sampledDomain.count > 96);code=\(ns.code);reason=\(reason)")
-            #endif
-        }
-        var lastGeometry = "No usable target/window snapshots observed"
-        // Ask XCTest for its real hit point before requesting full snapshots.
+        var lastGeometry = "No usable target/window frames observed"
+        // Ask XCTest for its real hit point before requesting scalar frames.
         // Hit readiness and finite geometry must both fit the same five seconds.
         timing("hitWait", "begin")
         let hitBudget = deadline - ProcessInfo.processInfo.systemUptime
@@ -275,31 +248,22 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         timing("hitWait", hittable ? "returnedTrue" : "returnedFalse")
         var geometryUsable = false
         if hittable && ProcessInfo.processInfo.systemUptime <= deadline {
-            var snapshotStage = "targetSnapshot"
-            do {
-                timing("targetSnapshot", "begin")
-                let targetSnapshot = try element.snapshot()
-                timing("targetSnapshot", "returned")
-                // A synchronous AX call can overrun its framework budget. Never
-                // request another snapshot or accept that late result as ready.
-                if ProcessInfo.processInfo.systemUptime <= deadline {
-                    snapshotStage = "windowSnapshot"
-                    timing("windowSnapshot", "begin")
-                    let windowSnapshot = try app.windows.firstMatch.snapshot()
-                    timing("windowSnapshot", "returned")
-                    let frame = targetSnapshot.frame, windowFrame = windowSnapshot.frame
-                    let intersection = frame.intersection(windowFrame)
-                    lastGeometry = "id=\(targetSnapshot.identifier);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
-                    geometryUsable = usableFrame(frame) && usableFrame(windowFrame) && usableFrame(intersection)
-                    timing("geometry", geometryUsable ? "usable" : "unusable")
-                } else {
-                    lastGeometry = "Target snapshot returned after readiness deadline"
-                    timing("windowSnapshot", "deadlineExpired")
-                }
-            } catch {
-                lastGeometry = snapshotStage == "targetSnapshot" ? "Target snapshot unavailable" : "Application window snapshot unavailable"
-                timing(snapshotStage, "unavailable")
-                snapshotFailure(error, stage: snapshotStage)
+            timing("targetFrame", "begin")
+            let frame = element.frame
+            timing("targetFrame", "returned")
+            // A scalar AX attribute can still overrun its framework budget.
+            // Never request the window or accept a late target result.
+            if ProcessInfo.processInfo.systemUptime <= deadline {
+                timing("windowFrame", "begin")
+                let windowFrame = app.windows.firstMatch.frame
+                timing("windowFrame", "returned")
+                let intersection = frame.intersection(windowFrame)
+                lastGeometry = "requestedID=\(requestedIdentifier ?? "unspecified");frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
+                geometryUsable = usableFrame(frame) && usableFrame(windowFrame) && usableFrame(intersection)
+                timing("geometry", geometryUsable ? "usable" : "unusable")
+            } else {
+                lastGeometry = "Target frame returned after readiness deadline"
+                timing("windowFrame", "deadlineExpired")
             }
         } else {
             lastGeometry = hittable ? "Hit wait returned after readiness deadline" : "No real hit point within readiness deadline"
