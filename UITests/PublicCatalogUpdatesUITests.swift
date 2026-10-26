@@ -248,44 +248,23 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             print("FINDER-HIT-TIMING schema=1;line=\(line);event=\(timingEvents);stage=\(stage);status=\(status);elapsedMs=\(milliseconds);deadlineMs=5000")
             #endif
         }
-        var lastGeometry = "No usable target/window frames observed"
-        // Ask XCTest for its real hit point before requesting scalar frames.
-        // Hit readiness and finite geometry must both fit the same five seconds.
+        // Readiness is a real on-time XCTest hit point, followed by the test's
+        // actual interactions and assertions. Do not add frame/snapshot AX reads
+        // here: their independent latency can outlast an already returned hit.
+        // The separate full selected-row geometry assertion remains in the test.
         timing("hitWait", "begin")
         let hitBudget = deadline - ProcessInfo.processInfo.systemUptime
         let hittable = hitBudget > 0 && element.wait(for: \.isHittable, toEqual: true, timeout: hitBudget)
         timing("hitWait", hittable ? "returnedTrue" : "returnedFalse")
-        var geometryUsable = false
-        if hittable && ProcessInfo.processInfo.systemUptime <= deadline {
-            timing("targetFrame", "begin")
-            let frame = element.frame
-            timing("targetFrame", "returned")
-            // A scalar AX attribute can still overrun its framework budget.
-            // Never request the window or accept a late target result.
-            if ProcessInfo.processInfo.systemUptime <= deadline {
-                timing("windowFrame", "begin")
-                let windowFrame = app.windows.firstMatch.frame
-                timing("windowFrame", "returned")
-                let intersection = frame.intersection(windowFrame)
-                lastGeometry = "requestedID=\(requestedIdentifier ?? "unspecified");frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
-                geometryUsable = usableFrame(frame) && usableFrame(windowFrame) && usableFrame(intersection)
-                timing("geometry", geometryUsable ? "usable" : "unusable")
-            } else {
-                lastGeometry = "Target frame returned after readiness deadline"
-                timing("windowFrame", "deadlineExpired")
-            }
-        } else {
-            lastGeometry = hittable ? "Hit wait returned after readiness deadline" : "No real hit point within readiness deadline"
-            timing("geometry", hittable ? "deadlineExpired" : "notHittable")
-        }
         let result: XCTWaiter.Result =
-            hittable && geometryUsable && ProcessInfo.processInfo.systemUptime <= deadline ? .completed : .timedOut
+            hittable && ProcessInfo.processInfo.systemUptime <= deadline ? .completed : .timedOut
         timing("result", result == .completed ? "completed" : "failed")
-        cachedReadinessTarget = String(lastGeometry.prefix(2_048))
+        let readinessState = "requestedID=\(requestedIdentifier ?? "unspecified");realHit=\(hittable);result=\(result.rawValue);geometryNotRead;actualInteractionAssertionsStillRequired"
+        cachedReadinessTarget = String(readinessState.prefix(2_048))
         if result != .completed {
-            catalogReadinessDiagnostics(stage: "hittability wait failed", targetState: lastGeometry)
+            catalogReadinessDiagnostics(stage: "hittability wait failed", targetState: readinessState)
         }
-        XCTAssertEqual(result, .completed, "The control must become hittable; \(lastGeometry)", file: file, line: line)
+        XCTAssertEqual(result, .completed, "The control must become hittable within five seconds; \(readinessState)", file: file, line: line)
     }
 
     private func usableFrame(_ frame: CGRect) -> Bool {
