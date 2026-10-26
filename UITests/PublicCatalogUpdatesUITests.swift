@@ -2,9 +2,13 @@ import XCTest
 
 final class PublicCatalogUpdatesUITests: XCTestCase {
     private var app: XCUIApplication!
+    private var readinessDiagnosticEmitted = false
+    private var cachedReadinessTarget = "No readiness geometry captured"
 
     override func setUp() {
         super.setUp()
+        readinessDiagnosticEmitted = false
+        cachedReadinessTarget = "No readiness geometry captured"
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
@@ -17,12 +21,14 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     override func tearDown() {
         guard let app else { super.tearDown(); return }
         if (testRun?.totalFailureCount ?? 0) > 0 {
+            // Failure evidence is cached; another AX request can delay teardown.
             catalogReadinessDiagnostics(stage: "tearDown after failure")
+        } else {
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "Public pin data offline refresh final screen"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
         }
-        let screenshot = XCTAttachment(screenshot: app.screenshot())
-        screenshot.name = "Public pin data offline refresh final screen"
-        screenshot.lifetime = .keepAlways
-        add(screenshot)
         app.terminate()
         super.tearDown()
     }
@@ -49,9 +55,11 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         // a dismissal signal. Wait for the actual presentation boundary.
         let picker = app.navigationBars["Communities"]
         let pickerClosed = picker.waitForNonExistence(timeout: 5)
-        observePickerTraceAfterWait()
-        if !pickerClosed {
-            print("PublicCatalogPickerFailure pickerExists=\(picker.exists) selectedCommunity=\(app.buttons["finder.community"].label) address=\(String(reflecting: app.textFields["finder.address"].value as? String))")
+        if pickerClosed {
+            observePickerTraceAfterWait()
+        } else {
+            print("PublicCatalogPickerFailure pickerClosed=false;lateAXReadsSkipped=true")
+            catalogReadinessDiagnostics(stage: "community picker dismissal wait failed")
         }
         XCTAssertTrue(pickerClosed, "Selecting the community must dismiss its picker before entering a unit")
         XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
@@ -74,15 +82,10 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         let entered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "2066"), object: unit)
         let entryWaitResult = XCTWaiter.wait(for: [entered], timeout: 3)
         if entryWaitResult != .completed {
-            // Observe only after the original wait has failed. A late value must
-            // never turn this failed setup into a passing acceptance result.
-            let observedAt = ProcessInfo.processInfo.systemUptime
-            let observedValue = unit.value as? String
-            let valueQuerySeconds = ProcessInfo.processInfo.systemUptime - observedAt
-            print("PublicCatalogInputFailure wait=\(entryWaitResult.rawValue) value=\(String(reflecting: observedValue)) valueQuerySeconds=\(valueQuerySeconds)")
-            print("PublicCatalogInputFailure placeholder=\(String(reflecting: unit.placeholderValue)) exists=\(unit.exists) keyboardExists=\(app.keyboards.firstMatch.exists)")
+            // The original result is final. Failure diagnostics must not issue
+            // new value/placeholder/keyboard/hierarchy AX reads after its deadline.
+            print("PublicCatalogInputFailure wait=\(entryWaitResult.rawValue);lateAXReadsSkipped=true")
             catalogReadinessDiagnostics(stage: "typed unit value wait failed")
-            print("PublicCatalogInputFailure field=\(unit.debugDescription)")
         }
         XCTAssertEqual(entryWaitResult, .completed)
         XCTAssertEqual(unit.value as? String, "2066")
@@ -236,7 +239,7 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             print("FINDER-HIT-TIMING schema=1;line=\(line);event=\(timingEvents);stage=\(stage);status=\(status);elapsedMs=\(milliseconds);deadlineMs=5000")
             #endif
         }
-        func snapshotFailure(_ error: Error) {
+        func snapshotFailure(_ error: Error, stage: String) {
             #if DEBUG && targetEnvironment(simulator)
             let arguments = app.launchArguments
             guard arguments.contains("--uitesting"),
@@ -260,62 +263,52 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
             else if text.contains("no matches") || text.contains("no matching") { reason = "noMatches" }
             else if text.contains("timed out") || text.contains("timeout") { reason = "timeout" }
             else { reason = "other" }
-            print("FINDER-SNAPSHOT-ERROR schema=1;line=\(line);stage=targetSnapshot;domain=\(domain);domainTruncated=\(sampledDomain.count > 96);code=\(ns.code);reason=\(reason)")
+            print("FINDER-SNAPSHOT-ERROR schema=1;line=\(line);stage=\(stage);domain=\(domain);domainTruncated=\(sampledDomain.count > 96);code=\(ns.code);reason=\(reason)")
             #endif
         }
-        timing("geometryWait", "begin")
         var lastGeometry = "No usable target/window snapshots observed"
-        let geometry = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            let window = app.windows.firstMatch
-            let targetSnapshot: XCUIElementSnapshot
-            timing("targetSnapshot", "begin")
+        // Ask XCTest for its real hit point before requesting full snapshots.
+        // Hit readiness and finite geometry must both fit the same five seconds.
+        timing("hitWait", "begin")
+        let hitBudget = deadline - ProcessInfo.processInfo.systemUptime
+        let hittable = hitBudget > 0 && element.wait(for: \.isHittable, toEqual: true, timeout: hitBudget)
+        timing("hitWait", hittable ? "returnedTrue" : "returnedFalse")
+        var geometryUsable = false
+        if hittable && ProcessInfo.processInfo.systemUptime <= deadline {
+            var snapshotStage = "targetSnapshot"
             do {
-                targetSnapshot = try element.snapshot()
+                timing("targetSnapshot", "begin")
+                let targetSnapshot = try element.snapshot()
                 timing("targetSnapshot", "returned")
+                // A synchronous AX call can overrun its framework budget. Never
+                // request another snapshot or accept that late result as ready.
+                if ProcessInfo.processInfo.systemUptime <= deadline {
+                    snapshotStage = "windowSnapshot"
+                    timing("windowSnapshot", "begin")
+                    let windowSnapshot = try app.windows.firstMatch.snapshot()
+                    timing("windowSnapshot", "returned")
+                    let frame = targetSnapshot.frame, windowFrame = windowSnapshot.frame
+                    let intersection = frame.intersection(windowFrame)
+                    lastGeometry = "id=\(targetSnapshot.identifier);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
+                    geometryUsable = usableFrame(frame) && usableFrame(windowFrame) && usableFrame(intersection)
+                    timing("geometry", geometryUsable ? "usable" : "unusable")
+                } else {
+                    lastGeometry = "Target snapshot returned after readiness deadline"
+                    timing("windowSnapshot", "deadlineExpired")
+                }
             } catch {
-                lastGeometry = "Target snapshot unavailable"
-                timing("targetSnapshot", "unavailable")
-                snapshotFailure(error)
-                return false
+                lastGeometry = snapshotStage == "targetSnapshot" ? "Target snapshot unavailable" : "Application window snapshot unavailable"
+                timing(snapshotStage, "unavailable")
+                snapshotFailure(error, stage: snapshotStage)
             }
-            let windowSnapshot: XCUIElementSnapshot
-            timing("windowSnapshot", "begin")
-            do {
-                windowSnapshot = try window.snapshot()
-                timing("windowSnapshot", "returned")
-            } catch {
-                lastGeometry = "Application window snapshot unavailable"
-                timing("windowSnapshot", "unavailable")
-                return false
-            }
-            // Read the captured attributes locally before asking XCTest for a
-            // real hit point; missing or unusable geometry never qualifies.
-            let frame = targetSnapshot.frame, windowFrame = windowSnapshot.frame
-            let intersection = frame.intersection(windowFrame)
-            lastGeometry = "id=\(targetSnapshot.identifier);frame=\(frame);window=\(windowFrame);intersection=\(intersection)"
-            guard self.usableFrame(frame), self.usableFrame(windowFrame), self.usableFrame(intersection) else {
-                timing("geometry", "unusable")
-                return false
-            }
-            timing("geometry", "usable")
-            return true
-        }, object: nil)
-        let geometryResult = XCTWaiter.wait(for: [geometry], timeout: 5)
-        timing("geometryWait", geometryResult == .completed ? "completed" : "failed")
-        let remaining = deadline - ProcessInfo.processInfo.systemUptime
-        var hittable = false
-        if geometryResult == .completed, remaining > 0 {
-            // Geometry and the framework-owned hit wait share one deadline.
-            // A late true result cannot turn an expired wait into success.
-            timing("hitWait", "begin")
-            hittable = element.wait(for: \.isHittable, toEqual: true, timeout: remaining)
-            timing("hitWait", hittable ? "returnedTrue" : "returnedFalse")
         } else {
-            timing("hitWait", geometryResult == .completed ? "deadlineExpired" : "geometryUnavailable")
+            lastGeometry = hittable ? "Hit wait returned after readiness deadline" : "No real hit point within readiness deadline"
+            timing("geometry", hittable ? "deadlineExpired" : "notHittable")
         }
         let result: XCTWaiter.Result =
-            hittable && ProcessInfo.processInfo.systemUptime <= deadline ? .completed : .timedOut
+            hittable && geometryUsable && ProcessInfo.processInfo.systemUptime <= deadline ? .completed : .timedOut
         timing("result", result == .completed ? "completed" : "failed")
+        cachedReadinessTarget = String(lastGeometry.prefix(2_048))
         if result != .completed {
             catalogReadinessDiagnostics(stage: "hittability wait failed", targetState: lastGeometry)
         }
@@ -328,32 +321,25 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     }
 
     private func catalogReadinessDiagnostics(stage: String, targetState: String = "") {
-        guard let app, app.launchArguments.contains("--uitesting"),
-              app.launchArguments.contains("--test-store") else { return }
-        // Emit the stage first in case a subsequent AX snapshot itself stalls.
-        print("PUBLIC-CATALOG-READINESS-DIAGNOSTIC stage=\(stage); target=\(String(targetState.prefix(2_048)))")
-        func state(_ name: String, _ element: XCUIElement) -> String {
-            guard element.exists, let snapshot = try? element.snapshot() else {
-                return "\(name): missing or snapshot unavailable"
-            }
-            return "\(name): id=\(snapshot.identifier);type=\(snapshot.elementType.rawValue);frame=\(snapshot.frame);value=\(String(describing: snapshot.value))"
-        }
-        let geometry = [
-            state("window", app.windows.firstMatch),
-            state("finder.page", app.scrollViews["finder.page"]),
-            state("finder.unit", app.textFields["finder.unit"]),
-            state("finder.address", app.textFields["finder.address"]),
-            state("finder.editSearch", app.buttons["finder.editSearch"]),
-            state("navigation", app.navigationBars.firstMatch),
-            state("tabBar", app.tabBars.firstMatch),
-            state("keyboard", app.keyboards.firstMatch)
-        ].joined(separator: "\n")
-        let diagnostics = String("stage=\(stage);target=\(targetState)\n\(geometry)\n\(app.debugDescription)".prefix(32_768))
+        #if DEBUG && targetEnvironment(simulator)
+        guard let app, !readinessDiagnosticEmitted else { return }
+        let arguments = app.launchArguments
+        guard arguments.contains("--uitesting"),
+              let storeFlag = arguments.firstIndex(of: "--test-store"),
+              storeFlag + 1 < arguments.count, UUID(uuidString: arguments[storeFlag + 1]) != nil,
+              arguments.contains("--catalog-refresh-offline"),
+              arguments.contains("--synthetic-community-picker-trace") else { return }
+        readinessDiagnosticEmitted = true
+        // This failure-only record uses already captured strings and scalars.
+        // Do not request snapshots, hierarchy dumps, values or screenshots here.
+        let cached = targetState.isEmpty ? cachedReadinessTarget : targetState
+        let diagnostics = "stage=\(String(stage.prefix(96)));target=\(String(cached.prefix(2_048)));lateAXReadsSkipped=true"
         print("PUBLIC-CATALOG-READINESS-DIAGNOSTIC \(diagnostics)")
         let attachment = XCTAttachment(string: diagnostics)
         attachment.name = "Public catalog Finder readiness"
         attachment.lifetime = .keepAlways
         add(attachment)
+        #endif
     }
 
     private func reveal(_ element: XCUIElement) {

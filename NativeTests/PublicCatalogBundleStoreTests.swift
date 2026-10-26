@@ -395,17 +395,40 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
             window.isHidden = true; window.rootViewController = nil
             priorKeyWindow?.makeKey()
         }
-        waitObservation(true, ProcessInfo.processInfo.systemUptime)
-        let framed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+        // Evaluate this real MapReader/camera observation on MainActor first.
+        // Yield only while it is false; a late true state never passes the budget.
+        @MainActor func observedCameraIsFramed() -> Bool {
             guard let snapshot = observation(), snapshot.viewport.width > 0, snapshot.viewport.height > 0,
                   snapshot.lockerAnnotationAppeared, let projected = snapshot.lockerProjectedPoint else { return false }
             return Geometry.distance(snapshot.center, target) < 120 &&
                 snapshot.span.latitudeDelta > 0 && snapshot.span.latitudeDelta < 0.03 &&
                 snapshot.span.longitudeDelta > 0 && snapshot.span.longitudeDelta < 0.05 &&
                 CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains(projected)
-        }, object: nil)
-        await fulfillment(of: [framed], timeout: 5)
-        waitObservation(false, ProcessInfo.processInfo.systemUptime)
+        }
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        let deadline = startedAt + 5
+        var framedWithinDeadline = false
+        var predicateChecks = 0
+        waitObservation(true, startedAt)
+        do {
+            defer { waitObservation(false, ProcessInfo.processInfo.systemUptime) }
+            while ProcessInfo.processInfo.systemUptime <= deadline {
+                predicateChecks += 1
+                let framed = observedCameraIsFramed()
+                let checkedAt = ProcessInfo.processInfo.systemUptime
+                if framed && checkedAt <= deadline {
+                    framedWithinDeadline = true
+                    break
+                }
+                let remaining = deadline - checkedAt
+                guard remaining > 0 else { break }
+                // A short suspension releases MainActor for actual map updates.
+                try await Task.sleep(nanoseconds: UInt64(min(0.01, remaining) * 1_000_000_000))
+            }
+        }
+        let elapsedMs = Int(min(600_000, max(0, (ProcessInfo.processInfo.systemUptime - startedAt) * 1_000)))
+        print("NATIVE-CAMERA-PREDICATE schema=1;checks=\(min(1_000_000, predicateChecks));matchedWithinDeadline=\(framedWithinDeadline);elapsedMs=\(elapsedMs);deadlineMs=5000")
+        XCTAssertTrue(framedWithinDeadline, "\(label): the actual SwiftUI Map must frame the sourced amenity within five seconds", file: file, line: line)
         let snapshot = try XCTUnwrap(observation(), "\(label): actual SwiftUI Map camera was not observed", file: file, line: line)
         let projected = try XCTUnwrap(snapshot.lockerProjectedPoint,
                                      "The real MapReader must project the sourced amenity", file: file, line: line)
