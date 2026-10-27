@@ -86,7 +86,7 @@ final class FinderTabTests: XCTestCase {
         openFinder()
         app.buttons["finder.community"].tap()
         XCTAssertTrue(app.navigationBars["Communities"].waitForExistence(timeout: 5))
-        let field = app.searchFields.firstMatch
+        let field = app.textFields["communityPicker.search"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
         field.typeText("89118")
@@ -102,7 +102,7 @@ final class FinderTabTests: XCTestCase {
         openFinder()
         app.buttons["finder.community"].tap()
         XCTAssertTrue(app.navigationBars["Communities"].waitForExistence(timeout: 5))
-        let field = app.searchFields.firstMatch
+        let field = app.textFields["communityPicker.search"]
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.tap()
         field.typeText("Spanish Ridge")

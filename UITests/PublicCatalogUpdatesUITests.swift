@@ -4,11 +4,13 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
     private var app: XCUIApplication!
     private var readinessDiagnosticEmitted = false
     private var cachedReadinessTarget = "No readiness geometry captured"
+    private var communitySearchHitPending = false
 
     override func setUp() {
         super.setUp()
         readinessDiagnosticEmitted = false
         cachedReadinessTarget = "No readiness geometry captured"
+        communitySearchHitPending = false
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--test-store", UUID().uuidString,
@@ -22,6 +24,10 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         guard let app else { super.tearDown(); return }
         if (testRun?.totalFailureCount ?? 0) > 0 {
             // Failure evidence is cached; another AX request can delay teardown.
+            if communitySearchHitPending {
+                communitySearchHitPending = false
+                observeFailedCommunitySearch()
+            }
             catalogReadinessDiagnostics(stage: "tearDown after failure")
         } else {
             let screenshot = XCTAttachment(screenshot: app.screenshot())
@@ -41,10 +47,12 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         // Keep the identical Tuscano fixture and one final community-row tap.
         app.buttons["finder.community"].tap()
         XCTAssertTrue(app.navigationBars["Communities"].waitForExistence(timeout: 5))
-        let communitySearch = app.searchFields.firstMatch
+        let communitySearch = app.textFields["communityPicker.search"]
         XCTAssertTrue(communitySearch.waitForExistence(timeout: 5))
-        XCTAssertEqual(app.searchFields.count, 1, "The presented picker must expose one unambiguous production search field")
+        XCTAssertEqual(app.textFields.matching(identifier: "communityPicker.search").count, 1, "The presented picker must expose one unambiguous production search field")
+        communitySearchHitPending = true
         expectHittable(communitySearch)
+        communitySearchHitPending = false
         communitySearch.tap()
         communitySearch.typeText("Tuscano")
         let queryEntered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Tuscano"), object: communitySearch)
@@ -225,6 +233,45 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
         XCTAssertTrue(editor.buttons["Save"].isEnabled, "Local pin editing must remain available after a public refresh fails")
         XCTAssertTrue(editor.buttons["Cancel"].isHittable)
         XCTAssertFalse(app.alerts.firstMatch.exists)
+    }
+
+    private func observeFailedCommunitySearch() {
+        guard let app else { return }
+        let started = ProcessInfo.processInfo.systemUptime
+        print("PUBLIC-CATALOG-SEARCH-SNAPSHOT phase=begin;postFailureOnly=true;originalAcceptance=false")
+        do {
+            let snapshot = try app.snapshot()
+            var visited = 0, truncated = false, searchCount = 0, navigationCount = 0
+            var fields: [String] = [], navigationFrames: [String] = []
+            func visit(_ node: XCUIElementSnapshot, window: CGRect?) {
+                guard visited < 4096 else { truncated = true; return }
+                visited += 1
+                let currentWindow = node.elementType == .window ? node.frame : window
+                if node.elementType == .textField && node.identifier == "communityPicker.search" {
+                    searchCount += 1
+                    if fields.count < 2 {
+                        let frame = node.frame
+                        let windowText = currentWindow.map { "\($0)" } ?? "unavailable"
+                        let inside = currentWindow.map { usableFrame(frame) && usableFrame($0) && $0.contains(frame) } ?? false
+                        fields.append("frame=\(frame);window=\(windowText);usableFrame=\(usableFrame(frame));insideWindow=\(inside)")
+                    }
+                }
+                if node.elementType == .navigationBar && (node.identifier == "Communities" || node.label == "Communities") {
+                    navigationCount += 1
+                    if navigationFrames.count < 2 { navigationFrames.append("\(node.frame)") }
+                }
+                for child in node.children {
+                    if truncated { break }
+                    visit(child, window: currentWindow)
+                }
+            }
+            visit(snapshot, window: nil)
+            let elapsed = Int((ProcessInfo.processInfo.systemUptime - started) * 1000)
+            let record = "phase=end;postFailureOnly=true;originalAcceptance=false;elapsedMs=\(elapsed);visited=\(visited);truncated=\(truncated);searchCount=\(searchCount);searchRecordsTruncated=\(searchCount > 2);fields=\(fields.joined(separator: "|"));communitiesNavigationCount=\(navigationCount);navigationRecordsTruncated=\(navigationCount > 2);navigationFrames=\(navigationFrames.joined(separator: "|"))"
+            print("PUBLIC-CATALOG-SEARCH-SNAPSHOT \(String(record.prefix(7800)))")
+        } catch {
+            print("PUBLIC-CATALOG-SEARCH-SNAPSHOT phase=end;status=unavailable;postFailureOnly=true;originalAcceptance=false")
+        }
     }
 
     private func expectHittable(_ element: XCUIElement,

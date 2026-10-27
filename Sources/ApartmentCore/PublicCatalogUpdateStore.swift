@@ -45,6 +45,20 @@ public struct PublicCatalogUpdateStore: Sendable {
         return PublicCatalogUpdateSelection(pack: pack, manifest: value.manifest, recoveredPrevious: value.recovered,
                                             canRollback: canRollback(state, selected: value.reference))
     }
+    /// One coherent selection and conservative bundle eligibility; this never changes the store.
+    public func reviewedBundleSelection() throws -> (selection: PublicCatalogUpdateSelection?, bundleAllowed: Bool) {
+        Self.writer.lock(); defer { Self.writer.unlock() }
+        guard let (state, value) = try resolve(fullPack: true), let pack = value.pack else {
+            guard FileManager.default.fileExists(atPath: directory.path) else { return (nil, true) }
+            try DataPackPayload.checkDirectory(directory)
+            // An empty cache is first-run safe; any unexplained history is held.
+            return (nil, try FileManager.default.contentsOfDirectory(atPath: directory.path).isEmpty)
+        }
+        let selection = PublicCatalogUpdateSelection(pack: pack, manifest: value.manifest,
+            recoveredPrevious: value.recovered, canRollback: canRollback(state, selected: value.reference))
+        return (selection, state.rejectedRevisions.isEmpty && !value.recovered &&
+            state.highestSequence == value.reference.sequence)
+    }
     public func knownAddresses() throws -> [String]? { try resolve(fullPack: false)?.1.index.addresses }
 
     /// Preflight avoids unchanged network downloads. An exact no-op also verifies the cached

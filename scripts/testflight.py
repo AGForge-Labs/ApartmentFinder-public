@@ -239,12 +239,21 @@ def inspect_ipa(path, config, expected_build):
         require(extensions == expected_extensions, 'IPA is missing the share extension or contains an unexpected extension.')
         legacy_resources = ('catalog.json', 'locations.geojson', 'paths.geojson')
         public_resources = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson')
+        reviewed_resources = ('reviewed-progress-catalog.json', 'reviewed-progress-locations.geojson',
+                              'reviewed-progress-paths.geojson', 'reviewed-baseline-manifest.json',
+                              'reviewed-baseline-catalog.json', 'reviewed-baseline-locations.geojson',
+                              'reviewed-baseline-paths.geojson')
         has_legacy = any(prefix + name in names for name in legacy_resources)
         has_public = any(prefix + name in names for name in public_resources)
         require(not (has_legacy and has_public), 'IPA mixes public and legacy resource families.')
         resource_names = public_resources if has_public else legacy_resources
         if has_public or prefix + 'known-addresses.json' in names:
             resource_names += ('known-addresses.json',)
+        has_reviewed = any(prefix + name in names for name in reviewed_resources)
+        require(not has_reviewed or has_public, 'Reviewed bundle requires the public resource family.')
+        if has_reviewed:
+            require(all(prefix + name in names for name in reviewed_resources), 'IPA has incomplete reviewed bundle resources.')
+            resource_names += reviewed_resources
         if config.get('share_extension'):
             extension = dict(config, **config['share_extension'])
             share = prefix + 'PlugIns/ApartmentFinderShare.appex/'
@@ -258,7 +267,7 @@ def inspect_ipa(path, config, expected_build):
                     'Share extension does not accept a manifest file.')
             require(hashlib.sha256(archive.read(share + 'embedded.mobileprovision')).hexdigest() == extension['profile_sha256'],
                     'Exported extension contains a different provisioning profile.')
-            forbidden_resources = legacy_resources + public_resources if has_public else public_resources
+            forbidden_resources = (legacy_resources + public_resources if has_public else public_resources) + reviewed_resources
             require(not any(share + name in names for name in forbidden_resources),
                     'Share extension contains unexpected catalog or GeoJSON resources.')
             shared_resource = 'known-addresses.json' if has_public else 'catalog.json'

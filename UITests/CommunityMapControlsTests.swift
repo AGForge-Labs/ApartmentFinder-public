@@ -71,6 +71,8 @@ final class CommunityMapControlsTests: XCTestCase {
         XCTAssertEqual(app.buttons["mini.mapStyle"].value as? String, "Map")
         assertCompactControls()
         app.buttons["mini.focus.3"].tap()
+        XCTAssertTrue(app.staticTexts["Unit 2137"].waitForExistence(timeout: 5),
+                      "Selecting stop 3 must publish its exact unit before inspecting the card")
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)
         app.buttons["mini.recenter"].tap()
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)

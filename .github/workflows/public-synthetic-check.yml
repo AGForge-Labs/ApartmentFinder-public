@@ -225,7 +225,7 @@ jobs:
           import json,os,re,sys
           selection=json.load(open(sys.argv[1]))
           identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':85}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
+          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':90}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
           assert len(identities)==len(set(identities))==expected
           assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
           if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -236,7 +236,7 @@ jobs:
           PY
           FILTERS=()
           while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
-          EXPECTED_NATIVE_COUNT=85
+          EXPECTED_NATIVE_COUNT=90
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
           if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi
@@ -307,6 +307,18 @@ jobs:
           for name,digest in review['resourcesSHA256'].items():
               assert hashlib.sha256((app/name).read_bytes()).hexdigest()==digest
           assert hashlib.sha256((share/'known-addresses.json').read_bytes()).hexdigest()==review['resourcesSHA256']['known-addresses.json']
+          reviewed_resources = {
+              'reviewed-progress-catalog.json': 'a4dc6243c8a8548a1d1994d2bf190ea2748196b999bd534cc257e85dd96779e7',
+              'reviewed-progress-locations.geojson': '84f2ec404be402b56312535f07ab258d9df6315ee37842cf031ebebd81283766',
+              'reviewed-progress-paths.geojson': '3aa6f1e0ea9e8def31c4501c6e18bc446274f36545b653502a57619a30f88fe9',
+              'reviewed-baseline-manifest.json': '002a4c672e623f56a898806dfe91fe4754a271389ba8ff4585098a81521c3f73',
+              'reviewed-baseline-catalog.json': 'c959e033b5a3ea49d48b8a218ca5ee6ac85350bf41b0505a68bc90fbff823e63',
+              'reviewed-baseline-locations.geojson': 'f406a48e832adb11d4181163965d149b525fd4d3e29bb4df18d45d59ce8efc24',
+              'reviewed-baseline-paths.geojson': '1570d1f9592af92765720ea4e1364cacdbbb3447edc2c31e8cc8765e2c014939',
+          }
+          for name,digest in reviewed_resources.items():
+              assert hashlib.sha256((app/name).read_bytes()).hexdigest()==digest
+              assert not (share/name).exists()
           print(json.dumps(dict(scope='unsigned-release-app-and-share',candidate=os.environ['EXPECTED_COMMIT'],app=True,embeddedShare=True,resourcesMatch=True,distributionSigning=False,upload=False,full_acceptance=False,release_eligible=False)))
           PY
           python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/unsigned-release-checkout"

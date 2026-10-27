@@ -533,6 +533,7 @@ struct CommunityPicker: View {
     var choose: (Community) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
+    @FocusState private var searchFocused: Bool
     #if DEBUG && targetEnvironment(simulator)
     fileprivate func observingSelection(_ observe: @escaping (SyntheticCommunityPickerStage, Community) -> Void) -> Self {
         guard SyntheticCommunityPickerObservation.enabled else { return self }
@@ -549,20 +550,51 @@ struct CommunityPicker: View {
     #endif
     var body: some View {
         NavigationStack {
-            List(FinderCommunityOrder.ordered(FinderSearch.communities(matching: search, in: store.communities))) { community in
-                Button { choose(community); dismiss() } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(community.name).font(.headline)
-                        Text("\(community.address) · \(community.zip)").font(.caption).foregroundStyle(.secondary)
-                        if let countyZIPs = community.countyZIPs, !countyZIPs.contains(community.zip) {
-                            Text("County ZIP: \(countyZIPs.joined(separator: ", ")) · directory postal ZIP unconfirmed")
-                                .font(.caption).foregroundStyle(.secondary)
+            VStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                    TextField("Name, address or ZIP", text: $search)
+                        .textFieldStyle(.plain)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.search)
+                        .focused($searchFocused)
+                        .onSubmit { searchFocused = false }
+                        .accessibilityIdentifier("communityPicker.search")
+                    if !search.isEmpty {
+                        Button { search = "" } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .frame(minWidth: 44, minHeight: 44)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Clear search")
+                        .accessibilityIdentifier("communityPicker.clearSearch")
                     }
-                }.buttonStyle(.plain)
-                    .accessibilityIdentifier("finder.community.\(community.id)")
-            }.searchable(text: $search, placement: .navigationBarDrawer(displayMode: .always), prompt: "Name, address or ZIP").navigationTitle("Communities")
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+                }
+                .frame(minHeight: 44)
+                .padding(.horizontal, 12)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                List(FinderCommunityOrder.ordered(FinderSearch.communities(matching: search, in: store.communities))) { community in
+                    Button { choose(community); dismiss() } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(community.name).font(.headline)
+                            Text("\(community.address) · \(community.zip)").font(.caption).foregroundStyle(.secondary)
+                            if let countyZIPs = community.countyZIPs, !countyZIPs.contains(community.zip) {
+                                Text("County ZIP: \(countyZIPs.joined(separator: ", ")) · directory postal ZIP unconfirmed")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }.buttonStyle(.plain)
+                        .accessibilityIdentifier("finder.community.\(community.id)")
+                }
+            }
+            .navigationTitle("Communities")
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
         }
     }
 }

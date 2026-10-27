@@ -40,6 +40,10 @@ final class AppStore: ObservableObject {
     private var personalStorageWritable = false
     private var privatePackStore: PrivateDataPackStore?
     private var publicCatalogSupplement: LocalDataPack?
+    private var publicOwnershipView: LocalDataPack?
+    private var reviewedBaseline: PublicCatalogUpdatePayload?
+    private var reviewedOverlay: LocalDataPack?
+    private var reviewedOverlayAllowed = false
     private var loadedBasePack: LocalDataPack?
     private var publicCatalogStore: PublicCatalogUpdateStore?
     private let publicCatalogClient: PublicCatalogUpdateClient
@@ -150,27 +154,46 @@ final class AppStore: ObservableObject {
         if unreadableSavedPack { throw CoreError("The saved map pack could not be verified. Its original files are preserved. Import a complete private map pack to recover.") }
     }
     private func loadPublicSupplement(resourceBundle: Bundle) {
+        // Failure to read history or the reviewed files must never resurrect a rolled-back selection.
         do {
-            if let selected = try publicCatalogStore?.load() {
+            let baseline = try ReviewedBundleResources.baseline(from: resourceBundle)
+            reviewedBaseline = baseline
+            let overlay = try ReviewedBundleResources.overlay(from: resourceBundle)
+            let snapshot = try publicCatalogStore?.reviewedBundleSelection()
+            if let selected = snapshot?.selection {
                 publicCatalogSupplement = selected.pack
                 publicCatalogRevisionLabel = selected.manifest.revision
                 canRollbackPublicCatalog = selected.canRollback
                 publicCatalogUpdateStatus = selected.recoveredPrevious
                     ? "Using the previous verified pin data. The latest copy could not be verified."
                     : "Saved pin data is available offline."
+            }
+            if snapshot?.bundleAllowed == true, let baseline, let overlay {
+                let saved = snapshot?.selection
+                let identical = saved?.manifest == baseline.manifest
+                if saved == nil || (saved!.manifest.sequence < baseline.manifest.sequence) {
+                    publicCatalogSupplement = baseline.pack
+                    publicCatalogRevisionLabel = "Bundled · \(baseline.manifest.revision)"
+                    reviewedOverlay = overlay; reviewedOverlayAllowed = true
+                } else if saved!.manifest.sequence > baseline.manifest.sequence || identical {
+                    reviewedOverlay = overlay; reviewedOverlayAllowed = true
+                }
+            }
+            if publicCatalogSupplement != nil { return }
+        } catch {
+            publicCatalogUpdateStatus = "Saved pin data or reviewed bundle could not be verified."
+            // Existing selection remains available independently when bundle validation failed.
+            if let selected = try? publicCatalogStore?.load() {
+                publicCatalogSupplement = selected.pack
+                publicCatalogRevisionLabel = selected.manifest.revision
+                canRollbackPublicCatalog = selected.canRollback
                 return
             }
-        } catch {
-            publicCatalogUpdateStatus = "Saved pin data could not be verified. Using the bundled copy."
         }
         do {
             publicCatalogSupplement = try PublicCatalogSupplement.read(from: resourceBundle)
-            if let publicCatalogSupplement {
-                publicCatalogRevisionLabel = "Bundled · \(publicCatalogSupplement.catalog.packVersion)"
-            }
-        } catch {
-            errorMessage = "The bundled public catalog could not be verified. Existing saved data was preserved."
-        }
+            if let publicCatalogSupplement { publicCatalogRevisionLabel = "Bundled · \(publicCatalogSupplement.catalog.packVersion)" }
+        } catch { errorMessage = "The bundled public catalog could not be verified. Existing saved data was preserved." }
     }
     func refreshPublicCatalogIfDue() async { await refreshPublicCatalog(manual: false) }
     func refreshPublicCatalog(manual: Bool = true) async {
@@ -231,11 +254,21 @@ final class AppStore: ObservableObject {
         }
     }
     private func applyPublicCatalog(_ selected: PublicCatalogUpdateSelection) {
-        publicCatalogSupplement = selected.pack
-        publicCatalogRevisionLabel = selected.manifest.revision
+        let snapshot = try? publicCatalogStore?.reviewedBundleSelection()
+        let eligible = snapshot?.bundleAllowed == true && snapshot?.selection?.manifest == selected.manifest
+        let baseline = reviewedBaseline
+        reviewedOverlayAllowed = eligible && reviewedOverlay != nil && baseline != nil &&
+            (selected.manifest.sequence > baseline!.manifest.sequence || selected.manifest.sequence < baseline!.manifest.sequence || selected.manifest == baseline!.manifest)
+        if eligible, let baseline, selected.manifest.sequence < baseline.manifest.sequence {
+            publicCatalogSupplement = baseline.pack
+            publicCatalogRevisionLabel = "Bundled · \(baseline.manifest.revision)"
+        } else {
+            publicCatalogSupplement = selected.pack
+            publicCatalogRevisionLabel = selected.manifest.revision
+        }
         canRollbackPublicCatalog = selected.canRollback
         // Reproject over the latest private/personal state, never a pre-download snapshot.
-        pack = supplementedPack(loadedBasePack, with: selected.pack)
+        if let publicCatalogSupplement { pack = supplementedPack(loadedBasePack, with: publicCatalogSupplement) }
         if loadedBasePack == nil { packStatus = "Public map catalog loaded" }
         rebuildPlaceIndex()
         rebuildApartmentPlan()
@@ -263,8 +296,8 @@ final class AppStore: ObservableObject {
         // Activation has committed. Publish its exact selection even after a late cancellation.
         applyPrivatePack(selected)
     }
-    private func reservedPublicCommunityIDs(in backup: PersonalBackup) -> Set<String> {
-        guard let publicCatalogSupplement else { return [] }
+    private func reservedPublicCommunityIDs(in backup: PersonalBackup, supplement: LocalDataPack? = nil) -> Set<String> {
+        guard let publicCatalogSupplement = supplement ?? publicOwnershipView ?? publicCatalogSupplement else { return [] }
         let owned = Set(backup.places.map(\.communityID))
             .union(backup.paths.map(\.communityID))
             .union(backup.apartmentRules.compactMap(\.communityID))
@@ -299,7 +332,14 @@ final class AppStore: ObservableObject {
         })
     }
     private func supplementedPack(_ base: LocalDataPack?, with supplement: LocalDataPack) -> LocalDataPack {
-        PublicCatalogSupplement.applying(supplement, to: base, reservingCommunityIDs: reservedPublicCommunityIDs(in: personal))
+        let publicView: LocalDataPack
+        if reviewedOverlayAllowed, let reviewedOverlay {
+            publicView = ReviewedBundleComposition.applying(reviewedOverlay, to: supplement,
+                privatePlaces: base?.places ?? [], personalPlaces: personal.places)
+        } else { publicView = supplement }
+        publicOwnershipView = publicView
+        return PublicCatalogSupplement.applying(publicView, to: base,
+            reservingCommunityIDs: reservedPublicCommunityIDs(in: personal, supplement: publicView))
     }
     private func applyPrivatePack(_ selected: PrivateDataPackSelection) {
         loadedBasePack = selected.pack
@@ -336,7 +376,7 @@ final class AppStore: ObservableObject {
     func save(_ path: PathSegment) -> Bool {
         let publicOnlyCommunity = communities.first { community in
             community.id == path.communityID &&
-                publicCatalogSupplement?.catalog.communities.contains(where: { $0.id == community.id }) == true &&
+                (publicOwnershipView ?? publicCatalogSupplement)?.catalog.communities.contains(where: { $0.id == community.id }) == true &&
                 loadedBasePack?.catalog.communities.contains(where: { $0.id == community.id }) != true
         }
         return updatePersonal { records in
@@ -433,7 +473,7 @@ final class AppStore: ObservableObject {
     }
     private func refreshPersonal(from previous: PersonalBackup) {
         let communityOwnershipChanged = reservedPublicCommunityIDs(in: previous) != reservedPublicCommunityIDs(in: personal)
-        if communityOwnershipChanged, let publicCatalogSupplement {
+        if (communityOwnershipChanged || previous.places != personal.places), let publicCatalogSupplement {
             pack = supplementedPack(loadedBasePack, with: publicCatalogSupplement)
             packRevision &+= 1
         }
