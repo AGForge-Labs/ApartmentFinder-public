@@ -398,10 +398,12 @@ private struct FinderView: View {
                 .accessibilityIdentifier("finder.address")
             HStack {
                 TextField("Apartment / unit",text: $unit).autocorrectionDisabled()
+                    .frame(minWidth: 80, maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .focused($focusedField, equals: .unit).submitLabel(.search).onSubmit(search)
                     .accessibilityIdentifier("finder.unit")
                 Divider().frame(height: 24)
                 TextField("Building (optional)",text: $building).autocorrectionDisabled()
+                    .frame(minWidth: 80, maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .focused($focusedField, equals: .building).submitLabel(.search).onSubmit(search)
                     .accessibilityIdentifier("finder.building")
             }

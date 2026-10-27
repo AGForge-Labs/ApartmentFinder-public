@@ -28,7 +28,7 @@ enum PublicCatalogUpdateAdmission {
             throw CoreError("The public feed cannot assert complete door coverage.")
         }
         for community in try objects(catalog["communities"]) {
-            _ = try object(community, allowed: communityKeys, required: ["id", "name", "address", "zip", "aliases", "sourceIDs", "researchStatus", "gapNotes"])
+            _ = try object(community, allowed: communityKeys, required: ["id", "name", "address", "zip", "sourceIDs", "researchStatus", "gapNotes"])
             let latitude = community["latitude"], longitude = community["longitude"]
             guard (latitude == nil) == (longitude == nil) else { throw CoreError("Incomplete public community coordinate.") }
             if let locker = community["digitalLocker"] { try digitalLocker(locker, sourceIDs: sourceIDs) }

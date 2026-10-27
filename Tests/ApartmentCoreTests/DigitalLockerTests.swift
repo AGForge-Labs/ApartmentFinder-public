@@ -64,6 +64,20 @@ final class DigitalLockerTests: XCTestCase {
         var invalid = evidence
         invalid["point"] = ["longitude": -115.1, "latitude": 36.1, "locationSourceIDs": ["amenity"], "precision": "sourceMapped", "gateCode": "private"]
         XCTAssertThrowsError(try PublicCatalogUpdateAdmission.validate(files(invalid)))
+
+        // Existing public revisions may omit aliases; malformed values must still fail decoding.
+        var fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(pack(valid, sources: [source("amenity")]).catalog)) as? [String: Any])
+        var rows = try XCTUnwrap(fixture["communities"] as? [[String: Any]])
+        rows[0].removeValue(forKey: "aliases")
+        fixture["communities"] = rows
+        let collection = Data(#"{"type":"FeatureCollection","schemaVersion":1,"packVersion":"fictional","features":[]}"#.utf8)
+        let catalog = try JSONSerialization.data(withJSONObject: fixture)
+        XCTAssertNoThrow(try PublicCatalogUpdateAdmission.validate(["public-catalog.json": catalog, "public-locations.geojson": collection, "public-paths.geojson": collection]))
+        XCTAssertEqual(try JSONDecoder().decode(Catalog.self, from: catalog).communities[0].aliases, [])
+        for malformed: Any in ["not-an-array", NSNull()] {
+            rows[0]["aliases"] = malformed; fixture["communities"] = rows
+            XCTAssertThrowsError(try JSONDecoder().decode(Catalog.self, from: JSONSerialization.data(withJSONObject: fixture)))
+        }
     }
     func testSupplementAddsLocationSourcesWithoutReplacingPrivateEvidenceOrOtherStreet() throws {
         var baseCommunity = try community(); baseCommunity.sourceIDs = ["private-identity"]

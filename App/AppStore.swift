@@ -475,7 +475,7 @@ final class AppStore: ObservableObject {
         let communityOwnershipChanged = reservedPublicCommunityIDs(in: previous) != reservedPublicCommunityIDs(in: personal)
         if (communityOwnershipChanged || previous.places != personal.places), let publicCatalogSupplement {
             pack = supplementedPack(loadedBasePack, with: publicCatalogSupplement)
-            packRevision &+= 1
+            if communityOwnershipChanged { packRevision &+= 1 }
         }
         let placesChanged = previous.places != personal.places
         if placesChanged || communityOwnershipChanged { rebuildPlaceIndex() }
