@@ -323,7 +323,8 @@ class PublicPreflightTests(unittest.TestCase):
                         (root / name).unlink(missing_ok=True)
                     result = subprocess.run(['bash'], input='set -euo pipefail\nWORK=(env)\n' + textwrap.dedent(block),
                         cwd=root, text=True, capture_output=True, timeout=2,
-                        env={**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': scope, 'RUNNER_TEMP': str(root)})
+                        env={**os.environ, 'PUBLIC_SYNTHETIC_SCOPE': scope, 'RUNNER_TEMP': str(root),
+                             'PUBLIC_TEST_SHARD_COUNT': '1', 'PUBLIC_TEST_SHARD_INDEX': '0'})
                     if expected is None:
                         self.assertNotEqual(result.returncode, 0)
                         self.assertFalse((root / 'selected-tests.json').exists())
