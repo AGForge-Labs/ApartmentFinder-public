@@ -40,14 +40,22 @@ env:
   DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
   HOMEBREW_NO_AUTO_UPDATE: '1'
 jobs:
-  validate:
+  validate_shard:
     if: >-
       github.event_name == 'workflow_dispatch' && inputs.authorize_upload &&
       github.repository == 'AGForge-Labs/ApartmentFinder-public' && !github.event.repository.private &&
       github.actor_id == '105477711' && github.triggering_actor == 'Galaxybigbird' &&
       github.ref == 'refs/heads/main' && github.run_attempt == 1
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard: ${{ fromJSON((inputs.accept_known_map_regression || inputs.accept_current_ui_test_risk) && '[0]' || '[0,1,2,3]') }}
     runs-on: macos-15-intel
     timeout-minutes: 95
+    env:
+      PUBLIC_TEST_SHARD_INDEX: ${{ matrix.shard }}
+      PUBLIC_TEST_SHARD_COUNT: ${{ (inputs.accept_known_map_regression || inputs.accept_current_ui_test_risk) && '1' || '4' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -57,7 +65,7 @@ jobs:
       - name: Require exact owner-reviewed public source
         run: python3 -B scripts/public-release.py check
       - name: Release gate regression checks
-        if: ${{ !inputs.accept_current_ui_test_risk }}
+        if: ${{ matrix.shard == 0 && !inputs.accept_current_ui_test_risk }}
         run: python3 -B -m unittest discover -s Tests/release -v
       - name: Preserve existing native and source regression checks
         if: ${{ !inputs.accept_known_map_regression && !inputs.accept_current_ui_test_risk }}
@@ -69,6 +77,19 @@ jobs:
       - name: Verify identical application source and retain the disclosed UI failure without rerunning tests
         if: ${{ inputs.accept_current_ui_test_risk }}
         run: python3 -B scripts/public-release-current-ui-risk.py
+  validate:
+    needs: validate_shard
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Require every selected release validation shard to succeed
+        env:
+          VALIDATION_RESULT: ${{ needs.validate_shard.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$VALIDATION_RESULT" = success
   release:
     needs: validate
     if: ${{ needs.validate.result == 'success' }}

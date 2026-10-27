@@ -99,7 +99,11 @@ def perform_release(env, version):
         manifest = json.loads((output / "build-manifest.json").read_text(encoding="utf-8"))
         resources = {name: hashlib.sha256((ROOT / "data" / name).read_bytes()).hexdigest()
                      for name in ("public-catalog.json", "public-locations.geojson",
-                                  "public-paths.geojson", "known-addresses.json")}
+                                  "public-paths.geojson", "known-addresses.json",
+                                  "reviewed-progress-catalog.json", "reviewed-progress-locations.geojson",
+                                  "reviewed-progress-paths.geojson", "reviewed-baseline-manifest.json",
+                                  "reviewed-baseline-catalog.json", "reviewed-baseline-locations.geojson",
+                                  "reviewed-baseline-paths.geojson")}
         validate_package_manifest(manifest, actual, resources, env)
         with tempfile.TemporaryDirectory(prefix="finder-public-upload-", dir=env["RUNNER_TEMP"]) as folder:
             directory = Path(folder) / "upload"

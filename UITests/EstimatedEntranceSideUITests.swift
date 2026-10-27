@@ -54,6 +54,8 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertTrue([frame.minX, frame.minY, frame.width, frame.height].allSatisfy(\.isFinite))
         XCTAssertTrue(app.maps.firstMatch.frame.intersects(frame))
         app.buttons["mini.focus.2"].tap()
+        XCTAssertTrue(app.staticTexts["Unit 1022"].waitForExistence(timeout: 5),
+                      "Selecting stop 2 must render its unit before inspecting its evidence")
         XCTAssertTrue(app.staticTexts["Unit 1022"].exists)
         expandEvidence()
         XCTAssertTrue(warning.label.lowercased().contains("historical"))
@@ -123,9 +125,12 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         if initialValue != "Collapsed" { evidenceDiagnostics(identifier, stage: "header did not reset to Collapsed") }
         XCTAssertEqual(initialValue, "Collapsed", file: file, line: line)
         details.tap()
-        let expanded = XCTWaiter.wait(for: [
-            XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Expanded"), object: details)
-        ], timeout: 5)
+        // Keep the exact header scope and required value in the framework
+        // query, with the same five-second observation budget.
+        let expandedHeader = headers.matching(
+            NSPredicate(format: "value == %@", "Expanded")).firstMatch
+        let expanded: XCTWaiter.Result =
+            expandedHeader.waitForExistence(timeout: 5) ? .completed : .timedOut
         if expanded != .completed { evidenceDiagnostics(identifier, stage: "tap did not expand header") }
         XCTAssertEqual(expanded, .completed, "Evidence header must become Expanded after tap", file: file, line: line)
     }

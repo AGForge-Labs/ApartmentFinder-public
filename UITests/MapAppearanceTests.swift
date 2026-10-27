@@ -19,7 +19,7 @@ final class MapAppearanceTests: XCTestCase {
 
         let style = app.buttons["mini.mapStyle"]
         XCTAssertTrue(style.waitForExistence(timeout: 5), "The delivery map needs a map-type control")
-        expectStyle("Satellite", on: style)
+        expectStyle("Satellite", on: app.buttons.matching(identifier: "mini.mapStyle"))
         let firstPin = app.buttons["mini.pin.2.tuscano-unit-county-2187653-2066"]
         let secondPin = app.buttons["mini.pin.3.tuscano-unit-county-2187691-2137"]
         XCTAssertTrue(firstPin.waitForExistence(timeout: 5))
@@ -121,7 +121,7 @@ final class MapAppearanceTests: XCTestCase {
         style.tap()
         capture(app, "Map and Satellite choices from the layers button")
         app.buttons["Map"].tap()
-        expectStyle("Map", on: style)
+        expectStyle("Map", on: app.buttons.matching(identifier: "mini.mapStyle"))
         XCTAssertEqual(app.staticTexts["mini.next"].label, "Next · Stop 2")
         XCTAssertEqual(firstPin.frame.midX, originalTip.x, accuracy: 3)
         XCTAssertEqual(firstPin.frame.maxY, originalTip.y, accuracy: 3,
@@ -133,13 +133,13 @@ final class MapAppearanceTests: XCTestCase {
         app.buttons["mini.prepare"].tap()
         XCTAssertTrue(app.buttons["door.confirm"].waitForExistence(timeout: 5))
         let doorStyle = app.buttons["door.mapStyle"]
-        expectStyle("Map", on: doorStyle)
+        expectStyle("Map", on: app.buttons.matching(identifier: "door.mapStyle"))
         XCTAssertTrue(doorStyle.isHittable)
         doorStyle.tap()
         app.buttons["Satellite"].tap()
-        expectStyle("Satellite", on: doorStyle)
+        expectStyle("Satellite", on: app.buttons.matching(identifier: "door.mapStyle"))
         app.buttons["Cancel"].tap()
-        expectStyle("Satellite", on: style)
+        expectStyle("Satellite", on: app.buttons.matching(identifier: "mini.mapStyle"))
         style.tap()
         app.buttons["Map"].tap()
 
@@ -147,7 +147,7 @@ final class MapAppearanceTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Unit 2066"].exists)
         app.buttons["mini.delivered"].tap()
         XCTAssertEqual(app.staticTexts["mini.next"].label, "Next · Stop 3")
-        expectStyle("Map", on: style)
+        expectStyle("Map", on: app.buttons.matching(identifier: "mini.mapStyle"))
         capture(app, "Standard map retains progress and the completed pin")
         app.terminate()
         app.launchArguments.removeAll { $0 == "--reset-test-inbox" }
@@ -155,7 +155,7 @@ final class MapAppearanceTests: XCTestCase {
         app.buttons["apartment.tuscano"].tap()
         app.buttons["mini.start"].tap()
         XCTAssertTrue(style.waitForExistence(timeout: 5))
-        expectStyle("Map", on: style)
+        expectStyle("Map", on: app.buttons.matching(identifier: "mini.mapStyle"))
         XCTAssertEqual(app.staticTexts["mini.next"].label, "Next · Stop 3")
         XCTAssertTrue(firstPin.exists)
         XCTAssertTrue(secondPin.exists)
@@ -176,9 +176,11 @@ final class MapAppearanceTests: XCTestCase {
         super.tearDown()
     }
 
-    private func expectStyle(_ name: String, on control: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
-        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", name), object: control)
-        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 5), .completed,
+    private func expectStyle(_ name: String, on controls: XCUIElementQuery, file: StaticString = #filePath, line: UInt = #line) {
+        let expectedStyle = controls.matching(NSPredicate(format: "value == %@", name)).firstMatch
+        let result: XCTWaiter.Result =
+            expectedStyle.waitForExistence(timeout: 5) ? .completed : .timedOut
+        XCTAssertEqual(result, .completed,
                        "The visible map type must update to \(name)", file: file, line: line)
     }
 

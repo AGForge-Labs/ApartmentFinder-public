@@ -1,4 +1,4 @@
-"""Exercise the unsigned bundle receipt with invented, credential-free files."""
+"""Exercise unsigned fictional bundles with credential-free public resources."""
 import hashlib
 import json
 import os
@@ -11,6 +11,12 @@ import textwrap
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
+REVIEWED_RESOURCES = (
+    'reviewed-progress-catalog.json', 'reviewed-progress-locations.geojson',
+    'reviewed-progress-paths.geojson', 'reviewed-baseline-manifest.json',
+    'reviewed-baseline-catalog.json', 'reviewed-baseline-locations.geojson',
+    'reviewed-baseline-paths.geojson',
+)
 
 
 class UnsignedReceiptTests(unittest.TestCase):
@@ -29,6 +35,8 @@ class UnsignedReceiptTests(unittest.TestCase):
                 data = ('fictional-' + name).encode()
                 (app / name).write_bytes(data)
                 resources[name] = hashlib.sha256(data).hexdigest()
+            for name in REVIEWED_RESOURCES:
+                (app / name).write_bytes((ROOT / 'data' / name).read_bytes())
             (share / 'known-addresses.json').write_bytes((app / 'known-addresses.json').read_bytes())
             for bundle, identity in ((app, 'dev.galaxybigbird.ApartmentFinder'),
                                      (share, 'dev.galaxybigbird.ApartmentFinder.Share')):
@@ -59,6 +67,12 @@ class UnsignedReceiptTests(unittest.TestCase):
             lambda app, share: (share / '_CodeSignature').mkdir(),
             lambda app, share: (share / 'Info.plist').write_bytes(plistlib.dumps({
                 'CFBundleIdentifier': 'org.example.wrong', 'CFBundleExecutable': 'FictionalExecutable'}))]
+        for name in REVIEWED_RESOURCES:
+            mutations.extend((
+                lambda app, share, name=name: (app / name).write_bytes(b'changed'),
+                lambda app, share, name=name: (app / name).unlink(),
+                lambda app, share, name=name: (share / name).write_bytes((app / name).read_bytes()),
+            ))
         for mutation in mutations:
             with self.subTest(mutation=mutation):
                 result = self.run_receipt(mutation)

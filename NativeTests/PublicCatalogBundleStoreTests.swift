@@ -99,31 +99,61 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let store = AppStore(storeURL: url, resourceBundle: .main, packDirectory: directory)
         XCTAssertNil(store.errorMessage)
         XCTAssertFalse(store.requiresPrivatePack)
-        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.25.13-public-valley-ventana-provider-unit-areas")
-        XCTAssertEqual(store.communities.count, 193)
-        XCTAssertEqual(store.places.count, 28_458)
+        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.27.2")
+        XCTAssertEqual(store.communities.count, 221)
+        XCTAssertEqual(store.places.count, 40_126)
         XCTAssertEqual(store.paths.count, 17)
-        // The immutable resource retains research provenance, while AppStore
-        // projects only sources referenced by admitted records.
+        // The legacy resource remains intact; the selected baseline plus the
+        // reviewed progress overlay supplies the active source provenance.
         let bundled = try XCTUnwrap(PublicCatalogSupplement.read(from: .main))
         XCTAssertEqual(bundled.catalog.sources.count, 1_076)
+        let baseline = try XCTUnwrap(ReviewedBundleResources.baseline(from: .main)).pack
+        let overlay = try XCTUnwrap(ReviewedBundleResources.overlay(from: .main))
+        XCTAssertEqual(baseline.catalog.sources.count, 1_480)
+        XCTAssertEqual(overlay.catalog.sources.count, 38)
         let loadedSources = try XCTUnwrap(store.pack).catalog.sources
-        XCTAssertEqual(loadedSources.count, 1_072)
+        XCTAssertEqual(loadedSources.count, 1_504)
         let unreferencedSourceIDs: Set<String> = [
+            "evolve-map-embed-20261026", "evolve-native-background-20261026",
+            "lyric-estimate-20261023-map-region1", "lyric-estimate-20261023-map-region2",
+            "lyric-estimate-20261023-map-region3", "martinique-bay-actual-aerial-20261026",
+            "martinique-bay-official-amenities-20261026", "martinique-bay-official-floorplans-20261026",
+            "martinique-bay-official-map-embed-20261026", "mc-emerald-operator-page"]
+        let legacyUnreferenced: Set<String> = [
             "lyric-estimate-20261023-map-region1", "lyric-estimate-20261023-map-region2",
             "lyric-estimate-20261023-map-region3", "mc-emerald-operator-page"]
-        XCTAssertEqual(Set(bundled.catalog.sources.map(\.id)).subtracting(loadedSources.map(\.id)), unreferencedSourceIDs)
-        XCTAssertEqual(loadedSources, bundled.catalog.sources.filter { !unreferencedSourceIDs.contains($0.id) })
+        XCTAssertEqual(Set(bundled.catalog.sources.map(\.id)).subtracting(loadedSources.map(\.id)), legacyUnreferenced)
+        let baselineByID = Dictionary(uniqueKeysWithValues: baseline.catalog.sources.map { ($0.id, $0) })
+        XCTAssertTrue(bundled.catalog.sources.allSatisfy { baselineByID[$0.id] == $0 })
+        let expectedSources = baseline.catalog.sources.filter { !unreferencedSourceIDs.contains($0.id) }
+            + overlay.catalog.sources.filter { baselineByID[$0.id] == nil }
+        let loadedByID = Dictionary(loadedSources.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        XCTAssertEqual(loadedByID.count, loadedSources.count)
+        XCTAssertEqual(Set(expectedSources.map(\.id)).count, expectedSources.count)
+        XCTAssertTrue(expectedSources.count == loadedSources.count && expectedSources.allSatisfy { loadedByID[$0.id] == $0 },
+                      "Loaded source provenance differs from the reviewed resources.")
         XCTAssertFalse(store.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified })
         XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 8_139)
         let estimates = store.places.filter { $0.entranceSideEstimate != nil }
-        XCTAssertEqual(estimates.count, 4_603)
+        XCTAssertEqual(estimates.count, 5_556)
         XCTAssertTrue(estimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.verification == .estimated && $0.kind == .unitPosition })
         let copper = store.doorMatch(DeliveryStop(sequence: 1, address: "9400 Bermuda Road", unit: "126"), groupID: "copper-creek")
-        XCTAssertEqual(copper.candidates.count, 1)
-        XCTAssertEqual(copper.candidates.first?.address, "9400 BERMUDA RD")
-        XCTAssertEqual(copper.candidates.first?.floor, "")
-        XCTAssertEqual(copper.candidates.first?.entranceSideEstimate?.dwellingFloorEvidence, .unknown)
+        XCTAssertEqual(Set(copper.candidates.map(\.id)), [
+            "entrance-estimate:copper-creek:9400-bermuda-rd:unit-126",
+            "copper-creek:source-unit-area:699454"])
+        let copperEstimate = try XCTUnwrap(copper.candidates.first { $0.id == "entrance-estimate:copper-creek:9400-bermuda-rd:unit-126" })
+        XCTAssertEqual(copperEstimate.address, "9400 BERMUDA RD")
+        XCTAssertEqual(copperEstimate.floor, "")
+        XCTAssertEqual(copperEstimate.verification, .estimated)
+        XCTAssertEqual(copperEstimate.identityUncertain, true)
+        XCTAssertTrue(copperEstimate.isValidEntranceSideEstimate)
+        XCTAssertEqual(copperEstimate.entranceSideEstimate?.dwellingFloorEvidence, .unknown)
+        let copperArea = try XCTUnwrap(copper.candidates.first { $0.id == "copper-creek:source-unit-area:699454" })
+        XCTAssertEqual(copperArea.address, "9400 BERMUDA RD")
+        XCTAssertEqual(copperArea.floor, "")
+        XCTAssertEqual(copperArea.verification, .sourceMapped)
+        XCTAssertNil(copperArea.entranceSideEstimate)
+        XCTAssertTrue(copperArea.notes.contains("not an entrance or exact door"))
         XCTAssertNil(copper.readyDoor)
         let wrongStreet = store.doorMatch(DeliveryStop(sequence: 1, address: "9490 Bermuda Road", unit: "126"), groupID: "copper-creek")
         XCTAssertTrue(wrongStreet.candidates.isEmpty)
@@ -139,9 +169,15 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(store.communities.first { $0.id == "lyric" }?.coordinate, Coordinate(latitude: 36.01408, longitude: -115.159018))
         XCTAssertEqual(store.communities.first { $0.id == "trend" }?.coordinate, Coordinate(latitude: 36.01422151644452, longitude: -115.16156023077903))
         let legal = store.doorMatch(DeliveryStop(sequence: 1, address: "2300 E Silverado Ranch Blvd", unit: "1037"), groupID: "latigo")
-        XCTAssertEqual(legal.buildingReferences.count, 1)
-        XCTAssertEqual(legal.buildingReferences.first?.kind, .building)
-        XCTAssertTrue(legal.candidates.isEmpty); XCTAssertNil(legal.readyDoor)
+        XCTAssertTrue(legal.buildingReferences.isEmpty)
+        XCTAssertEqual(legal.candidates.count, 1)
+        let latigoEstimate = try XCTUnwrap(legal.candidates.first)
+        XCTAssertEqual(latigoEstimate.id, "latigo:plat-side-estimate:unit-1037")
+        XCTAssertEqual(latigoEstimate.verification, .estimated)
+        XCTAssertEqual(latigoEstimate.identityUncertain, true)
+        XCTAssertTrue(latigoEstimate.isValidEntranceSideEstimate)
+        XCTAssertEqual(latigoEstimate.entranceSideEstimate?.dwellingFloorEvidence, .unknown)
+        XCTAssertNil(legal.readyDoor)
         XCTAssertNil(legal.supportedIdentityForNewPin)
         let schematic = store.doorMatch(DeliveryStop(sequence: 2, address: "304 E Silverado Ranch Blvd", unit: "1189"), groupID: "lyric")
         let schematicAssociation = store.pack?.catalog.unitBuildingAssociations?.first {
@@ -228,8 +264,11 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertFalse(restored.personal.stops[0].completed)
         // A fresh public property may have only a sourced amenity point. Exercise
         // the real map cameras without converting that amenity into a door.
+        #if DEBUG && targetEnvironment(simulator)
         try await assertLockerOnlyPropertyMapsWithoutInventingDoors(at: root)
+        #endif
     }
+    #if DEBUG && targetEnvironment(simulator)
     private func assertLockerOnlyPropertyMapsWithoutInventingDoors(at root: URL) async throws {
         let target = Coordinate(latitude: 36.0417, longitude: -115.1743)
         let evidenceObject: [String: Any] = ["status": "present",
@@ -294,9 +333,15 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let manager = LockerCameraDeniedLocationManager()
         let location = LocationService(manager: manager)
         XCTAssertNil(location.fix)
+        var miniObservation: SyntheticMiniRouteMapObservation?
+        let cameraTiming = LockerCameraTiming(target: target)
+        defer { cameraTiming.finish() }
         let mini = ApartmentDeliveryMap(group: group, store: store, location: location,
-            selectedStopID: stop.id, select: { selections.append($0) })
-        try await assertHostedMapFramesLocker(mini, target: target, label: "No-GPS mini-route locker-only")
+            selectedStopID: stop.id, select: { selections.append($0) },
+            syntheticMapObservation: { miniObservation = $0; cameraTiming.observe($0) })
+        try await assertHostedSwiftUIMapFramesLocker(mini, target: target,
+            label: "No-GPS mini-route locker-only", observation: { miniObservation },
+            waitObservation: cameraTiming.waitChanged)
         XCTAssertNil(location.fix, "The camera fallback must work without a fabricated GPS fix")
         XCTAssertEqual(manager.starts, 0, "Denied synthetic GPS must not start real acquisition")
         XCTAssertTrue(selections.isEmpty)
@@ -306,6 +351,137 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertNil(try PrivateDataPackStore(directory: directory).load())
     }
 
+    // Only this fictional native fixture uses the existing injected observer.
+    // These bounded scalar timings never fulfill an expectation or alter a map.
+    @MainActor
+    private final class LockerCameraTiming {
+        let target: Coordinate
+        private let createdAt = ProcessInfo.processInfo.systemUptime
+        private var waitStartedAt: TimeInterval?
+        private var observations = 0
+        private var emitted = 0
+        private var priorState: String?
+        private var firstFramedAt: TimeInterval?
+        private var firstFramedDuringWaitAt: TimeInterval?
+
+        init(target: Coordinate) { self.target = target }
+
+        func observe(_ snapshot: SyntheticMiniRouteMapObservation) {
+            let now = ProcessInfo.processInfo.systemUptime
+            observations = min(1_000_000, observations + 1)
+            let viewport = snapshot.viewport.width > 0 && snapshot.viewport.height > 0
+            let center = Geometry.distance(snapshot.center, target) < 120
+            let span = snapshot.span.latitudeDelta > 0 && snapshot.span.latitudeDelta < 0.03 &&
+                snapshot.span.longitudeDelta > 0 && snapshot.span.longitudeDelta < 0.05
+            let projection = snapshot.lockerProjectedPoint != nil
+            let inside = snapshot.lockerProjectedPoint.map {
+                CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains($0)
+            } ?? false
+            let framed = viewport && center && span && projection && inside && snapshot.lockerAnnotationAppeared
+            if framed {
+                firstFramedAt = firstFramedAt ?? now
+                if let start = waitStartedAt, now >= start {
+                    firstFramedDuringWaitAt = firstFramedDuringWaitAt ?? now
+                }
+            }
+            let state = "viewport=\(viewport);center=\(center);span=\(span);projection=\(projection);inside=\(inside);annotation=\(snapshot.lockerAnnotationAppeared)"
+            guard emitted < 24, state != priorState else { return }
+            priorState = state; emitted += 1
+            let phase = waitStartedAt == nil ? "beforeWait" : "afterWaitStart"
+            print("LOCKER-CAMERA-TIMING schema=1;stage=observation;event=\(emitted);phase=\(phase);elapsedMs=\(milliseconds(now-createdAt));\(state)")
+        }
+
+        func waitChanged(_ began: Bool, _ now: TimeInterval) {
+            if began { waitStartedAt = now }
+            print("LOCKER-CAMERA-TIMING schema=1;stage=\(began ? "waitBegin" : "waitEnd");elapsedMs=\(milliseconds(now-createdAt));deadlineMs=5000")
+        }
+
+        func finish() {
+            let firstFramed = firstFramedAt.map { String(milliseconds($0-createdAt)) } ?? "unobserved"
+            let duringWait = firstFramedDuringWaitAt.flatMap { time in
+                waitStartedAt.map { String(milliseconds(time-$0)) }
+            } ?? "unobserved"
+            let withinDeadline = firstFramedDuringWaitAt.flatMap { time in
+                waitStartedAt.map { time <= $0 + 5 }
+            } ?? false
+            print("LOCKER-CAMERA-TIMING schema=1;stage=summary;observations=\(observations);events=\(emitted);firstFramedMs=\(firstFramed);firstFramedAfterWaitMs=\(duringWait);firstFramedWithinDeadline=\(withinDeadline)")
+        }
+
+        private func milliseconds(_ elapsed: TimeInterval) -> Int {
+            Int(min(600_000, max(0, elapsed * 1_000)))
+        }
+    }
+
+    // SwiftUI Map does not promise an MKMapView descendant. Observe its public
+    // camera context, MapReader projection and actual annotation appearance.
+    private func assertHostedSwiftUIMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,
+        label: String, observation: @escaping () -> SyntheticMiniRouteMapObservation?,
+        waitObservation: (Bool, TimeInterval) -> Void,
+        file: StaticString = #filePath, line: UInt = #line) async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first,
+                                 "The hosted app must supply its actual window scene", file: file, line: line)
+        let priorKeyWindow = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+        let host = UIHostingController(rootView: content)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        host.view.setNeedsLayout(); host.view.layoutIfNeeded()
+        defer {
+            window.isHidden = true; window.rootViewController = nil
+            priorKeyWindow?.makeKey()
+        }
+        // Evaluate this real MapReader/camera observation on MainActor first.
+        // Yield only while it is false; a late true state never passes the budget.
+        @MainActor func observedCameraIsFramed() -> Bool {
+            guard let snapshot = observation(), snapshot.viewport.width > 0, snapshot.viewport.height > 0,
+                  snapshot.lockerAnnotationAppeared, let projected = snapshot.lockerProjectedPoint else { return false }
+            return Geometry.distance(snapshot.center, target) < 120 &&
+                snapshot.span.latitudeDelta > 0 && snapshot.span.latitudeDelta < 0.03 &&
+                snapshot.span.longitudeDelta > 0 && snapshot.span.longitudeDelta < 0.05 &&
+                CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains(projected)
+        }
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        let deadline = startedAt + 5
+        var framedWithinDeadline = false
+        var predicateChecks = 0
+        waitObservation(true, startedAt)
+        do {
+            defer { waitObservation(false, ProcessInfo.processInfo.systemUptime) }
+            while ProcessInfo.processInfo.systemUptime <= deadline {
+                predicateChecks += 1
+                let framed = observedCameraIsFramed()
+                let checkedAt = ProcessInfo.processInfo.systemUptime
+                if framed && checkedAt <= deadline {
+                    framedWithinDeadline = true
+                    break
+                }
+                let remaining = deadline - checkedAt
+                guard remaining > 0 else { break }
+                // A short suspension releases MainActor for actual map updates.
+                try await Task.sleep(nanoseconds: UInt64(min(0.01, remaining) * 1_000_000_000))
+            }
+        }
+        let elapsedMs = Int(min(600_000, max(0, (ProcessInfo.processInfo.systemUptime - startedAt) * 1_000)))
+        print("NATIVE-CAMERA-PREDICATE schema=1;checks=\(min(1_000_000, predicateChecks));matchedWithinDeadline=\(framedWithinDeadline);elapsedMs=\(elapsedMs);deadlineMs=5000")
+        XCTAssertTrue(framedWithinDeadline, "\(label): the actual SwiftUI Map must frame the sourced amenity within five seconds", file: file, line: line)
+        let snapshot = try XCTUnwrap(observation(), "\(label): actual SwiftUI Map camera was not observed", file: file, line: line)
+        let projected = try XCTUnwrap(snapshot.lockerProjectedPoint,
+                                     "The real MapReader must project the sourced amenity", file: file, line: line)
+        print("LOCKER-CAMERA \(label) SwiftUI center=\(snapshot.center.latitude),\(snapshot.center.longitude) span=\(snapshot.span.latitudeDelta),\(snapshot.span.longitudeDelta) annotationAppeared=\(snapshot.lockerAnnotationAppeared)")
+        XCTAssertLessThan(Geometry.distance(snapshot.center, target), 120,
+                          "\(label): actual camera must initially frame the sourced amenity", file: file, line: line)
+        XCTAssertGreaterThan(snapshot.span.latitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(snapshot.span.latitudeDelta, 0.03, "A world view cannot satisfy property framing", file: file, line: line)
+        XCTAssertGreaterThan(snapshot.span.longitudeDelta, 0, "A degenerate map region cannot pass", file: file, line: line)
+        XCTAssertLessThan(snapshot.span.longitudeDelta, 0.05, "A wide regional view cannot satisfy property framing", file: file, line: line)
+        XCTAssertTrue(CGRect(origin: .zero, size: snapshot.viewport).insetBy(dx: 20, dy: 20).contains(projected),
+                      "The amenity must project inside the actual visible map", file: file, line: line)
+        XCTAssertTrue(snapshot.lockerAnnotationAppeared, "The real map must instantiate the locker annotation", file: file, line: line)
+        XCTAssertEqual(snapshot.lockerCoordinate, target, "Observe the sourced amenity, never an injected camera target", file: file, line: line)
+    }
+
+    #endif
     private func assertHostedMapFramesLocker<Content: View>(_ content: Content, target: Coordinate,
         label: String, file: StaticString = #filePath, line: UInt = #line,
         inspect: (MKMapView) throws -> Void = { _ in }) async throws {

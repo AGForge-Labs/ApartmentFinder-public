@@ -40,10 +40,14 @@ final class CommunityMapControlsTests: XCTestCase {
         app.buttons["Show all stops"].tap()
         // Observe the required state after the asynchronous SwiftUI/AX update;
         // a completed tap alone does not establish the published map mode.
-        let paused = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@ AND value BEGINSWITH %@", "Resume following", "Paused"),
-            object: app.buttons["mini.recenter"])
-        let pausedResult = XCTWaiter.wait(for: [paused], timeout: 5)
+        let recenter = app.buttons.matching(identifier: "mini.recenter")
+        // Resolve both required fields in the framework query. Avoid issuing
+        // an explicit snapshot RPC from a client-side predicate callback.
+        let pausedRecenter = recenter.matching(
+            NSPredicate(format: "label == %@ AND value BEGINSWITH %@",
+                        "Resume following", "Paused")).firstMatch
+        let pausedResult: XCTWaiter.Result =
+            pausedRecenter.waitForExistence(timeout: 5) ? .completed : .timedOut
         if pausedResult != .completed {
             mapStateDiagnostics(stage: "overview did not expose paused state", includeHierarchy: true)
         }
@@ -55,9 +59,10 @@ final class CommunityMapControlsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Map"].waitForExistence(timeout: 5))
         mapStateDiagnostics(stage: "before Map choice tap")
         app.buttons["Map"].tap()
-        let selectedMap = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Map"),
-                                                     object: app.buttons["mini.mapStyle"])
-        let selectedMapResult = XCTWaiter.wait(for: [selectedMap], timeout: 5)
+        let selectedMap = app.buttons.matching(identifier: "mini.mapStyle")
+            .matching(NSPredicate(format: "value == %@", "Map")).firstMatch
+        let selectedMapResult: XCTWaiter.Result =
+            selectedMap.waitForExistence(timeout: 5) ? .completed : .timedOut
         if selectedMapResult != .completed {
             mapStateDiagnostics(stage: "Map choice did not expose selected value", includeHierarchy: true)
         }
@@ -66,9 +71,23 @@ final class CommunityMapControlsTests: XCTestCase {
         XCTAssertEqual(app.buttons["mini.mapStyle"].value as? String, "Map")
         assertCompactControls()
         app.buttons["mini.focus.3"].tap()
+        XCTAssertTrue(app.staticTexts["Unit 2137"].waitForExistence(timeout: 5),
+                      "Selecting stop 3 must publish its exact unit before inspecting the card")
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)
         app.buttons["mini.recenter"].tap()
         XCTAssertTrue(app.staticTexts["Unit 2137"].exists)
+        // A completed tap does not establish the newly published AX state.
+        // Require both resumed fields before retaining the original label check.
+        let resumedRecenter = recenter.matching(
+            NSPredicate(format: "label != %@ AND value BEGINSWITH %@",
+                        "Resume following", "Following")).firstMatch
+        let resumedResult: XCTWaiter.Result =
+            resumedRecenter.waitForExistence(timeout: 5) ? .completed : .timedOut
+        if resumedResult != .completed {
+            mapStateDiagnostics(stage: "Resume following did not expose following state", includeHierarchy: true)
+        }
+        XCTAssertEqual(resumedResult, .completed,
+                       "Resume following must expose the following map state")
         XCTAssertNotEqual(app.buttons["mini.recenter"].label, "Resume following")
         assertCompactControls()
         capture("Following controls remain compact after map-style and stop changes")

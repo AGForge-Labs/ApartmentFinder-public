@@ -316,6 +316,57 @@ class TestFlightChecks(unittest.TestCase):
                     archive.writestr(name, value)
             return testflight.inspect_ipa(path, self.config, '3.1')
 
+    def test_reviewed_bundle_hashes_all_seven_exact_ipa_resources(self):
+        main = 'Payload/ApartmentFinder.app/'
+        entries = self.resource_ipa_entries(share=True)
+        names = ('reviewed-progress-catalog.json', 'reviewed-progress-locations.geojson',
+                 'reviewed-progress-paths.geojson', 'reviewed-baseline-manifest.json',
+                 'reviewed-baseline-catalog.json', 'reviewed-baseline-locations.geojson',
+                 'reviewed-baseline-paths.geojson')
+        entries.update({main + name: ('synthetic-reviewed:' + name).encode() for name in names})
+        result = self.inspect_resource_ipa(entries)
+        self.assertEqual(result['resources_sha256'], {
+            name[len(main):]: hashlib.sha256(data).hexdigest()
+            for name, data in entries.items()
+            if name.startswith(main) and '/' not in name[len(main):]
+            and name.endswith(('.json', '.geojson'))})
+
+    def test_reviewed_bundle_requires_every_member(self):
+        main = 'Payload/ApartmentFinder.app/'
+        names = ('reviewed-progress-catalog.json', 'reviewed-progress-locations.geojson',
+                 'reviewed-progress-paths.geojson', 'reviewed-baseline-manifest.json',
+                 'reviewed-baseline-catalog.json', 'reviewed-baseline-locations.geojson',
+                 'reviewed-baseline-paths.geojson')
+        entries = self.resource_ipa_entries()
+        entries.update({main + name: b'synthetic-reviewed' for name in names})
+        for missing in names:
+            with self.subTest(missing=missing):
+                partial = dict(entries)
+                del partial[main + missing]
+                with self.assertRaises((ValueError, KeyError)):
+                    self.inspect_resource_ipa(partial)
+
+    def test_reviewed_bundle_cannot_be_mixed_with_legacy_catalog(self):
+        main = 'Payload/ApartmentFinder.app/'
+        entries = self.resource_ipa_entries(public=False)
+        for name in ('reviewed-progress-catalog.json', 'reviewed-progress-locations.geojson',
+                     'reviewed-progress-paths.geojson', 'reviewed-baseline-manifest.json',
+                     'reviewed-baseline-catalog.json', 'reviewed-baseline-locations.geojson',
+                     'reviewed-baseline-paths.geojson'):
+            with self.subTest(resource=name), self.assertRaises(ValueError):
+                self.inspect_resource_ipa(dict(entries, **{main + name: b'synthetic-reviewed'}))
+
+    def test_reviewed_bundle_is_not_admitted_to_share_extension(self):
+        share = 'Payload/ApartmentFinder.app/PlugIns/ApartmentFinderShare.appex/'
+        for public in (False, True):
+            entries = self.resource_ipa_entries(public=public, share=True)
+            for name in ('reviewed-progress-catalog.json', 'reviewed-progress-locations.geojson',
+                         'reviewed-progress-paths.geojson', 'reviewed-baseline-manifest.json',
+                         'reviewed-baseline-catalog.json', 'reviewed-baseline-locations.geojson',
+                         'reviewed-baseline-paths.geojson'):
+                with self.subTest(public=public, resource=name), self.assertRaisesRegex(ValueError, 'Share extension.*resource'):
+                    self.inspect_resource_ipa(dict(entries, **{share + name: b'synthetic-reviewed'}))
+
     def test_public_resource_family_hashes_all_four_exact_filenames(self):
         main = 'Payload/ApartmentFinder.app/'
         entries = self.resource_ipa_entries()

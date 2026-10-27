@@ -9,6 +9,7 @@ for input in data/catalog.json data/locations.geojson data/paths.geojson private
 done
 python3 -B scripts/public-catalog.py validate --directory data
 test -z "$(git status --porcelain --untracked-files=all)"
+if [[ "${PUBLIC_TEST_SHARD_INDEX:-0}" == 0 ]]; then
 python3 -B -m unittest discover -s Tests/public_synthetic -v
 python3 -B -m unittest discover -s Tests/signing -v
 python3 -B -m unittest discover -s Tests/iteration -v
@@ -25,6 +26,7 @@ body=open(sys.argv[1]).read()
 expected=json.load(open('scripts/public-synthetic-tests.json'))['core']
 assert len(verify_core_ids(body,expected)) == test_counts('core',body)['passed']
 PY
+fi
 
 set -euo pipefail
 WORK=(env)
@@ -96,13 +98,28 @@ if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
     for kind,identities in focused.items():
         assert set(identities)<=set(selection[kind])
     selection=focused
+if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='regression':
+    shard_count=int(os.environ.get('PUBLIC_TEST_SHARD_COUNT','1'))
+    shard_index=int(os.environ.get('PUBLIC_TEST_SHARD_INDEX','0'))
+    assert shard_count in (1,4) and 0 <= shard_index < shard_count
+    native,ui=selection['native'],selection['ui']
+    original=native+ui
+    assert len(native)==78 and len(ui)==12 and len(set(original))==90
+    shards=[{'native':native[i::shard_count],'ui':ui[i::shard_count]} for i in range(shard_count)]
+    union=[identity for shard in shards for identity in shard['native']+shard['ui']]
+    assert len(union)==len(set(union))==90 and set(union)==set(original)
+    selection={**selection,**shards[shard_index]}
 with open(sys.argv[1],'w') as output: json.dump(selection,output)
 PY
 "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" > "$RUNNER_TEMP/selected-identities.txt" <<'PY'
 import json,os,re,sys
 selection=json.load(open(sys.argv[1]))
 identities=selection['native']+selection['ui']
-expected=3 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else 85
+shard_count=int(os.environ.get('PUBLIC_TEST_SHARD_COUNT','1'))
+shard_index=int(os.environ.get('PUBLIC_TEST_SHARD_INDEX','0'))
+assert shard_count in (1,4) and 0 <= shard_index < shard_count
+regression_count=(90,) if shard_count==1 else (23,23,22,22)
+expected=3 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else regression_count[shard_index]
 assert len(identities)==len(set(identities))==expected
 assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
@@ -113,7 +130,12 @@ print('\n'.join(identities))
 PY
 FILTERS=()
 while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
-EXPECTED_NATIVE_COUNT=85
+case "${PUBLIC_TEST_SHARD_COUNT:-1}:${PUBLIC_TEST_SHARD_INDEX:-0}" in
+  1:0) EXPECTED_NATIVE_COUNT=90 ;;
+  4:0|4:1) EXPECTED_NATIVE_COUNT=23 ;;
+  4:2|4:3) EXPECTED_NATIVE_COUNT=22 ;;
+  *) echo "Invalid public test shard"; exit 1 ;;
+esac
 if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
 [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
 if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
@@ -122,7 +144,7 @@ if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
 fi
 XCODE_STATUS=0
 "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
-  -sdk iphonesimulator -destination "id=$DEVICE" -jobs 1 -parallel-testing-enabled NO \
+  -sdk iphonesimulator -destination "id=$DEVICE" -jobs 2 -parallel-testing-enabled NO \
   -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
   -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
   -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \

@@ -1,6 +1,10 @@
 import contextlib
 import importlib.util
 import io
+import hashlib
+import json
+from types import SimpleNamespace
+from unittest.mock import patch
 import os
 from pathlib import Path
 import subprocess
@@ -98,6 +102,43 @@ class PublicReleaseTests(unittest.TestCase):
                 release.validate_package_manifest(bad, actual, actual["resources_sha256"], request())
         with self.assertRaises(ValueError):
             release.validate_package_manifest(manifest, actual, {"public-catalog.json": "tampered"}, request())
+
+    def test_reviewed_ipa_resources_match_checkout_before_upload_key(self):
+        names = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson',
+                 'known-addresses.json', 'reviewed-progress-catalog.json',
+                 'reviewed-progress-locations.geojson', 'reviewed-progress-paths.geojson',
+                 'reviewed-baseline-manifest.json', 'reviewed-baseline-catalog.json',
+                 'reviewed-baseline-locations.geojson', 'reviewed-baseline-paths.geojson')
+        resources = {name: hashlib.sha256(('synthetic:' + name).encode()).hexdigest() for name in names}
+        bad_sets = [('all reviewed files missing', {name: digest for name, digest in resources.items()
+                     if not name.startswith('reviewed-')})]
+        for name in names[-7:]:
+            bad_sets.append((name + ' missing', {key: value for key, value in resources.items() if key != name}))
+            bad_sets.append((name + ' changed', {**resources, name: '0' * 64}))
+        for label, ipa_resources in [('complete', resources), *bad_sets]:
+            with self.subTest(case=label), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                (root / 'Config').mkdir()
+                (root / 'Config/TestFlight.json').write_text('{}')
+                (root / 'data').mkdir()
+                for name in names:
+                    (root / 'data' / name).write_bytes(('synthetic:' + name).encode())
+                output = root / 'build/testflight'
+                output.mkdir(parents=True)
+                actual = {'build_number': '100.1', 'resources_sha256': ipa_resources}
+                (output / 'build-manifest.json').write_text(json.dumps({**actual, 'commit': SHA}))
+                signing = SimpleNamespace(inspect_ipa=lambda *_: actual)
+                with patch.object(release, 'ROOT', root), patch.object(release, 'load_script', return_value=signing), \
+                     patch.object(release, 'run_redacted') as command:
+                    if label == 'complete':
+                        release.perform_release({**request(), 'RUNNER_TEMP': folder}, '100.1')
+                    else:
+                        with self.assertRaises(ValueError):
+                            release.perform_release({**request(), 'RUNNER_TEMP': folder}, '100.1')
+                calls = [call.args[0] for call in command.call_args_list]
+                self.assertEqual(any('prepare-upload-key' in call for call in calls), label == 'complete')
+                self.assertEqual(any('deliver' in call for call in calls), label == 'complete')
+                self.assertTrue(any(str(root / 'scripts/testflight-cleanup.sh') in call for call in calls))
 
     def test_public_signing_uses_explicit_build_instead_of_reset_workflow_number(self):
         signing = release.load_script("testflight")

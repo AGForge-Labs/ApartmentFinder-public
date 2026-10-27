@@ -49,6 +49,30 @@ public struct Community: Codable, Identifiable, Hashable, Sendable {
         return Coordinate(latitude: latitude, longitude: longitude)
     }
 }
+// Published older catalogs sometimes omit aliases. Preserve the existing
+// memberwise initializer and reject null or malformed aliases when present.
+extension Community {
+    private enum CodingKeys: String, CodingKey {
+        case id, name, address, zip, countyZIPs, deliveryAddresses, aliases, sourceIDs
+        case digitalLocker, researchStatus, gapNotes, latitude, longitude
+    }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id)
+        name = try values.decode(String.self, forKey: .name)
+        address = try values.decode(String.self, forKey: .address)
+        zip = try values.decode(String.self, forKey: .zip)
+        countyZIPs = try values.decodeIfPresent([String].self, forKey: .countyZIPs)
+        deliveryAddresses = try values.decodeIfPresent([String].self, forKey: .deliveryAddresses)
+        aliases = values.contains(.aliases) ? try values.decode([String].self, forKey: .aliases) : []
+        sourceIDs = try values.decode([String].self, forKey: .sourceIDs)
+        digitalLocker = try values.decodeIfPresent(DigitalLockerEvidence.self, forKey: .digitalLocker)
+        researchStatus = try values.decode(String.self, forKey: .researchStatus)
+        gapNotes = try values.decode([String].self, forKey: .gapNotes)
+        latitude = try values.decodeIfPresent(Double.self, forKey: .latitude)
+        longitude = try values.decodeIfPresent(Double.self, forKey: .longitude)
+    }
+}
 /// Legal records and operator schematics use distinct identifier namespaces.
 public enum BuildingIdentifierKind: String, Codable, Hashable, Sendable {
     case municipalLegal, operatorMap
