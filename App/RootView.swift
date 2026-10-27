@@ -493,7 +493,7 @@ struct EntranceSideEstimateNotice: View {
     let estimate: EntranceSideEstimate
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(estimate.summary).font(.caption).fixedSize(horizontal: false, vertical: true)
+            Text(estimate.compactNotice).font(.caption).fixedSize(horizontal: false, vertical: true)
         }.foregroundStyle(.orange)
             .accessibilityElement(children: .combine)
     }
