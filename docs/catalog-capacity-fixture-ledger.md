@@ -1,0 +1,54 @@
+# Offline compatibility fixture slice ledger
+
+Base: dd77c23a71aaf884053a2ac3d3933788fec91f47. Scope: a bounded offline portion of provisional Task 1; not the full task or an adopted complete-set design.
+
+Ruling: Keep this as credential-free preparation tooling and synthetic tests only — Swift cannot be executed on this host — Swift RED/GREEN, Main/Share resource integration and native budgets remain pending.
+
+Ruling: Use an explicitly provisional offline JSON fixture format — exact anchor/registry wire grammar is not accepted here — later reader work may revise it without claiming compatibility.
+
+Ruling: Freeze the delivered .23/91 public baseline, including Solitude, and retain the separate real .13 bundle — the .22/90 design packet is historical — no fabricated bundle feed manifest or sequence is created. The floor is caller-supplied and cannot be below the pinned source sequence.
+
+Ruling: Ship the exact 214c admission profile separately in Tests/fixtures — the old 83c43 helper and reader must remain unchanged — this adds about 411 KB of test tooling, no app resources.
+
+Baseline: all 291 raw files exactly match7220; zero EOL mismatches. Existing feed tests:16 run,1 skipped, pass. Existing resource tests:11 run,10 fail with legacy history layer or seal changed before edits; retained in private evidence and not repaired by modifying frozen history.
+
+Implementation, test results and remaining gaps will be appended before local commit.
+
+## Qualified offline outcomes and fix round 1
+
+The implemented slice consists of a separate credential-free Python fixture command, synthetic fixtures and the exact test-only seven-file admission profile. It copies the reviewed public baseline and separate bundle raw bytes without adding them to either app target. The actual private fixture preserves .23/91 (219 communities, 1,479 sources, 38,963 features, 17 paths) and the real .13 bundle; 102/204 duplicate memberships, 47 URL groups, 12 orphan sources, Riley302/154 and the Spanish Wells four source roles remain exact. No new door coordinate or locker pin is created.
+
+Initial RED:16 assertion failures and one platform skip while the new command did not exist. Separate coupled-identity and real-file hash/decode-race RED controls exposed missing boundaries before their fixes. The initial fixture suite then passed20 tests with one symlink-creation skip.
+
+The full broad runs below apply to the independently frozen initial21-test candidate, before this scoped review fix. Raw checkout:223 public tests,48 failures/154 errors/4 skips; pristine raw dd77:202 tests,48/154/3. Their complete202 failed-case/subcase name multisets match exactly, with no added or missing failures. Actual canonical Git-blob candidate:223 tests,27 failures/154 errors/4 skips; pristine canonical dd77:202 tests,28/153/3. Their complete181 failed-name multisets match exactly. One existing cleanup(original=0,cleanup=0) case changed FAIL to ERROR; failure kinds are not claimed identical. All names and outputs remain in private evidence. The broad suite is not green.
+
+Raw iteration49, release14 and signing-tool46 Python tests passed. Canonical release14/signing-tool46 passed; canonical iteration49 had one failure and nine errors including WinError206 from the deeper export paths. These source-only Python checks perform no native signing or distribution. The existing raw history seal mismatch is independently diagnosed as81CRLF in one unchanged helper, whose canonical Git blob matches its old seal. No old file or seal was normalized. A git-archive export that applied EOL conversion stopped at its hash assertion before tests and is retained as noncanonical evidence; the later export used actual git cat-file bytes.
+
+Independent review9500 returned I1 (important): lexical Path.absolute() comparisons admitted parent-traversal output inside the baseline; M1 requested completion of this ledger. The exact initial11 files, diff, source pins and rejected review remain immutable in private evidence.
+
+Task1 offline slice: fix round1/5 — original-spelling symlink/reparse ancestors are checked before physical path resolution; equal/nested comparisons cover every input root/file. Real output-alias and input-alias tests first failed because prepare incorrectly exited0, then passed after the scoped no_overlap correction. Disjoint similar-prefix output remains allowed and Windows case aliases remain rejected. All25 fixture controls now run:24 pass, one ordinary Windows symlink-creation skip. A separate existing task-owned Windows junction is rejected before normalization. Fresh actual seven-file byte equality, the preserved291 source hashes, the seven admission-profile hashes and actual fixture CLI verification passed under the corrected source. The full broad suites were not repeated for this scoped fix; their preceding results remain labeled above.
+
+The successor awaits independent review; no accepted-review claim is made here. The complete Task1 remains unfinished: Swift bootstrap parsing and fixtures, both target resource inventories/fallback integration and supported-host Swift/native validation are pending. Complete-set grammar, full registry admission, transport/store/policy work, native device budgets and all later plan tasks are excluded. The proposed complete-set design remains unselected; no reader, cap, runtime flag, feed pointer, public data, workflow, signing, TestFlight or account change occurs.
+
+## Fix round 2: Explicit Windows namespace admission
+
+Supplemental review9540 returned I2 (important): prefixed Windows extended paths retained a distinct canonical anchor, so the first path correction still allowed output inside an aliased baseline. The exact9530 source11 and both9500/9540 packets are retained unchanged before this successor. No earlier candidate is silently relabeled accepted.
+
+Task1 offline slice: fix round2/5 — ordinary local-drive absolute paths and ordinary relative paths are the supported Windows spellings. Unsupported device/extended/UNC, drive-relative and root-relative forms are rejected at the CLI boundary before filesystem inspection, with the same guard in filesystem helpers and on canonicalization results. There is no arbitrary prefix stripping. Both actual extended input/output alias CLI tests were RED because prepare returned0 before the correction. A separate canonical-result control was RED before the returned-namespace guard. The earlier new-test escaping error stopped import before any production fix and is retained as an invalidated test attempt rather than behavior RED.
+
+The targeted suite now runs30 tests:29 pass and one ordinary Windows symlink-creation skip. It includes84 guarded CLI spelling cases across all prepare/verify path operands; an I/O trap prevents any UNC/device filesystem contact if those controls regress. Ordinary relative paths remain supported. Parent traversal, case aliases, existing-output and disjoint-prefix controls still pass. A fresh read-only check of the existing task-owned Windows junction rejects it before normalization. Exact actual raw7, profile7 and original291 hashes and the positive pinned real fixture CLI verification pass under this source. No broad suite is rerun for this correction; all preceding qualified raw/canonical failures and case-name comparisons remain immutable. Whole-branch, Swift/native, device and full Task1 acceptance remain unclaimed.
+
+This successor is frozen for a fresh independent review. No local commit, push, public pointer, runtime capability, app resource integration, new pin, network/CI/native workflow, signing, TestFlight or account action has occurred.
+
+## Fix round 3: Preserve the fixture profile through Git
+
+Independent9590 accepted the exact physical9550 source scope. Root precommit9600 then rejected publication before creating a commit: the original global text=auto rule normalized both CRLF helper files in the staged Git blobs, so a committed checkout would fail the tool's exact profile hashes. Physical feed helper12,909 bytes/270CRLF became12,639 staged bytes; physical public helper62,685 bytes/831CRLF became61,854. The other nine staged candidate files were exact. The accepted physical review remains immutable and is not broadened into serialized Git acceptance.
+
+Task1 offline slice: fix round3/5 — the exact physical9550 source11 and9590 report/manifest/seal wrappers were preserved before this correction. A real local-Git regression first failed on the normalized feed-helper staged hash. A new parent `Tests/fixtures/.gitattributes` applies -text only to public-catalog-admission-214c/*; no original291 file, root attribute, helper content or seven-file profile directory is edited. The regression then passed actual staged-blob and checkout equality for all seven independently pinned profile hashes with automatic line-ending conversion enabled. No Git commit or network operation is needed for that test.
+
+The earlier candidate canonical export used actual Git blobs for the original291 files plus physical overlays for the new11 files. Its inventory already labels those origins separately; it is not proof of staged/committed identity for the new profile, and the two converted staged helpers were not exercised there. The raw/canonical original-baseline case comparisons and all historical failures remain retained with that qualification. This successor requires true Git index blobs and actual checkout bytes for every new12 file, plus the targeted31-control suite and exact public-fixture preservation checks. No broad suite, native workflow or public action follows from this correction.
+
+
+The physical successor runs31 targeted fixture tests:30 pass and the ordinary Windows symlink-creation control is skipped. The new local-Git regression also runs the default cached-diff whitespace check. Exact frozen-profile attributes keep the standard blank-at-eol, blank-at-eof and space-before-tab diagnostics enabled while adding cr-at-eol only for those seven files; the initial CRLF diagnostic failure is retained before that correction. No general whitespace diagnostic is disabled.
+
+Explicit correction to the earlier broad-run label above: the historical “actual canonical Git-blob candidate” is mixed/canonical-old-only evidence. Its original291 files came from canonical Git blobs, but its new11 files were physical overlays. It establishes neither staged nor committed new-profile byte compatibility. Those historical reports and failed-name comparisons remain unchanged. The final private successor receipt separately records actual root-index blob hashes, the actual Git checkout of all12 additions, its targeted31 result and the pinned real-fixture verification; physical, index and checkout identities are distinguished rather than assumed equal. No whole-branch, supported POSIX, Swift/native or app-integration acceptance is inferred.
