@@ -41,8 +41,23 @@ public enum ReviewedProgressOverlay {
         }
         let matchedIDs = Set(matched.map(\.id))
         let existingUnits = Set(selectedPublic.places.filter { !LocalSearch.normalized($0.unit).isEmpty }.map(UnitKey.init))
+        // Reject the entire overlay before any effect if two incoming unit
+        // positions resolve to the same community/street/unit identity.
+        var incomingUnits = Set<UnitKey>()
+        for point in overlay.places where point.kind == .unitPosition && !LocalSearch.normalized(point.unit).isEmpty {
+            guard incomingUnits.insert(UnitKey(point)).inserted else { return selectedPublic }
+        }
         var candidate = overlay
-        candidate.catalog.communities = matched
+        // The generic public supplement can enrich coordinates, alternate
+        // addresses and lockers. This scoped helper admits none of those paths:
+        // lockers are handled separately below, with stricter evidence checks.
+        candidate.catalog.communities = matched.map { incoming in
+            var safe = incoming
+            safe.digitalLocker = nil
+            safe.latitude = nil; safe.longitude = nil
+            safe.deliveryAddresses = nil
+            return safe
+        }
         candidate.catalog.unitBuildingAssociations = nil
         candidate.catalog.unitFloorReferences = nil
         candidate.catalog.deliveryAreaExceptions = nil

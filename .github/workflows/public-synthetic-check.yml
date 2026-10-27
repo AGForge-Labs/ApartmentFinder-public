@@ -1,4 +1,4 @@
-# TEST BRANCH ONLY. Never merge into an application or release branch.
+# TEST BRANCH ONLY. Never merge into app or release branch.
 name: Public synthetic iOS regression check
 on:
   workflow_dispatch:
@@ -21,10 +21,10 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: overlay-safety-red-only-${{ github.sha }}
+  group: overlay-eight-green-only-${{ github.sha }}
   cancel-in-progress: false
 jobs:
-  safety-red-only:
+  eight-green-only:
     if: ${{ inputs.approve_runner && inputs.scope == 'regression' && github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.event.repository.private == false }}
     runs-on: macos-15-intel
     timeout-minutes: 15
@@ -45,7 +45,7 @@ jobs:
         with:
           ref: ${{ inputs.expected_commit }}
           persist-credentials: false
-      - name: Run exactly four fictional safety red cases
+      - name: Run the eight fictional overlay tests
         shell: bash
         run: |
           set -euo pipefail
@@ -53,8 +53,8 @@ jobs:
           test -z "${APARTMENTFINDER_PRIVATE_PACK_DIRECTORY:-}${APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY:-}"
           for input in data/catalog.json data/locations.geojson data/paths.geojson private-data private-baselines; do test ! -e "$input"; done
           set +e
-          swift test --jobs 1 --disable-automatic-resolution --skip-update --filter ReviewedProgressOverlaySafetyTests > "$RUNNER_TEMP/overlay-safety-red.log" 2>&1
+          swift test --jobs 1 --disable-automatic-resolution --skip-update --filter 'ReviewedProgressOverlayTests|ReviewedProgressOverlaySafetyTests' > "$RUNNER_TEMP/overlay-eight-green.log" 2>&1
           swift_status=$?
           set -e
-          python3 -B scripts/overlay-safety-red-verifier.py "$RUNNER_TEMP/overlay-safety-red.log" "$swift_status"
+          python3 -B scripts/overlay-safety-red-verifier.py "$RUNNER_TEMP/overlay-eight-green.log" "$swift_status"
           test -z "$(git status --porcelain --untracked-files=all)"
