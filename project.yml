@@ -35,6 +35,12 @@ targets:
         buildPhase: resources
       - path: data/public-paths.geojson
         buildPhase: resources
+      - path: data/reviewed-progress-catalog.json
+        buildPhase: resources
+      - path: data/reviewed-progress-locations.geojson
+        buildPhase: resources
+      - path: data/reviewed-progress-paths.geojson
+        buildPhase: resources
     dependencies:
       - package: ApartmentCore
       - package: GoogleNavigation

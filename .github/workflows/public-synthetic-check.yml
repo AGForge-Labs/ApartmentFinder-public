@@ -1,4 +1,4 @@
-# TEST BRANCH ONLY. Never merge into app or release branch.
+# TEST BRANCH ONLY. Never merge this workflow into an app or release branch.
 name: Public synthetic iOS regression check
 on:
   workflow_dispatch:
@@ -21,40 +21,97 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: overlay-eight-green-only-${{ github.sha }}
+  group: overlay-integration-red-only-${{ github.sha }}
   cancel-in-progress: false
 jobs:
-  eight-green-only:
+  integration-red-only:
     if: ${{ inputs.approve_runner && inputs.scope == 'regression' && github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.event.repository.private == false }}
     runs-on: macos-15-intel
-    timeout-minutes: 15
+    timeout-minutes: 90
     env:
       EXPECTED_COMMIT: ${{ inputs.expected_commit }}
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
       PYTHONDONTWRITEBYTECODE: '1'
+      HOMEBREW_NO_AUTO_UPDATE: '1'
     steps:
-      - name: Require exact reviewed public commit and runner
+      - name: Require exact reviewed commit and runner
         shell: bash
         run: |
           set -euo pipefail
-          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$GITHUB_SHA" == "$EXPECTED_COMMIT" ]]
+          trap 'status=$?; if (( status != 0 )); then printf "{\"stage\":\"identity\",\"exit\":%s}\n" "$status"; fi' EXIT
+          exec 2> "$RUNNER_TEMP/identity-errors.log"
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ && "$GITHUB_SHA" == "$EXPECTED_COMMIT" ]]
+          [[ "$GITHUB_REF" == refs/heads/codex/overlay-red-diagnostic-20261027 ]]
           [[ "$(uname -m)" == x86_64 ]]
           [[ "$(xcodebuild -version)" == $'Xcode 26.2\nBuild version 17C52' ]]
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ inputs.expected_commit }}
           persist-credentials: false
-      - name: Run the eight fictional overlay tests
+      - name: Run exactly three bundle integration scenarios
         shell: bash
         run: |
           set -euo pipefail
+          DEVICE=''
+          STAGE='source'
+          cleanup() {
+            original_status=$?
+            trap - EXIT
+            if [[ "$DEVICE" =~ ^[0-9A-Fa-f-]{36}$ ]]; then
+              xcrun simctl shutdown "$DEVICE" >/dev/null 2>&1 || true
+              xcrun simctl delete "$DEVICE" >/dev/null 2>&1 || true
+            fi
+            if (( original_status != 0 )); then
+              printf '{"stage":"%s","exit":%s}\n' "$STAGE" "$original_status"
+            fi
+            exit "$original_status"
+          }
+          trap cleanup EXIT
+          exec 2> "$RUNNER_TEMP/diagnostic-errors.log"
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_COMMIT" ]]
           test -z "${APARTMENTFINDER_PRIVATE_PACK_DIRECTORY:-}${APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY:-}"
           for input in data/catalog.json data/locations.geojson data/paths.geojson private-data private-baselines; do test ! -e "$input"; done
-          set +e
-          swift test --jobs 1 --disable-automatic-resolution --skip-update --filter 'ReviewedProgressOverlayTests|ReviewedProgressOverlaySafetyTests' > "$RUNNER_TEMP/overlay-eight-green.log" 2>&1
-          swift_status=$?
-          set -e
-          python3 -B scripts/overlay-safety-red-verifier.py "$RUNNER_TEMP/overlay-eight-green.log" "$swift_status"
           test -z "$(git status --porcelain --untracked-files=all)"
+          printf '%s  %s\n' a4dc6243c8a8548a1d1994d2bf190ea2748196b999bd534cc257e85dd96779e7 data/reviewed-progress-catalog.json | shasum -a 256 -c --status
+          printf '%s  %s\n' 84f2ec404be402b56312535f07ab258d9df6315ee37842cf031ebebd81283766 data/reviewed-progress-locations.geojson | shasum -a 256 -c --status
+          printf '%s  %s\n' 3aa6f1e0ea9e8def31c4501c6e18bc446274f36545b653502a57619a30f88fe9 data/reviewed-progress-paths.geojson | shasum -a 256 -c --status
+          STAGE='tools'
+          command -v xcodegen >/dev/null || brew install xcodegen > "$RUNNER_TEMP/tools.log" 2>&1
+          STAGE='project-generation'
+          xcodegen generate --spec project.yml > "$RUNNER_TEMP/xcodegen.log" 2>&1
+          LOCK=ApartmentFinder.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          mkdir -p "$(dirname "$LOCK")"
+          cp Config/Iteration-Package.resolved "$LOCK"
+          STAGE='runtime'
+          RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-26-2
+          xcrun simctl list runtimes --json > "$RUNNER_TEMP/runtimes.json" 2> "$RUNNER_TEMP/runtime-error.log"
+          python3 -c 'import json,sys; assert any(x["identifier"]==sys.argv[1] and x.get("isAvailable") for x in json.load(open(sys.argv[2]))["runtimes"])' "$RUNTIME" "$RUNNER_TEMP/runtimes.json" 2>> "$RUNNER_TEMP/runtime-error.log"
+          STAGE='simulator'
+          DEVICE=$(xcrun simctl create "ApartmentFinder integration ${GITHUB_RUN_ID}" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro "$RUNTIME" 2> "$RUNNER_TEMP/simulator-error.log")
+          [[ "$DEVICE" =~ ^[0-9A-Fa-f-]{36}$ ]]
+          xcrun simctl boot "$DEVICE" >> "$RUNNER_TEMP/simulator.log" 2>&1
+          xcrun simctl bootstatus "$DEVICE" -b >> "$RUNNER_TEMP/simulator.log" 2>&1
+          STAGE='test'
+          set +e
+          xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
+            -sdk iphonesimulator -destination "id=$DEVICE" -jobs 2 -parallel-testing-enabled NO \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/integration.xcresult" \
+            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
+            -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            -only-testing:ApartmentFinderTests/PublicCatalogRefreshStoreTests/testActualReviewedBundleHasExactAreaAndLockerScope \
+            -only-testing:ApartmentFinderTests/PublicCatalogRefreshStoreTests/testOlderSavedFeedGetsBundleProgressWithoutChangingPrivateOrPersonalData \
+            -only-testing:ApartmentFinderTests/PublicCatalogRefreshStoreTests/testFutureRefreshRollbackAndConservativeShare \
+            test > "$RUNNER_TEMP/integration.log" 2>&1
+          test_status=$?
+          set -e
+          if (( test_status != 65 )); then
+            printf '{"stage":"test-command","exit":%s}\n' "$test_status"
+            exit 1
+          fi
+          STAGE='xcresult'
+          xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/integration.xcresult" > "$RUNNER_TEMP/summary.json" 2> "$RUNNER_TEMP/xcresult-error.log"
+          xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/integration.xcresult" > "$RUNNER_TEMP/tests.json" 2>> "$RUNNER_TEMP/xcresult-error.log"
+          STAGE='verification'
+          if ! python3 -B scripts/overlay-safety-red-verifier.py "$RUNNER_TEMP/summary.json" "$RUNNER_TEMP/tests.json" "$RUNNER_TEMP/integration.log" "$test_status" > "$RUNNER_TEMP/verified.json" 2> "$RUNNER_TEMP/verification-error.log"; then exit 1; fi
+          cat "$RUNNER_TEMP/verified.json"
