@@ -1,4 +1,4 @@
-# Manual synthetic check only; this does not satisfy private release acceptance.
+# TEST BRANCH ONLY. This is an intentional red-test diagnostic, not release validation.
 name: Public synthetic iOS regression check
 on:
   workflow_dispatch:
@@ -16,297 +16,45 @@ on:
         description: Regression subset, focused map interaction checks, or text-only activation diagnosis
         required: true
         type: choice
-        options:
-          - regression
-          - map-interaction-regression
-          - community-area-controls-regression
-          - map-pinch-diagnostics
-          - activation-diagnostics
+        options: [regression, map-interaction-regression, community-area-controls-regression, map-pinch-diagnostics, activation-diagnostics]
         default: regression
 permissions:
   contents: read
 concurrency:
-  group: apartmentfinder-public-synthetic
+  group: overlay-red-only-${{ github.sha }}
   cancel-in-progress: false
 jobs:
-  synthetic:
-    if: ${{ inputs.approve_runner && github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.event.repository.private == false }}
+  red-only:
+    if: ${{ inputs.approve_runner && inputs.scope == 'regression' && github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.event.repository.private == false }}
     runs-on: macos-15-intel
-    timeout-minutes: 90
+    timeout-minutes: 15
     env:
       EXPECTED_COMMIT: ${{ inputs.expected_commit }}
-      PUBLIC_SYNTHETIC_SCOPE: ${{ inputs.scope }}
-      HOMEBREW_NO_AUTO_UPDATE: '1'
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - name: Require the exact reviewed source
-        timeout-minutes: ${{ inputs.scope == 'activation-diagnostics' && 5 || 90 }}
+      - name: Require exact reviewed public commit and runner
         shell: bash
         run: |
           set -euo pipefail
-          # Conservative collection admission cutoff; native job remains capped at 90 minutes.
-          PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH=$(( $(date +%s) + 80 * 60 ))
-          printf 'PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH=%s\n' "$PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH" >> "$GITHUB_ENV"
-          [[ "$PUBLIC_SYNTHETIC_SCOPE" == regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression || "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression || "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics || "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
-            echo "DIAGNOSTIC_WORK_DEADLINE=$(( $(date +%s) + 85 * 60 ))" >> "$GITHUB_ENV"
-          fi
           [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
           [[ "$GITHUB_SHA" == "$EXPECTED_COMMIT" ]]
           [[ "$(uname -m)" == x86_64 ]]
-          test -d "$DEVELOPER_DIR"
           [[ "$(xcodebuild -version)" == $'Xcode 26.2\nBuild version 17C52' ]]
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        timeout-minutes: ${{ inputs.scope == 'activation-diagnostics' && 5 || 90 }}
         with:
+          ref: ${{ inputs.expected_commit }}
           persist-credentials: false
-      - name: Portable synthetic fixture and validator checks
-        timeout-minutes: ${{ inputs.scope == 'activation-diagnostics' && 10 || 90 }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -z "${APARTMENTFINDER_PRIVATE_PACK_DIRECTORY:-}${APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY:-}"
-          for input in data/catalog.json data/locations.geojson data/paths.geojson private-data private-baselines; do
-            test ! -e "$input"
-          done
-          python3 -B scripts/public-catalog.py validate --directory data
-          test -z "$(git status --porcelain --untracked-files=all)"
-          python3 -B -m unittest discover -s Tests/public_synthetic -v
-          python3 -B -m unittest discover -s Tests/signing -v
-          python3 -B -m unittest discover -s Tests/iteration -v
-          node --test --test-reporter=tap services/geocoding/worker.test.mjs
-      - name: Selected synthetic core tests with exact identity verification
-        if: ${{ inputs.scope == 'regression' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          FILTER=$(python3 -c 'import json,re; print("|".join(re.escape(x)+"$" for x in json.load(open("scripts/public-synthetic-tests.json"))["core"]))')
-          swift test --jobs 1 --disable-automatic-resolution --skip-update --filter "$FILTER" 2>&1 | tee "$RUNNER_TEMP/core.log"
-          python3 -B - "$RUNNER_TEMP/core.log" <<'PY'
-          import json,sys
-          sys.path.insert(0,'scripts')
-          from iterate import verify_core_ids,test_counts
-          body=open(sys.argv[1]).read()
-          expected=json.load(open('scripts/public-synthetic-tests.json'))['core']
-          assert len(verify_core_ids(body,expected)) == test_counts('core',body)['passed']
-          PY
-      - name: Compile production targets and run only synthetic native and UI tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          WORK=(env)
-          RUN=(env)
-          TEST_LIMITS=()
-          DIAGNOSTICS_COLLECTED=0
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
-            MAP_GESTURE_RUN_NONCE=$(python3 -c 'import uuid; print(uuid.uuid4())')
-            export TEST_RUNNER_APARTMENTFINDER_MAP_GESTURE_RUN_NONCE="$MAP_GESTURE_RUN_NONCE"
-            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
-          fi
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
-            WORK=(python3 -B scripts/public-synthetic-diagnostics.py work --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --)
-            export TEST_RUNNER_APARTMENTFINDER_SYNTHETIC_DIAGNOSTICS=1
-            TEST_LIMITS=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600 -maximum-test-execution-time-allowance 600)
-          fi
-          "${WORK[@]}" bash -c 'command -v xcodegen >/dev/null || brew install xcodegen'
-          "${WORK[@]}" xcodebuild -version
-          "${WORK[@]}" xcodegen generate --spec project.yml
-          LOCK=ApartmentFinder.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-          mkdir -p "$(dirname "$LOCK")"
-          cp Config/Iteration-Package.resolved "$LOCK"
-          RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-26-2
-          "${WORK[@]}" xcrun simctl list runtimes --json > "$RUNNER_TEMP/runtimes.json"
-          "${WORK[@]}" python3 -c 'import json,sys; assert any(x["identifier"]==sys.argv[1] and x.get("isAvailable") for x in json.load(open(sys.argv[2]))["runtimes"]),"Required iOS 26.2 runtime is unavailable"' "$RUNTIME" "$RUNNER_TEMP/runtimes.json"
-          DEVICE=$("${WORK[@]}" xcrun simctl create "ApartmentFinder synthetic ${GITHUB_RUN_ID}" com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro "$RUNTIME")
-          [[ "$DEVICE" =~ ^[0-9A-Fa-f-]{36}$ ]]
-          FAILURE_DIAGNOSTICS_COLLECTED=0
-          FAILURE_TEST_START=0
-          FAILURE_TEST_END=0
-          collect_test_failure_diagnostics() {
-            local original_status="$1"
-            [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]] || return 0
-            [[ "$original_status" != 0 && "$FAILURE_TEST_START" != 0 && "$FAILURE_DIAGNOSTICS_COLLECTED" == 0 ]] || return 0
-            FAILURE_DIAGNOSTICS_COLLECTED=1
-            local test_end="$FAILURE_TEST_END"
-            if [[ "$test_end" == 0 ]]; then test_end=$(date +%s) || return 0; fi
-            python3 -B scripts/public-test-failure-diagnostics.py \
-              --temp-root "$RUNNER_TEMP" --device "$DEVICE" --source-commit "$GITHUB_SHA" \
-              --xcode-status "${XCODE_STATUS:-$original_status}" --result-status "${RESULT_STATUS:-1}" \
-              --start-epoch "$FAILURE_TEST_START" --end-epoch "$test_end" \
-              --deadline-epoch "${PUBLIC_FAILURE_COLLECTION_CUTOFF_EPOCH:-0}" || true
-          }
-          cleanup() {
-            local original_status=$?
-            local cleanup_status=0
-            trap - EXIT
-            collect_test_failure_diagnostics "$original_status"
-            if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
-              if [[ "$DIAGNOSTICS_COLLECTED" == 0 ]]; then
-                python3 -B scripts/public-synthetic-diagnostics.py collect --device "$DEVICE" || true
-              fi
-              python3 -B - "$DEVICE" <<'PY' || cleanup_status=$?
-          import os,signal,subprocess,sys
-          cleanup_failed=0
-          for operation in ('shutdown','delete'):
-              try:
-                  process=subprocess.Popen(['xcrun','simctl',operation,sys.argv[1]],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
-                  try:
-                      status=process.wait(timeout=10)
-                  except subprocess.TimeoutExpired:
-                      try: os.killpg(process.pid,signal.SIGKILL)
-                      except ProcessLookupError: pass
-                      try: process.wait(timeout=2)
-                      except subprocess.TimeoutExpired: pass
-                      status=124
-                  print('syntheticCleanup='+operation+';status='+('complete' if status==0 else 'incomplete'))
-                  if status!=0: cleanup_failed=1
-              except Exception:
-                  print('syntheticCleanup='+operation+';status=incomplete')
-                  cleanup_failed=1
-          sys.exit(cleanup_failed)
-          PY
-            else
-              xcrun simctl shutdown "$DEVICE" >/dev/null 2>&1 || true
-              xcrun simctl delete "$DEVICE" >/dev/null 2>&1 || true
-            fi
-            if [[ "$original_status" == 0 && "$cleanup_status" != 0 ]]; then original_status=$cleanup_status; fi
-            exit "$original_status"
-          }
-          trap cleanup EXIT
-          "${WORK[@]}" xcrun simctl boot "$DEVICE"
-          "${WORK[@]}" xcrun simctl bootstatus "$DEVICE" -b
-          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" <<'PY'
-          import json,os,sys
-          selection=json.load(open('scripts/public-synthetic-tests.json'))
-          if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
-              focused={'native':['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
-                                 'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport'],
-                       'ui':['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
-              for kind,identities in focused.items():
-                  assert set(identities)<=set(selection[kind])
-              selection=focused
-          elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='community-area-controls-regression':
-              sys.path.insert(0,'scripts')
-              from iterate import test_ids
-              focused={'native':[
-                  'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport',
-                  'ApartmentFinderTests/PublicCatalogBundleStoreTests/testSavedPackSupplementPreservesGenerationAndPersonalBytesAcrossReopen'],
-                  'ui':[
-                  'ApartmentFinderUITests/CommunityMapControlsTests/testPausedControlsStayCompactAndKeepTheirActions',
-                  'ApartmentFinderUITests/CommunityMapControlsTests/testLyricAndTrendShowTheirCommunityAreasWithoutInventingDoors',
-                  'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
-                  'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch']}
-              for kind,folder,prefix in [('native','NativeTests','ApartmentFinderTests/'),('ui','UITests','ApartmentFinderUITests/')]:
-                  assert all(item.removeprefix(prefix) in test_ids('.',folder) for item in focused[kind])
-              selection=focused
-          elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-pinch-diagnostics':
-              sys.path.insert(0,'scripts')
-              from iterate import test_ids
-              focused={'native':[], 'ui':[
-                  'ApartmentFinderUITests/HeadingUpNavigationTests/testResumePreservesActualPinchZoomAndSelectedStop']}
-              assert all(item.removeprefix('ApartmentFinderUITests/') in test_ids('.', 'UITests') for item in focused['ui'])
-              selection=focused
-          elif os.environ['PUBLIC_SYNTHETIC_SCOPE']=='map-interaction-regression':
-              sys.path.insert(0,'scripts')
-              from iterate import test_ids
-              focused={'native':[], 'ui':[
-                  'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
-                  'ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation',
-                  'ApartmentFinderUITests/HeadingUpNavigationTests/testStartsHeadingUpAndResumePreservesChosenStop',
-                  'ApartmentFinderUITests/HeadingUpNavigationTests/testResumePreservesActualPinchZoomAndSelectedStop',
-                  'ApartmentFinderUITests/MapAppearanceTests/testMapTypePersistsAcrossDoorReviewDeliveryAdvanceAndRelaunch']}
-              assert {'ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport',
-                      'ApartmentFinderUITests/OnTracFlowTests/testZIPPreviewCancellationEmptyDayAndApartmentNavigation'}<=set(focused['ui'])
-              assert all(item.removeprefix('ApartmentFinderUITests/') in test_ids('.', 'UITests') for item in focused['ui'])
-              selection=focused
-          with open(sys.argv[1],'w') as output: json.dump(selection,output)
-          PY
-          "${WORK[@]}" python3 -B - "$RUNNER_TEMP/selected-tests.json" > "$RUNNER_TEMP/selected-identities.txt" <<'PY'
-          import json,os,re,sys
-          selection=json.load(open(sys.argv[1]))
-          identities=selection['native']+selection['ui']
-          expected={'activation-diagnostics':3,'map-interaction-regression':5,'community-area-controls-regression':6,'map-pinch-diagnostics':1,'regression':85}[os.environ['PUBLIC_SYNTHETIC_SCOPE']]
-          assert len(identities)==len(set(identities))==expected
-          assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
-          if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics':
-              assert selection=={'native':['ApartmentFinderTests/OnTracImportSetupTests/testFictionalPackAndExactZIPReachTheTwoDayImportRequestOnIOS',
-                                           'ApartmentFinderTests/PublicCatalogBundleStoreTests/testProductionAppBundleLoadsReviewedPublicCatalogWithoutMapImport'],
-                                'ui':['ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport']}
-          print('\n'.join(identities))
-          PY
-          FILTERS=()
-          while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
-          EXPECTED_NATIVE_COUNT=85
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-interaction-regression ]]; then EXPECTED_NATIVE_COUNT=5; fi
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == community-area-controls-regression ]]; then EXPECTED_NATIVE_COUNT=6; fi
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then EXPECTED_NATIVE_COUNT=1; fi
-          [[ "${#FILTERS[@]}" == "$EXPECTED_NATIVE_COUNT" ]]
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then
-            RUN=(python3 -B scripts/public-synthetic-diagnostics.py run --deadline-epoch "$DIAGNOSTIC_WORK_DEADLINE" --device "$DEVICE" --)
-            DIAGNOSTICS_COLLECTED=1
-          fi
-          XCODE_STATUS=0
-          FAILURE_TEST_START=$(date +%s) || FAILURE_TEST_START=0
-          "${RUN[@]}" xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Debug \
-            -sdk iphonesimulator -destination "id=$DEVICE" -jobs 2 -parallel-testing-enabled NO \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" -resultBundlePath "$RUNNER_TEMP/synthetic.xcresult" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
-            -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
-            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
-            "${FILTERS[@]}" ${TEST_LIMITS[@]+"${TEST_LIMITS[@]}"} test || XCODE_STATUS=$?
-          FAILURE_TEST_END=$(date +%s) || FAILURE_TEST_END=0
-          MAP_GESTURE_STATUS=0
-          if [[ "$PUBLIC_SYNTHETIC_SCOPE" == map-pinch-diagnostics ]]; then
-            python3 -B scripts/public-map-gesture-diagnostics.py --device "$DEVICE" --run-nonce "$MAP_GESTURE_RUN_NONCE" || MAP_GESTURE_STATUS=$?
-          fi
-          RESULT_STATUS=0
-          if [[ -d "$RUNNER_TEMP/synthetic.xcresult" ]]; then
-            "${WORK[@]}" xcrun xcresulttool get test-results summary --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/summary.json" || RESULT_STATUS=$?
-            "${WORK[@]}" xcrun xcresulttool get test-results tests --path "$RUNNER_TEMP/synthetic.xcresult" > "$RUNNER_TEMP/tests.json" || RESULT_STATUS=$?
-          else
-            RESULT_STATUS=1
-          fi
-          collect_test_failure_diagnostics "$XCODE_STATUS"
-          if [[ "$XCODE_STATUS" != 0 ]]; then exit "$XCODE_STATUS"; fi
-          if [[ "$MAP_GESTURE_STATUS" != 0 ]]; then exit "$MAP_GESTURE_STATUS"; fi
-          if [[ "$RESULT_STATUS" != 0 ]]; then exit "$RESULT_STATUS"; fi
-          "${WORK[@]}" python3 -B - "$RUNNER_TEMP" <<'PY'
-          import json,os,sys
-          from pathlib import Path
-          sys.path.insert(0,'scripts')
-          from iterate import verify_native_ids,test_counts
-          root=Path(sys.argv[1]); selection=json.load(open(root/'selected-tests.json'))
-          expected=selection['native']+selection['ui']
-          assert len(verify_native_ids(json.loads((root/'tests.json').read_text()),expected)) == test_counts('native',(root/'summary.json').read_text())['passed']
-          print(json.dumps(dict(scope='public-synthetic-'+os.environ['PUBLIC_SYNTHETIC_SCOPE'],passed=len(expected),full_acceptance=False,release_eligible=False)))
-          PY
-          "${WORK[@]}" python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/checkout-validation"
-      - name: Build unsigned Release app and embedded Share extension
-        if: ${{ inputs.scope == 'regression' }}
+      - name: Run exactly the synthetic overlay red cases
         shell: bash
         run: |
           set -euo pipefail
           [[ "$(git rev-parse HEAD)" == "$EXPECTED_COMMIT" ]]
-          xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder -configuration Release \
-            -sdk iphoneos -destination 'generic/platform=iOS' -jobs 1 \
-            -derivedDataPath "$RUNNER_TEMP/UnsignedRelease" \
-            -clonedSourcePackagesDirPath "$RUNNER_TEMP/SourcePackages" \
-            -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
-          python3 -B - "$RUNNER_TEMP/UnsignedRelease/Build/Products/Release-iphoneos/ApartmentFinder.app" <<'PY'
-          import hashlib,json,os,plistlib,sys
-          from pathlib import Path
-          app=Path(sys.argv[1]); share=app/'PlugIns/ApartmentFinderShare.appex'
-          for bundle,identity in [(app,'dev.galaxybigbird.ApartmentFinder'),(share,'dev.galaxybigbird.ApartmentFinder.Share')]:
-              info=plistlib.loads((bundle/'Info.plist').read_bytes())
-              assert info['CFBundleIdentifier']==identity
-              assert (bundle/info['CFBundleExecutable']).is_file()
-              assert not (bundle/'_CodeSignature').exists()
-          review=json.loads(Path('data/public-catalog-review.json').read_bytes())
-          for name,digest in review['resourcesSHA256'].items():
-              assert hashlib.sha256((app/name).read_bytes()).hexdigest()==digest
-          assert hashlib.sha256((share/'known-addresses.json').read_bytes()).hexdigest()==review['resourcesSHA256']['known-addresses.json']
-          print(json.dumps(dict(scope='unsigned-release-app-and-share',candidate=os.environ['EXPECTED_COMMIT'],app=True,embeddedShare=True,resourcesMatch=True,distributionSigning=False,upload=False,full_acceptance=False,release_eligible=False)))
-          PY
-          python3 -B scripts/validate-checkout.py "$RUNNER_TEMP/unsigned-release-checkout"
+          test -z "${APARTMENTFINDER_PRIVATE_PACK_DIRECTORY:-}${APARTMENTFINDER_PRIVATE_SOURCE_DIRECTORY:-}"
+          for input in data/catalog.json data/locations.geojson data/paths.geojson private-data private-baselines; do test ! -e "$input"; done
+          set +e
+          swift test --jobs 1 --disable-automatic-resolution --skip-update --filter ReviewedProgressOverlayTests > "$RUNNER_TEMP/overlay-red.log" 2>&1
+          swift_status=$?
+          set -e
+          python3 -B scripts/overlay-red-only-verifier.py "$RUNNER_TEMP/overlay-red.log" "$swift_status"
+          test -z "$(git status --porcelain --untracked-files=all)"
