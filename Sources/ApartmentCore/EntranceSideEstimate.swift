@@ -51,6 +51,28 @@ public struct EntranceSideEstimate: Codable, Hashable, Sendable {
         }
     }
 
+    /// Short display text for the shared estimate notice; research metadata stays intact.
+    public var compactNotice: String {
+        let floor = dwellingFloor?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let floorText: String
+        if let floor, !floor.isEmpty, dwellingFloorEvidence != .unknown {
+            let qualifier: String
+            switch dwellingFloorEvidence {
+            case .unknown: qualifier = "unknown"
+            case .inferred: qualifier = "estimated"
+            case .historicalExplicit: qualifier = "historical"
+            case .currentExplicit: qualifier = "source"
+            }
+            floorText = "Unit floor \(floor) (\(qualifier))"
+        } else {
+            floorText = "Unit floor unknown"
+        }
+        let shared = sharedUnits.count > 1 ? "Shared units " + sharedUnits.joined(separator: "/") + " · " : ""
+        let allowance = workingAllowanceMeters.rounded() == workingAllowanceMeters
+            ? String(format: "%.0f", workingAllowanceMeters) : String(workingAllowanceMeters)
+        return "\(shared)\(floorText) · Door unverified · \(allowance) m working allowance (uncalibrated)"
+    }
+
     public var summary: String {
         let units = sharedUnits.count > 1 ? " · units " + sharedUnits.joined(separator: "/") : ""
         let allowance = workingAllowanceMeters.rounded() == workingAllowanceMeters

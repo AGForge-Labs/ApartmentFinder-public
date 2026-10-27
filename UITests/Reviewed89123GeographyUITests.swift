@@ -124,10 +124,10 @@ final class Reviewed89123GeographyUITests: XCTestCase {
             XCTAssertTrue(app.staticTexts["mini.sourceUnitWarning"].label.contains("not an entrance or door"))
             let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
             XCTAssertTrue(evidenceAppears(warning, timeout: 5))
-            XCTAssertTrue(warning.label.contains("Dwelling floor \(floor) from current source"))
+            XCTAssertTrue(warning.label.contains("Unit floor \(floor) (source)"))
             XCTAssertTrue(warning.label.lowercased().contains("unverified"))
             XCTAssertTrue(warning.label.lowercased().contains("uncalibrated"))
-            XCTAssertTrue(warning.label.contains("Actual entry floor, threshold elevation and accessible approach remain unknown"))
+            XCTAssertFalse(warning.label.contains("Actual entry floor, threshold elevation and accessible approach remain unknown"))
             XCTAssertFalse(app.buttons["mini.navigate"].exists)
             XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
             // Multiple suggestions suppress the single-place header. The real
@@ -176,10 +176,10 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         expandEvidence()
         let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
         XCTAssertTrue(evidenceAppears(warning, timeout: 5))
-        for qualifier in ["Doorway unverified", "Dwelling floor unknown", "Actual entrance floor, elevation and ground stair approach are unknown",
-                          "10 m working allowance", "accuracy uncalibrated"] {
+        for qualifier in ["Door unverified", "Unit floor unknown", "10 m working allowance (uncalibrated)"] {
             XCTAssertTrue(warning.label.contains(qualifier), "Missing current Octave qualifier: \(qualifier)")
         }
+        XCTAssertFalse(warning.label.contains("Actual entrance floor, elevation and ground stair approach are unknown"))
         XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         // The current estimate summary does not expose the retained historical

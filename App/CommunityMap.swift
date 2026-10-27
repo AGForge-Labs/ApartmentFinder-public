@@ -56,7 +56,7 @@ private struct OfflineMap: View {
     private var coordinates: [Coordinate] { places.map(\.coordinate) + paths.flatMap(\.coordinates) + route + (focus.map { [$0] } ?? []) + (digitalLocker?.point.map { [$0.coordinate] } ?? []) }
     private var selectedEstimate: EntranceSideEstimate? { places.first { $0.id == selectedID }?.entranceSideEstimate }
     private var mapAccessibilityLabel: String {
-        if let selectedEstimate { return "Offline community map. \(selectedEstimate.summary). Use the search results to select a unit." }
+        if let selectedEstimate { return "Offline community map. \(selectedEstimate.compactNotice). Use the search results to select a unit." }
         if places.contains(where: { $0.entranceSideEstimate != nil }) {
             return "Offline community map. Orange entry areas are estimated; doorways are unverified. Use the search results to select a unit."
         }

@@ -148,6 +148,36 @@ final class EntranceSideEstimateTests: XCTestCase {
         }
     }
 
+    func testCompactNoticePreservesFloorEvidenceAndDoesNotExposeResearchDetails() throws {
+        let cases: [(String, String?, String)] = [
+            ("unknown", nil, "Unit floor unknown · Door unverified · 10 m working allowance (uncalibrated)"),
+            ("inferred", "2", "Unit floor 2 (estimated) · Door unverified · 10 m working allowance (uncalibrated)"),
+            ("historicalExplicit", "3", "Unit floor 3 (historical) · Door unverified · 10 m working allowance (uncalibrated)"),
+            ("currentExplicit", "4", "Unit floor 4 (source) · Door unverified · 10 m working allowance (uncalibrated)")
+        ]
+        for (evidence, floor, expected) in cases {
+            var estimate = metadata
+            estimate["dwellingFloorEvidence"] = evidence
+            estimate["dwellingFloor"] = floor
+            estimate["entryLevelDescription"] = "Long entry description that should not appear"
+            estimate["evidenceNotes"] = "Long research note that should not appear"
+            let loaded = try XCTUnwrap(read(pointJSON(estimate)).places.first)
+            let typed = try XCTUnwrap(loaded.entranceSideEstimate)
+            XCTAssertEqual(typed.compactNotice, expected, evidence)
+            XCTAssertFalse(typed.compactNotice.contains("Long"), evidence)
+        }
+    }
+
+    func testCompactSharedNoticeIncludesLiteralUnitsAndUncalibratedArea() throws {
+        var estimate = metadata
+        estimate["sharedUnits"] = ["001", "002"]
+        estimate["frontage"] = []
+        estimate["workingAllowanceMeters"] = 12.5
+        let loaded = try XCTUnwrap(read(pointJSON(estimate)).places.first)
+        let typed = try XCTUnwrap(loaded.entranceSideEstimate)
+        XCTAssertEqual(typed.compactNotice, "Shared units 001/002 · Unit floor unknown · Door unverified · 12.5 m working allowance (uncalibrated)")
+    }
+
     func testSharedEstimateSummaryNamesThePairAndDoesNotClaimAThresholdOrKnownFloor() throws {
         var estimate = metadata; estimate["sharedUnits"] = ["001", "002"]; estimate["frontage"] = []
         let loaded = try XCTUnwrap(read(pointJSON(estimate)).places.first)
