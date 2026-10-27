@@ -99,31 +99,61 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         let store = AppStore(storeURL: url, resourceBundle: .main, packDirectory: directory)
         XCTAssertNil(store.errorMessage)
         XCTAssertFalse(store.requiresPrivatePack)
-        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.25.13-public-valley-ventana-provider-unit-areas")
-        XCTAssertEqual(store.communities.count, 193)
-        XCTAssertEqual(store.places.count, 28_458)
+        XCTAssertEqual(store.pack?.catalog.packVersion, "2026.10.27.2")
+        XCTAssertEqual(store.communities.count, 221)
+        XCTAssertEqual(store.places.count, 40_126)
         XCTAssertEqual(store.paths.count, 17)
-        // The immutable resource retains research provenance, while AppStore
-        // projects only sources referenced by admitted records.
+        // The legacy resource remains intact; the selected baseline plus the
+        // reviewed progress overlay supplies the active source provenance.
         let bundled = try XCTUnwrap(PublicCatalogSupplement.read(from: .main))
         XCTAssertEqual(bundled.catalog.sources.count, 1_076)
+        let baseline = try XCTUnwrap(ReviewedBundleResources.baseline(from: .main)).pack
+        let overlay = try XCTUnwrap(ReviewedBundleResources.overlay(from: .main))
+        XCTAssertEqual(baseline.catalog.sources.count, 1_480)
+        XCTAssertEqual(overlay.catalog.sources.count, 38)
         let loadedSources = try XCTUnwrap(store.pack).catalog.sources
-        XCTAssertEqual(loadedSources.count, 1_072)
+        XCTAssertEqual(loadedSources.count, 1_504)
         let unreferencedSourceIDs: Set<String> = [
+            "evolve-map-embed-20261026", "evolve-native-background-20261026",
+            "lyric-estimate-20261023-map-region1", "lyric-estimate-20261023-map-region2",
+            "lyric-estimate-20261023-map-region3", "martinique-bay-actual-aerial-20261026",
+            "martinique-bay-official-amenities-20261026", "martinique-bay-official-floorplans-20261026",
+            "martinique-bay-official-map-embed-20261026", "mc-emerald-operator-page"]
+        let legacyUnreferenced: Set<String> = [
             "lyric-estimate-20261023-map-region1", "lyric-estimate-20261023-map-region2",
             "lyric-estimate-20261023-map-region3", "mc-emerald-operator-page"]
-        XCTAssertEqual(Set(bundled.catalog.sources.map(\.id)).subtracting(loadedSources.map(\.id)), unreferencedSourceIDs)
-        XCTAssertEqual(loadedSources, bundled.catalog.sources.filter { !unreferencedSourceIDs.contains($0.id) })
+        XCTAssertEqual(Set(bundled.catalog.sources.map(\.id)).subtracting(loadedSources.map(\.id)), legacyUnreferenced)
+        let baselineByID = Dictionary(uniqueKeysWithValues: baseline.catalog.sources.map { ($0.id, $0) })
+        XCTAssertTrue(bundled.catalog.sources.allSatisfy { baselineByID[$0.id] == $0 })
+        let expectedSources = baseline.catalog.sources.filter { !unreferencedSourceIDs.contains($0.id) }
+            + overlay.catalog.sources.filter { baselineByID[$0.id] == nil }
+        let loadedByID = Dictionary(loadedSources.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        XCTAssertEqual(loadedByID.count, loadedSources.count)
+        XCTAssertEqual(Set(expectedSources.map(\.id)).count, expectedSources.count)
+        XCTAssertTrue(expectedSources.count == loadedSources.count && expectedSources.allSatisfy { loadedByID[$0.id] == $0 },
+                      "Loaded source provenance differs from the reviewed resources.")
         XCTAssertFalse(store.places.contains { $0.kind == .door || $0.kind == .entrance || $0.verification == .fieldVerified })
         XCTAssertEqual(store.pack?.catalog.unitBuildingAssociations?.count, 8_139)
         let estimates = store.places.filter { $0.entranceSideEstimate != nil }
-        XCTAssertEqual(estimates.count, 4_603)
+        XCTAssertEqual(estimates.count, 5_556)
         XCTAssertTrue(estimates.allSatisfy { $0.isValidEntranceSideEstimate && $0.verification == .estimated && $0.kind == .unitPosition })
         let copper = store.doorMatch(DeliveryStop(sequence: 1, address: "9400 Bermuda Road", unit: "126"), groupID: "copper-creek")
-        XCTAssertEqual(copper.candidates.count, 1)
-        XCTAssertEqual(copper.candidates.first?.address, "9400 BERMUDA RD")
-        XCTAssertEqual(copper.candidates.first?.floor, "")
-        XCTAssertEqual(copper.candidates.first?.entranceSideEstimate?.dwellingFloorEvidence, .unknown)
+        XCTAssertEqual(Set(copper.candidates.map(\.id)), [
+            "entrance-estimate:copper-creek:9400-bermuda-rd:unit-126",
+            "copper-creek:source-unit-area:699454"])
+        let copperEstimate = try XCTUnwrap(copper.candidates.first { $0.id == "entrance-estimate:copper-creek:9400-bermuda-rd:unit-126" })
+        XCTAssertEqual(copperEstimate.address, "9400 BERMUDA RD")
+        XCTAssertEqual(copperEstimate.floor, "")
+        XCTAssertEqual(copperEstimate.verification, .estimated)
+        XCTAssertEqual(copperEstimate.identityUncertain, true)
+        XCTAssertTrue(copperEstimate.isValidEntranceSideEstimate)
+        XCTAssertEqual(copperEstimate.entranceSideEstimate?.dwellingFloorEvidence, .unknown)
+        let copperArea = try XCTUnwrap(copper.candidates.first { $0.id == "copper-creek:source-unit-area:699454" })
+        XCTAssertEqual(copperArea.address, "9400 BERMUDA RD")
+        XCTAssertEqual(copperArea.floor, "")
+        XCTAssertEqual(copperArea.verification, .sourceMapped)
+        XCTAssertNil(copperArea.entranceSideEstimate)
+        XCTAssertTrue(copperArea.notes.contains("not an entrance or exact door"))
         XCTAssertNil(copper.readyDoor)
         let wrongStreet = store.doorMatch(DeliveryStop(sequence: 1, address: "9490 Bermuda Road", unit: "126"), groupID: "copper-creek")
         XCTAssertTrue(wrongStreet.candidates.isEmpty)
@@ -139,9 +169,15 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(store.communities.first { $0.id == "lyric" }?.coordinate, Coordinate(latitude: 36.01408, longitude: -115.159018))
         XCTAssertEqual(store.communities.first { $0.id == "trend" }?.coordinate, Coordinate(latitude: 36.01422151644452, longitude: -115.16156023077903))
         let legal = store.doorMatch(DeliveryStop(sequence: 1, address: "2300 E Silverado Ranch Blvd", unit: "1037"), groupID: "latigo")
-        XCTAssertEqual(legal.buildingReferences.count, 1)
-        XCTAssertEqual(legal.buildingReferences.first?.kind, .building)
-        XCTAssertTrue(legal.candidates.isEmpty); XCTAssertNil(legal.readyDoor)
+        XCTAssertTrue(legal.buildingReferences.isEmpty)
+        XCTAssertEqual(legal.candidates.count, 1)
+        let latigoEstimate = try XCTUnwrap(legal.candidates.first)
+        XCTAssertEqual(latigoEstimate.id, "latigo:plat-side-estimate:unit-1037")
+        XCTAssertEqual(latigoEstimate.verification, .estimated)
+        XCTAssertEqual(latigoEstimate.identityUncertain, true)
+        XCTAssertTrue(latigoEstimate.isValidEntranceSideEstimate)
+        XCTAssertEqual(latigoEstimate.entranceSideEstimate?.dwellingFloorEvidence, .unknown)
+        XCTAssertNil(legal.readyDoor)
         XCTAssertNil(legal.supportedIdentityForNewPin)
         let schematic = store.doorMatch(DeliveryStop(sequence: 2, address: "304 E Silverado Ranch Blvd", unit: "1189"), groupID: "lyric")
         let schematicAssociation = store.pack?.catalog.unitBuildingAssociations?.first {
