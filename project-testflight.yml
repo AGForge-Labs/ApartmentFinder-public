@@ -1,4 +1,6 @@
 include: project.yml
+# Both targets inherit the complete reviewed public anchor/registry/baseline/fallback
+# resource lists from project.yml. This does not enable the complete-set reader.
 settings:
   base:
     CODE_SIGNING_ALLOWED: YES

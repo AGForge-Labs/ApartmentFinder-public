@@ -35,6 +35,16 @@ targets:
         buildPhase: resources
       - path: data/public-paths.geojson
         buildPhase: resources
+      - path: data/public-set-bootstrap-anchor.json
+        buildPhase: resources
+      - path: data/public-set-conservation-registry.json
+        buildPhase: resources
+      - path: data/public-set-baseline-catalog.json
+        buildPhase: resources
+      - path: data/public-set-baseline-locations.geojson
+        buildPhase: resources
+      - path: data/public-set-baseline-paths.geojson
+        buildPhase: resources
     dependencies:
       - package: ApartmentCore
       - package: GoogleNavigation
@@ -79,6 +89,22 @@ targets:
       - path: ShareExtension
       - path: SharedUI
       - path: data/known-addresses.json
+        buildPhase: resources
+      - path: data/public-catalog.json
+        buildPhase: resources
+      - path: data/public-locations.geojson
+        buildPhase: resources
+      - path: data/public-paths.geojson
+        buildPhase: resources
+      - path: data/public-set-bootstrap-anchor.json
+        buildPhase: resources
+      - path: data/public-set-conservation-registry.json
+        buildPhase: resources
+      - path: data/public-set-baseline-catalog.json
+        buildPhase: resources
+      - path: data/public-set-baseline-locations.geojson
+        buildPhase: resources
+      - path: data/public-set-baseline-paths.geojson
         buildPhase: resources
     dependencies:
       - package: ApartmentCore

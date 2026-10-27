@@ -14,7 +14,26 @@ targets:
   ApartmentFinder:
     type: application
     platform: iOS
-    sources: [InstallProbe]
+    sources:
+      - path: InstallProbe
+      - path: data/known-addresses.json
+        buildPhase: resources
+      - path: data/public-catalog.json
+        buildPhase: resources
+      - path: data/public-locations.geojson
+        buildPhase: resources
+      - path: data/public-paths.geojson
+        buildPhase: resources
+      - path: data/public-set-bootstrap-anchor.json
+        buildPhase: resources
+      - path: data/public-set-conservation-registry.json
+        buildPhase: resources
+      - path: data/public-set-baseline-catalog.json
+        buildPhase: resources
+      - path: data/public-set-baseline-locations.geojson
+        buildPhase: resources
+      - path: data/public-set-baseline-paths.geojson
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.galaxybigbird.ApartmentFinder

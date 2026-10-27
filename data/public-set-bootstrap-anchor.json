@@ -1,0 +1,20 @@
+{
+  "admissionRulesVersion": 1,
+  "files": {
+    "public-catalog.json": {
+      "bytes": 2851638,
+      "sha256": "39ce30071bb60c32b9f11b802ebd92448169ba357dbb6e6ec4f58d4794a47c15"
+    },
+    "public-locations.geojson": {
+      "bytes": 29023021,
+      "sha256": "27b40b8f57fb1018a7d4a7d5ef4bc7705a1e61a5637c23f55f63d1b96db2ad72"
+    },
+    "public-paths.geojson": {
+      "bytes": 8968,
+      "sha256": "3df0e3abcbb3ce91ceaa41b7c81927554a6a685f91218b888fa04887104fa047"
+    }
+  },
+  "minimumRootSequence": 92,
+  "packVersion": "2026.10.25.13-public-valley-ventana-provider-unit-areas",
+  "schemaVersion": 1
+}
