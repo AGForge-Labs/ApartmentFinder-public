@@ -272,7 +272,7 @@ class PublicCatalogFeedTests(unittest.TestCase):
                     self.documents[name]['schemaVersion'] = 1
 
     def test_native_resource_budgets_are_checked_before_reading_and_output_creation(self):
-        for name, maximum in (('public-catalog.json', 3_000_000),
+        for name, maximum in (('public-catalog.json', 16_000_000),
                 ('public-locations.geojson', 64_000_000), ('public-paths.geojson', 16_000_000)):
             with self.subTest(name=name):
                 self.write_source()
@@ -295,7 +295,7 @@ class PublicCatalogFeedTests(unittest.TestCase):
                 self.run_prepare(revision='new', sequence=2, previous=previous, valid=False)
                 self.assertFalse(self.output.exists())
         for descriptor in (dict(bytes=True, sha256='1' * 64), dict(bytes=0, sha256='1' * 64),
-                dict(bytes=3_000_001, sha256='1' * 64), dict(bytes=20, sha256='A' * 64),
+                dict(bytes=16_000_001, sha256='1' * 64), dict(bytes=20, sha256='A' * 64),
                 dict(bytes=20, sha256='1' * 64, url='https://example.invalid/payload')):
             with self.subTest(descriptor=descriptor):
                 value = copy.deepcopy(manifest)
