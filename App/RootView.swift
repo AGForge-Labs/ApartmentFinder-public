@@ -553,23 +553,31 @@ struct CommunityPicker: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                    TextField("Name, address or ZIP", text: $search)
-                        .textFieldStyle(.plain)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.search)
-                        .focused($searchFocused)
-                        .onSubmit { searchFocused = false }
-                        .accessibilityIdentifier("communityPicker.search")
+                HStack(spacing: 0) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                        TextField("Name, address or ZIP", text: $search)
+                            .textFieldStyle(.plain)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .submitLabel(.search)
+                            .focused($searchFocused)
+                            .onSubmit { searchFocused = false }
+                            .accessibilityIdentifier("communityPicker.search")
+                    }
+                    .padding(.leading, 12)
+                    .padding(.trailing, search.isEmpty ? 12 : 8)
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(TapGesture().onEnded { searchFocused = true })
                     if !search.isEmpty {
                         Button { search = "" } label: {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundStyle(.secondary)
                                 .frame(minWidth: 44, minHeight: 44)
+                                .padding(.trailing, 12)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Clear search")
@@ -577,7 +585,6 @@ struct CommunityPicker: View {
                     }
                 }
                 .frame(minHeight: 44)
-                .padding(.horizontal, 12)
                 .background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
                 .padding(.horizontal)
                 .padding(.vertical, 8)
