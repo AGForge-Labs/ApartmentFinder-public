@@ -36,7 +36,7 @@ final class EstimatedEntranceSideUITests: XCTestCase {
 
     func testEstimatedEntryRegionsKeepStreetFloorAndSharedDoorUncertaintyVisible() {
         open("copper-creek")
-        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated")
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Choose location")
         XCTAssertFalse(app.staticTexts["mini.entranceSideWarning"].exists)
         expandEvidence()
         let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
@@ -45,7 +45,11 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertTrue(warning.label.lowercased().contains("uncalibrated"))
         XCTAssertTrue(warning.label.lowercased().contains("floor unknown"))
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
-        let first = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "mini.pin.1.")).firstMatch
+        let mapped = app.buttons["mini.pin.1.copper-creek:source-unit-area:699454"]
+        XCTAssertTrue(mapped.waitForExistence(timeout: 5))
+        XCTAssertTrue(mapped.label.contains("Map location"))
+        XCTAssertFalse(mapped.label.contains("Checked door"))
+        let first = app.buttons["mini.pin.1.entrance-estimate:copper-creek:9400-bermuda-rd:unit-126"]
         XCTAssertTrue(first.waitForExistence(timeout: 5))
         XCTAssertTrue(first.label.contains("126"))
         XCTAssertTrue(first.label.lowercased().contains("estimated"))
@@ -62,6 +66,9 @@ final class EstimatedEntranceSideUITests: XCTestCase {
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         app.buttons["mini.prepare"].tap()
         XCTAssertTrue(app.navigationBars["Check Door Pin"].waitForExistence(timeout: 5))
+        let estimate = app.buttons["door.candidate.entrance-estimate:copper-creek:9490-bermuda-rd:unit-1022"]
+        XCTAssertTrue(estimate.waitForExistence(timeout: 5))
+        estimate.tap()
         expandEvidence("door.evidenceDetails")
         let reviewWarning = app.descendants(matching: .any).matching(identifier: "door.entranceSideWarning").firstMatch
         XCTAssertTrue(evidenceAppears(reviewWarning, timeout: 5, headerID: "door.evidenceDetails"))
