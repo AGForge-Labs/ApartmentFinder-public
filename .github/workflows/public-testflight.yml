@@ -7,6 +7,11 @@ on:
         required: true
         type: boolean
         default: false
+      skip_regression_tests:
+        description: Owner-requested direct build and internal upload without regression tests
+        required: false
+        type: boolean
+        default: false
       expected_commit:
         description: Exact reviewed 40-character main commit, including this workflow
         required: true
@@ -43,6 +48,7 @@ jobs:
   validate_shard:
     if: >-
       github.event_name == 'workflow_dispatch' && inputs.authorize_upload &&
+      !inputs.skip_regression_tests &&
       github.repository == 'AGForge-Labs/ApartmentFinder-public' && !github.event.repository.private &&
       github.actor_id == '105477711' && github.triggering_actor == 'Galaxybigbird' &&
       github.ref == 'refs/heads/main' && github.run_attempt == 1
@@ -79,7 +85,7 @@ jobs:
         run: python3 -B scripts/public-release-current-ui-risk.py
   validate:
     needs: validate_shard
-    if: ${{ always() }}
+    if: ${{ always() && !inputs.skip_regression_tests }}
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -92,7 +98,14 @@ jobs:
           test "$VALIDATION_RESULT" = success
   release:
     needs: validate
-    if: ${{ needs.validate.result == 'success' }}
+    if: >-
+      always() && !cancelled() &&
+      github.event_name == 'workflow_dispatch' && inputs.authorize_upload &&
+      github.repository == 'AGForge-Labs/ApartmentFinder-public' && !github.event.repository.private &&
+      github.actor_id == '105477711' && github.triggering_actor == 'Galaxybigbird' &&
+      github.ref == 'refs/heads/main' && github.run_attempt == 1 &&
+      (needs.validate.result == 'success' ||
+       (inputs.skip_regression_tests && !inputs.accept_known_map_regression && !inputs.accept_current_ui_test_risk))
     environment:
       name: release
     runs-on: macos-15-intel
