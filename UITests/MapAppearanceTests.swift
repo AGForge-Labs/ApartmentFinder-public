@@ -20,13 +20,24 @@ final class MapAppearanceTests: XCTestCase {
         let style = app.buttons["mini.mapStyle"]
         XCTAssertTrue(style.waitForExistence(timeout: 5), "The delivery map needs a map-type control")
         expectStyle("Satellite", on: app.buttons.matching(identifier: "mini.mapStyle"))
-        let firstPin = app.buttons["mini.pin.2.tuscano-unit-county-2187653-2066"]
-        let secondPin = app.buttons["mini.pin.3.tuscano-unit-county-2187691-2137"]
-        XCTAssertTrue(firstPin.waitForExistence(timeout: 5))
-        XCTAssertTrue(secondPin.exists)
+        let pinIdentifiers = ["mini.pin.2.tuscano-unit-county-2187653-2066",
+                              "mini.pin.3.tuscano-unit-county-2187691-2137"]
+        let firstPin = app.buttons[pinIdentifiers[0]]
+        let secondPin = app.buttons[pinIdentifiers[1]]
+        // Keep the original five-second readiness budget, but require both
+        // exact buttons in one usable snapshot before measuring settlement.
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            self.coherentPinFrames(pinIdentifiers, in: app) != nil
+        }, object: nil)
+        let readiness = XCTWaiter.wait(for: [ready], timeout: 5)
+        if readiness != .completed {
+            mapAppearanceDiagnostics(app, stage: "initial pin snapshots unavailable", pins: [firstPin, secondPin])
+        }
+        XCTAssertEqual(readiness, .completed, "Both map pins must have finite nonempty snapshots before measuring settlement")
+        guard readiness == .completed else { return }
         capture(app, "Compact pointed pins on the satellite map")
 
-        let initialPinFrames = waitForSettledPins([firstPin, secondPin], in: app)
+        let initialPinFrames = waitForSettledPins(pinIdentifiers, in: app)
         guard initialPinFrames.count == 2 else { return }
         let initialFrame = initialPinFrames[0]
         let initialX = initialFrame.midX
@@ -109,7 +120,7 @@ final class MapAppearanceTests: XCTestCase {
                    withVelocity: XCUIGestureVelocity(rawValue: 50), thenHoldForDuration: 0.5)
         // MapKit can keep moving after XCTest reports the drag complete. Measure
         // the settled pan, not a transient frame before the style menu opens.
-        let pannedPinFrames = waitForSettledPins([firstPin, secondPin], in: app, movingFrom: initialPinFrames)
+        let pannedPinFrames = waitForSettledPins(pinIdentifiers, in: app, movingFrom: initialPinFrames)
         guard pannedPinFrames.count == 2 else { return }
         let originalTip = CGPoint(x: pannedPinFrames[0].midX, y: pannedPinFrames[0].maxY)
         let secondTip = CGPoint(x: pannedPinFrames[1].midX, y: pannedPinFrames[1].maxY)
@@ -184,28 +195,47 @@ final class MapAppearanceTests: XCTestCase {
                        "The visible map type must update to \(name)", file: file, line: line)
     }
 
-    private func waitForSettledPins(_ pins: [XCUIElement], in app: XCUIApplication,
+    private func coherentPinFrames(_ identifiers: [String], in app: XCUIApplication) -> [CGRect]? {
+        guard !identifiers.isEmpty, Set(identifiers).count == identifiers.count,
+              let snapshot = try? app.snapshot() else { return nil }
+        var framesByIdentifier: [String: [CGRect]] = [:]
+        var visited = 0, truncated = false
+        func visit(_ node: XCUIElementSnapshot) {
+            guard visited < 4096 else { truncated = true; return }
+            visited += 1
+            if node.elementType == .button && identifiers.contains(node.identifier) {
+                framesByIdentifier[node.identifier, default: []].append(node.frame)
+            }
+            for child in node.children {
+                if truncated { break }
+                visit(child)
+            }
+        }
+        visit(snapshot)
+        guard !truncated else { return nil }
+        var frames: [CGRect] = []
+        for identifier in identifiers {
+            guard let matches = framesByIdentifier[identifier], matches.count == 1,
+                  let frame = matches.first, !frame.isEmpty,
+                  [frame.minX, frame.minY, frame.maxX, frame.maxY].allSatisfy(\.isFinite) else { return nil }
+            frames.append(frame)
+        }
+        return frames
+    }
+
+    private func waitForSettledPins(_ identifiers: [String], in app: XCUIApplication,
                                     movingFrom baseline: [CGRect]? = nil,
                                     file: StaticString = #filePath, line: UInt = #line) -> [CGRect] {
+        let pins = identifiers.map { app.buttons[$0] }
         var previous: [CGRect] = []
         var settledFrames: [CGRect] = []
         var stableSince: Date?
         let settled = NSPredicate { _, _ in
-            var frames: [CGRect] = []
-            for pin in pins {
-                // A temporarily culled annotation is not a settled frame. Read
-                // one guarded snapshot instead of querying frame on a missing pin.
-                guard pin.exists, let snapshot = try? pin.snapshot() else {
-                    previous = []; settledFrames = []; stableSince = nil
-                    return false
-                }
-                let frame = snapshot.frame
-                guard !frame.isEmpty,
-                      [frame.minX, frame.minY, frame.maxX, frame.maxY].allSatisfy(\.isFinite) else {
-                    previous = []; settledFrames = []; stableSince = nil
-                    return false
-                }
-                frames.append(frame)
+            // Resolve both identities from one hierarchy snapshot. Separate
+            // exists/frame requests can observe different accessibility trees.
+            guard let frames = self.coherentPinFrames(identifiers, in: app) else {
+                previous = []; settledFrames = []; stableSince = nil
+                return false
             }
             // Unchanged pre-gesture snapshots are not evidence of a settled pan.
             // Keep the existing movement threshold and the same total wait budget.
