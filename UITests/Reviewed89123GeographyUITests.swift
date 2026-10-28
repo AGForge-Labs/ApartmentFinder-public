@@ -172,7 +172,11 @@ final class Reviewed89123GeographyUITests: XCTestCase {
         waitForCount(pins(containing: "entrance-estimate:octave-apartments:"), 1)
         XCTAssertTrue(estimate.label.contains("Estimated"))
         XCTAssertFalse(estimate.label.contains("Checked door"))
-        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Estimated")
+        let mapped = app.buttons["mini.pin.8.octave-apartments:source-unit-area:112686"]
+        XCTAssertTrue(mapped.waitForExistence(timeout: 5))
+        XCTAssertTrue(mapped.label.contains("Map location"))
+        XCTAssertFalse(mapped.label.contains("Checked door"))
+        XCTAssertEqual(app.staticTexts["mini.evidenceStatus"].label, "Choose location")
         expandEvidence()
         let warning = app.descendants(matching: .any).matching(identifier: "mini.entranceSideWarning").firstMatch
         XCTAssertTrue(evidenceAppears(warning, timeout: 5))
@@ -180,7 +184,7 @@ final class Reviewed89123GeographyUITests: XCTestCase {
             XCTAssertTrue(warning.label.contains(qualifier), "Missing current Octave qualifier: \(qualifier)")
         }
         XCTAssertFalse(warning.label.contains("Actual entrance floor, elevation and ground stair approach are unknown"))
-        XCTAssertEqual(app.buttons["mini.prepare"].label, "Check / correct estimated pin")
+        XCTAssertEqual(app.buttons["mini.prepare"].label, "Choose building / door")
         XCTAssertFalse(app.buttons["mini.navigate"].exists)
         // The current estimate summary does not expose the retained historical
         // alias detail. Core tests cover that provenance; this UI check verifies
