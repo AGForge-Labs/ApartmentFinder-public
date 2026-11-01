@@ -87,8 +87,8 @@ struct ApartmentDoorPreparationView: View {
                                 MapReader { proxy in
                                     Map(position: $camera) {
                                         if let coordinate {
-                                            if let estimate = chosen?.entranceSideEstimate {
-                                                Marker(estimate.sharedUnits.count > 1 ? "Entry area for \(estimate.sharedUnits.joined(separator: "/"))" : estimate.label,
+                                            if chosen?.entranceSideEstimate != nil {
+                                                Marker("Unit \(stop.unit)",
                                                        coordinate: coordinate.cl).tint(.orange)
                                             } else {
                                                 Marker("Unit \(stop.unit)", coordinate: coordinate.cl).tint(.teal)
