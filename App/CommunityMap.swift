@@ -105,9 +105,8 @@ private struct OfflineMap: View {
                                  with: .color(place.entranceSideEstimate != nil ? .orange : chosen ? .yellow : place.kind == .door ? .mint : .cyan.opacity(0.7)))
                     if chosen || (scale > 3 && !place.unit.isEmpty) {
                         let label: String
-                        if let estimate = place.entranceSideEstimate {
-                            let units = estimate.sharedUnits.isEmpty ? place.unit : estimate.sharedUnits.joined(separator: "/")
-                            label = "\(units) · Estimated"
+                        if place.entranceSideEstimate != nil {
+                            label = "\(place.unit) · Estimated"
                         } else { label = place.unit.isEmpty ? place.kind.label : place.unit }
                         context.draw(Text(label).font(.caption2.bold()).foregroundColor(.white),
                                      at: CGPoint(x: p.x, y: p.y - 14))
@@ -189,9 +188,8 @@ private final class PinAnnotation: NSObject, MKAnnotation {
     init(_ place: Place) {
         recordID = place.id; coordinate = place.coordinate.cl
         isEntranceSideEstimate = place.entranceSideEstimate != nil
-        if let estimate = place.entranceSideEstimate {
-            let units = estimate.sharedUnits.isEmpty ? place.unit : estimate.sharedUnits.joined(separator: "/")
-            title = "Unit \(units)"
+        if place.entranceSideEstimate != nil {
+            title = "Unit \(place.unit)"
             subtitle = place.pinEvidenceLabel
         } else {
             title = place.unit.isEmpty ? place.kind.label : "Unit \(place.unit)"
