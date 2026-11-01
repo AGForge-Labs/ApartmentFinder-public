@@ -62,13 +62,11 @@ struct ApartmentDeliveryMap: View {
             return frontageDistance + estimate.workingAllowanceMeters
         }
         var estimateReferenceLabel: String? {
-            guard let estimate = place.entranceSideEstimate else { return nil }
-            let units = estimate.sharedUnits.isEmpty ? stop.unit : estimate.sharedUnits.joined(separator: "/")
-            return [units, place.building.isEmpty ? nil : "B\(place.building)"].compactMap { $0 }.joined(separator: " · ")
+            guard place.entranceSideEstimate != nil else { return nil }
+            return [stop.unit, place.building.isEmpty ? nil : "B\(place.building)"].compactMap { $0 }.joined(separator: " · ")
         }
         var status: String {
-            let shared = place.entranceSideEstimate?.sharedUnits ?? []
-            let label = place.pinEvidenceLabel + (shared.count > 1 ? ", units " + shared.joined(separator: "/") : "")
+            let label = place.pinEvidenceLabel
             return stop.completed ? "Delivered, \(label)" : label
         }
 
