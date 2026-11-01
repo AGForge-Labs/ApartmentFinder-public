@@ -51,8 +51,8 @@ COVERAGE_NOTES = [
     'New Silverado-area records may have only a verified property name and street address. Missing unit maps remain explicit research gaps.',
     'Public map geometry is unconfirmed. OpenStreetMap contributors attribution and ODbL requirements apply to retained OSM paths.',
 ]
-# Mirrors the dedicated compiled-public-bundle reader, not private/import budgets.
-RESOURCE_LIMITS = {'public-catalog.json': 3_000_000, 'public-locations.geojson': 64_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
+# Live public-feed preparation budget; immutable bundles and private imports keep their separate reader limits.
+RESOURCE_LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 64_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
 RESOURCE_NAMES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson', 'known-addresses.json')
 
 

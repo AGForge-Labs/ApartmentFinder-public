@@ -11,7 +11,7 @@ public struct PublicCatalogUpdateManifest: Codable, Sendable, Equatable {
         public let sha256: String
     }
     public static let fileNames = ["public-catalog.json", "public-locations.geojson", "public-paths.geojson"]
-    static let limits = ["public-catalog.json": 3_000_000, "public-locations.geojson": 64_000_000, "public-paths.geojson": 16_000_000]
+    static let limits = ["public-catalog.json": 16_000_000, "public-locations.geojson": 64_000_000, "public-paths.geojson": 16_000_000]
     static let maximumBytes = 16_384
     public let schemaVersion: Int
     public let revision: String

@@ -16,7 +16,8 @@ SPEC = importlib.util.spec_from_file_location('public_feed_admission', Path(__fi
 ADMISSION = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ADMISSION)
 FILES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson')
-LIMITS = {'public-catalog.json': 3_000_000, 'public-locations.geojson': 64_000_000,
+LEGACY_CATALOG_LIMIT = 3_000_000
+LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 64_000_000,
           'public-paths.geojson': 16_000_000}
 INPUT_LIMITS = dict(LIMITS, **{'known-addresses.json': 2_000_000, 'public-catalog-review.json': 100_000})
 MANIFEST_LIMIT = 16_384
@@ -178,6 +179,9 @@ def existing_feed(output):
     pointers = [output / name for name in ('latest.json', 'latest-v2.json') if present(output / name)]
     for latest in pointers:
         current, body = read_manifest(latest)
+        if latest.name == 'latest.json':
+            require(current['files']['public-catalog.json']['bytes'] <= LEGACY_CATALOG_LIMIT,
+                    'Legacy public catalog exceeds its byte limit')
         require(any(item == current and stored == body for item, stored in history), 'Latest manifest has no identical verified revision')
     require(pointers or not history, 'Existing revisions have no selected manifest; inspect the incomplete staging feed')
     return [item for item, _ in history]
@@ -213,6 +217,9 @@ def prepare(directory, output, revision, sequence, previous_manifest=None, lates
         require(not any('digitalLocker' in c for c in catalog['communities']) and set(catalog['scopeZIPs']) <= legacy_zips,
                 'Expanded valley and locker payloads require latest-v2.json; preserve the legacy app feed')
     bodies = {name: compact(objects[name]) for name in FILES}
+    if latest_name == 'latest.json':
+        require(len(bodies['public-catalog.json']) <= LEGACY_CATALOG_LIMIT,
+                'Larger catalogs require latest-v2.json; preserve the legacy catalog byte limit')
     for name, body in bodies.items():
         require(len(body) <= LIMITS[name] and decode(body) == objects[name], 'Canonical payload exceeds its limit or changed JSON values')
     manifest = dict(schemaVersion=1, revision=revision, sequence=sequence,
