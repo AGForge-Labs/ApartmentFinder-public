@@ -67,10 +67,9 @@ public struct EntranceSideEstimate: Codable, Hashable, Sendable {
         } else {
             floorText = "Unit floor unknown"
         }
-        let shared = sharedUnits.count > 1 ? "Shared units " + sharedUnits.joined(separator: "/") + " · " : ""
         let allowance = workingAllowanceMeters.rounded() == workingAllowanceMeters
             ? String(format: "%.0f", workingAllowanceMeters) : String(workingAllowanceMeters)
-        return "\(shared)\(floorText) · Door unverified · \(allowance) m working allowance (uncalibrated)"
+        return "\(floorText) · Door unverified · \(allowance) m working allowance (uncalibrated)"
     }
 
     public var summary: String {

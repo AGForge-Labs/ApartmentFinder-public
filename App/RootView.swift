@@ -471,9 +471,6 @@ private struct FinderView: View {
 struct PlaceRow: View {
     var place: Place
     private var title: String {
-        if let estimate = place.entranceSideEstimate, estimate.sharedUnits.count > 1 {
-            return "Entry area for \(estimate.sharedUnits.joined(separator: "/"))"
-        }
         return place.unit.isEmpty ? place.kind.label : "Unit \(place.unit)"
     }
     var body: some View {
