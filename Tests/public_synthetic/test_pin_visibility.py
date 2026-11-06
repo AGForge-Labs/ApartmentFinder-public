@@ -144,7 +144,7 @@ class PinVisibilityTests(unittest.TestCase):
         source = (ROOT / 'App/NativeDeliveryMap.swift').read_text()
         self.assertIn('parent.select(pin.stopID)', source)
         self.assertIn('accessibilityTraits = .button', source)
-        self.assertIn('"mini.pin.\\(pin.sequence).\\(pin.placeID)"', source)
+        self.assertIn('"mini.pin.\\(pin.sequenceID).\\(pin.placeID)"', source)
         self.assertNotIn('accessibilityRepresentation', source)
         self.assertNotIn('accessibilityChildren', source)
         ui = (ROOT / 'UITests/OnTracFlowTests.swift').read_text()

@@ -10,6 +10,7 @@ struct NativeDeliveryMap: UIViewRepresentable {
         let stopID: String
         let placeID: String
         let coordinate: Coordinate
+        let sequenceID: Int
         let sequence: String
         let unit: String
         let building: String
@@ -260,7 +261,7 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 #endif
                 view.configure(content: content, bottomAnchored: true)
                 view.zPriority = pin.selected ? .max : .defaultUnselected
-                view.accessibilityIdentifier = "mini.pin.\(pin.sequence).\(pin.placeID)"
+                view.accessibilityIdentifier = "mini.pin.\(pin.sequenceID).\(pin.placeID)"
                 view.accessibilityLabel = "Stop \(pin.sequence), unit \(pin.unit), building \(pin.building), \(pin.status)"
             } else if let locker = annotation.locker {
                 view.configure(content: AnyView(DigitalLockerMapPin(evidence: locker)), bottomAnchored: true)
