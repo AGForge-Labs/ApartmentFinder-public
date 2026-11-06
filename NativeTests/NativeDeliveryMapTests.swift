@@ -1,4 +1,5 @@
 import XCTest
+import SwiftUI
 import MapKit
 import ApartmentCore
 @testable import ApartmentFinder
