@@ -40,16 +40,22 @@ struct DigitalLockerMapPin: View {
             }.foregroundStyle(.white).fixedSize()
         }.buttonStyle(.plain).frame(minWidth: 44, minHeight: 44)
             .accessibilityLabel(evidence.statusLabel)
-            .sheet(isPresented: $details) {
-                NavigationStack {
-                    Form {
-                        Text(evidence.brand ?? "Digital package lockers").font(.headline)
-                        if let placement = evidence.placementDescription { Text(placement) }
-                        if let point = evidence.point { Text(point.precision == .sourceMapped ? "Location from source map" : "Approximate location") }
-                        Text("Checked \(evidence.checkedAt)")
-                    }.navigationTitle("Digital lockers").navigationBarTitleDisplayMode(.inline)
-                        .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { details = false } } }
-                }.presentationDetents([.medium])
-            }
+            .sheet(isPresented: $details) { DigitalLockerDetails(evidence: evidence) }
+    }
+}
+
+struct DigitalLockerDetails: View {
+    let evidence: DigitalLockerEvidence
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            Form {
+                Text(evidence.brand ?? "Digital package lockers").font(.headline)
+                if let placement = evidence.placementDescription { Text(placement) }
+                if let point = evidence.point { Text(point.precision == .sourceMapped ? "Location from source map" : "Approximate location") }
+                Text("Checked \(evidence.checkedAt)")
+            }.navigationTitle("Digital lockers").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+        }.presentationDetents([.medium])
     }
 }
