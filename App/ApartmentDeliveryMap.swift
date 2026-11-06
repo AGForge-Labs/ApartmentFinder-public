@@ -24,13 +24,8 @@ struct ApartmentDeliveryMap: View {
     #if DEBUG && targetEnvironment(simulator)
     var syntheticMapObservation: ((SyntheticMiniRouteMapObservation) -> Void)? = nil
     #endif
-    #if DEBUG && targetEnvironment(simulator)
-    @State private var syntheticCameraRegion: MKCoordinateRegion?
-    @State private var syntheticCameraCenter: Coordinate?
-    @State private var syntheticLockerAnnotationAppeared = false
-    #endif
-    @Namespace private var mapScope
     @State private var camera: MapCameraPosition = .automatic
+    @State private var cameraCommand: UInt64 = 0
     @State private var following = MiniRouteMapFollowingState()
     @State private var mapHeading: Double = 0
     @State private var mapDistance: Double = 350
@@ -38,6 +33,7 @@ struct ApartmentDeliveryMap: View {
     @State private var viewport: CGSize = .zero
     @State private var pinProjectionRevision: UInt64 = 0
     @State private var showingPropertyForDistantUser = false
+    @State private var showingLockerDetails = false
     #if DEBUG && targetEnvironment(simulator)
     @State private var pinHostSnapshot = ""
     @State private var diagnosticMapCenter: CLLocationCoordinate2D?
@@ -117,60 +113,7 @@ struct ApartmentDeliveryMap: View {
     var body: some View {
         let pins = pins
         let guides = guides(pins)
-        MapReader { proxy in
-            Map(position: $camera, scope: mapScope) {
-                ForEach(pins.filter { $0.place.entranceSideEstimate != nil }) { pin in
-                    if let estimate = pin.place.entranceSideEstimate {
-                        MapCircle(center: pin.place.coordinate.cl, radius: pin.estimatedAreaRadius)
-                            .foregroundStyle(.orange.opacity(0.12))
-                            .stroke(.orange.opacity(0.55), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                        if estimate.frontage.count >= 2 {
-                            MapPolyline(coordinates: estimate.frontage.map(\.cl))
-                                .stroke(.orange.opacity(0.8), style: StrokeStyle(lineWidth: 3, dash: [4, 3]))
-                        }
-                    }
-                }
-                ForEach(guides) { guide in
-                    MapPolyline(coordinates: guide.coordinates)
-                        .stroke(.teal.opacity(0.75), style: StrokeStyle(lineWidth: 3, dash: [6, 5]))
-                }
-                if pins.isEmpty {
-                    if !contextAreas.isEmpty {
-                        ForEach(contextAreas) { area in
-                            Marker("\(area.building) area · unit location unknown", systemImage: "building.2", coordinate: area.coordinate.cl).tint(.orange)
-                        }
-                    } else if let center = group.coordinate {
-                        Marker("Community area", systemImage: "building.2", coordinate: center.cl).tint(.secondary)
-                    }
-                }
-                if let locker = store.digitalLocker(groupID: group.id), locker.status == .present, let point = locker.point {
-                    Annotation("Digital package lockers", coordinate: point.coordinate.cl, anchor: .bottom) {
-                        DigitalLockerMapPin(evidence: locker).accessibilityIdentifier("mini.digitalLocker")
-                            #if DEBUG && targetEnvironment(simulator)
-                            .onAppear {
-                                if syntheticMapObservation != nil { syntheticLockerAnnotationAppeared = true }
-                            }
-                            .onDisappear {
-                                if syntheticMapObservation != nil { syntheticLockerAnnotationAppeared = false }
-                            }
-                            #endif
-                    }
-                }
-                if let fix = location.fix, fix.usable(at: .now) {
-                    Annotation("You", coordinate: fix.coordinate.cl) {
-                        MapLocationDirection(direction: location.direction, mapHeading: mapHeading,
-                                             accessibilityID: "mini.userLocation")
-                    }
-                }
-            }
-            .mapStyle(mapStyle.mapStyle)
-            .mapControls { }
-            .overlay {
-                projectedPins(pins, proxy: proxy, revision: pinProjectionRevision)
-            }
-            .overlay(alignment: .topTrailing) {
-                MapCompass(scope: mapScope).padding(12)
-            }
+        nativeMap(pins, guides: guides)
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 4) {
                     coverageLabel(pins)
@@ -204,42 +147,18 @@ struct ApartmentDeliveryMap: View {
                     .padding(12).padding(.trailing, 75).accessibilityIdentifier("mini.locationStatus")
             }
             .automaticMapLocation(location)
+            .sheet(isPresented: $showingLockerDetails) {
+                if let locker = store.digitalLocker(groupID: group.id) { DigitalLockerDetails(evidence: locker) }
+            }
             .background {
                 GeometryReader { geometry in
                     Color.clear.onAppear { viewport = geometry.size; followLocation() }
                         .onChange(of: geometry.size) { _, size in
                             viewport = size; following.viewportChanged(); followLocation()
                         }
-                        #if DEBUG && targetEnvironment(simulator)
-                        .onChange(of: pinProjectionRevision) { _, _ in
-                            emitSyntheticMapObservation(proxy: proxy, size: geometry.size)
-                        }
-                        .onChange(of: syntheticLockerAnnotationAppeared) { _, _ in
-                            emitSyntheticMapObservation(proxy: proxy, size: geometry.size)
-                        }
-                        #endif
                 }
             }
             .onAppear { followLocation() }
-            .onMapCameraChange(frequency: .continuous) { context in
-                mapHeading = context.camera.heading
-                mapDistance = context.camera.distance
-                // A pan can change projection without changing heading or distance.
-                pinProjectionRevision &+= 1
-                #if DEBUG && targetEnvironment(simulator)
-                if syntheticMapObservation != nil {
-                    syntheticCameraRegion = context.region
-                    syntheticCameraCenter = Coordinate(context.camera.centerCoordinate)
-                }
-                #endif
-                if camera.positionedByUser || following.mode == .manual {
-                    following.userMoved(distance: context.camera.distance)
-                }
-                #if DEBUG && targetEnvironment(simulator)
-                diagnosticMapCenter = context.camera.centerCoordinate
-                if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
-                #endif
-            }
             .onChange(of: location.fix?.timestamp) { _, _ in
                 followLocation()
             }
@@ -255,46 +174,52 @@ struct ApartmentDeliveryMap: View {
                 else if following.mode == .overview { fitAll(pins, includeLocation: true) }
             }
             // Choosing/advancing a delivery changes its highlight, not the user's camera/follow choice.
-        }
+    }
+
+    private func nativeMap(_ pins: [Pin], guides: [OrderGuide]) -> NativeDeliveryMap {
+        var map = NativeDeliveryMap(pins: pins.map { pin in
+            .init(id: pin.id, stopID: pin.stop.id, placeID: pin.place.id, coordinate: pin.place.coordinate,
+                sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
+                status: pin.status, ready: pin.ready, completed: pin.stop.completed,
+                selected: pin.stop.id == focusedStopID, estimated: pin.place.verification == .estimated,
+                referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · B\(pin.place.building) area" : nil),
+                radius: pin.estimatedAreaRadius, frontage: pin.place.entranceSideEstimate?.frontage ?? [])
+        }, areas: pins.isEmpty ? contextAreas : [], community: group.coordinate,
+            locker: store.digitalLocker(groupID: group.id), fix: location.fix, direction: location.direction,
+            camera: camera, style: mapStyle, select: select,
+            userMoved: { distance in following.userMoved(distance: distance) },
+            cameraSettled: { map in
+                mapHeading = map.camera.heading
+                mapDistance = map.camera.centerCoordinateDistance
+                pinProjectionRevision &+= 1
+                #if DEBUG && targetEnvironment(simulator)
+                diagnosticMapCenter = map.centerCoordinate
+                if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
+                #endif
+            })
+        map.guides = guides.map { $0.coordinates.map(Coordinate.init) }
+        map.cameraCommand = cameraCommand
+        map.selectLocker = { showingLockerDetails = true }
+        #if DEBUG && targetEnvironment(simulator)
+        map.observe = { map in emitSyntheticMapObservation(map: map) }
+        map.pinHostSnapshot = { pinHostSnapshot = $0 }
+        #endif
+        return map
     }
 
     #if DEBUG && targetEnvironment(simulator)
-    private func emitSyntheticMapObservation(proxy: MapProxy, size: CGSize) {
+    private func emitSyntheticMapObservation(map: MKMapView) {
         guard let observe = syntheticMapObservation,
               group.id == "fictional-locker-only",
-              let region = syntheticCameraRegion, let center = syntheticCameraCenter,
               let locker = store.digitalLocker(groupID: group.id), locker.status == .present,
               let point = locker.point else { return }
-        observe(SyntheticMiniRouteMapObservation(center: center, span: region.span,
-            viewport: size, lockerCoordinate: point.coordinate,
-            lockerProjectedPoint: proxy.convert(point.coordinate.cl, to: .local),
-            lockerAnnotationAppeared: syntheticLockerAnnotationAppeared))
+        let lockerAnnotation = map.annotations.first { ($0 as? NativeDeliveryMap.Annotation)?.id == "locker" }
+        observe(SyntheticMiniRouteMapObservation(center: Coordinate(map.centerCoordinate), span: map.region.span,
+            viewport: map.bounds.size, lockerCoordinate: point.coordinate,
+            lockerProjectedPoint: map.convert(point.coordinate.cl, toPointTo: map),
+            lockerAnnotationAppeared: lockerAnnotation.flatMap { map.view(for: $0) } != nil))
     }
     #endif
-    private func projectedPins(_ pins: [Pin], proxy: MapProxy, revision: UInt64) -> some View {
-        GeometryReader { geometry in
-            ForEach(pins) { pin in
-                if let point = proxy.convert(pin.place.coordinate.cl, to: .local),
-                   point.x.isFinite, point.y.isFinite,
-                   CGRect(origin: .zero, size: geometry.size).contains(point) {
-                    ProjectedDeliveryPinPosition(point: point, cameraRevision: revision) {
-                        #if DEBUG && targetEnvironment(simulator)
-                        if SyntheticPinHostProbe.enabled && store.pack?.catalog.packVersion == "fictional-ontrac-v1" &&
-                            group.id == "fictional-courtyard" && pin.place.id == "fictional-position-4102" {
-                            pinButton(pin, point: point, viewport: geometry.size)
-                                .background { SyntheticPinHostProbe { pinHostSnapshot = $0 } }
-                        } else { pinButton(pin, point: point, viewport: geometry.size) }
-                        #else
-                        pinButton(pin, point: point, viewport: geometry.size)
-                        #endif
-                    }
-                    // Stacked floors retain their exact source coordinates. The
-                    // focused unit must own the visible marker and its tap target.
-                    .zIndex(pin.stop.id == focusedStopID ? 1 : 0)
-                }
-            }
-        }.clipped()
-    }
 
     @ViewBuilder private func coverageLabel(_ pins: [Pin]) -> some View {
         let label = Text(coverage(pins)).font(.caption.bold()).accessibilityIdentifier("mini.coverage")
@@ -356,20 +281,12 @@ struct ApartmentDeliveryMap: View {
         // Direct camera updates avoid interpolating a 359-to-0 degree crossing through a full turn.
         camera = .camera(MapCamera(centerCoordinate: center.cl, distance: following.distance,
                                    heading: followedHeading, pitch: 0))
+        cameraCommand &+= 1
     }
 
-    private func pinButton(_ pin: Pin, point: CGPoint, viewport: CGSize) -> some View {
-        Button { select(pin.stop.id) } label: {
-            DeliveryMapPin(sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
-                           color: pin.color, selected: focusedStopID == pin.stop.id, estimated: pin.place.verification == .estimated,
-                           referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · B\(pin.place.building) area" : nil))
-                .contentShape(ProjectedDeliveryPinHitRegion(point: point, viewport: viewport))
-        }.buttonStyle(.plain)
-            .accessibilityLabel("Stop \(pin.stop.sequenceLabel), unit \(pin.stop.unit), building \(pin.place.building), \(pin.status)")
-            .accessibilityIdentifier("mini.pin.\(pin.stop.sequence).\(pin.place.id)")
-    }
     private func center(_ coordinate: Coordinate, meters: Double) {
         withAnimation { camera = .region(MKCoordinateRegion(center: coordinate.cl, latitudinalMeters: meters, longitudinalMeters: meters)) }
+        cameraCommand &+= 1
     }
     private func fitAll(_ pins: [Pin], includeLocation: Bool = false) {
         var coordinates = pins.map { $0.place.coordinate }
@@ -389,9 +306,9 @@ struct ApartmentDeliveryMap: View {
         }
         let padding = 75 * MKMapPointsPerMeterAtLatitude(first.latitude)
         camera = .rect(rect.insetBy(dx: -padding, dy: -padding))
+        cameraCommand &+= 1
     }
 }
-
 /// Each map action owns one accessible 44-point target. A paused text label must
 /// not widen all three controls or turn their shared background into a large disc.
 private struct DeliveryMapControlButtonStyle: ButtonStyle {
@@ -400,60 +317,5 @@ private struct DeliveryMapControlButtonStyle: ButtonStyle {
             .frame(width: 44, height: 44)
             .background(.regularMaterial, in: Circle())
             .contentShape(Circle()).opacity(configuration.isPressed ? 0.65 : 1)
-    }
-}
-
-/// Clip only each button's hit area. A viewport-wide content shape would consume
-/// gestures on clear map background before MapKit could pan or zoom.
-private struct ProjectedDeliveryPinHitRegion: Shape {
-    let point: CGPoint
-    let viewport: CGSize
-
-    func path(in bounds: CGRect) -> Path {
-        let mapInButton = CGRect(x: bounds.midX - point.x, y: bounds.maxY - point.y,
-                                 width: viewport.width, height: viewport.height)
-        let visibleButton = bounds.intersection(mapInButton)
-        return Path { path in
-            if !visibleButton.isNull && !visibleButton.isEmpty { path.addRect(visibleButton) }
-        }
-    }
-}
-
-/// Place the actual visible button's tip at its map coordinate. Keeping the
-/// control in the map overlay avoids MapKit's custom-annotation hosting path.
-private struct ProjectedDeliveryPinPosition<Content: View>: View {
-    let point: CGPoint
-    // A pure pan must invalidate this view even when heading and distance stay equal.
-    let cameraRevision: UInt64
-    private let content: Content
-    @State private var measuredSize: CGSize?
-
-    init(point: CGPoint, cameraRevision: UInt64, @ViewBuilder content: () -> Content) {
-        self.point = point
-        self.cameraRevision = cameraRevision
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .fixedSize()
-            .background {
-                GeometryReader { geometry in
-                    Color.clear
-                        .onAppear { recordSize(geometry.size) }
-                        .onChange(of: geometry.size) { _, size in recordSize(size) }
-                }.allowsHitTesting(false).accessibilityHidden(true)
-            }
-            .offset(x: point.x - (measuredSize?.width ?? 0) / 2,
-                    y: point.y - (measuredSize?.height ?? 0))
-            .opacity(measuredSize == nil ? 0 : 1)
-            .allowsHitTesting(measuredSize != nil)
-            .accessibilityHidden(measuredSize == nil)
-    }
-
-    private func recordSize(_ size: CGSize) {
-        guard size.width.isFinite, size.height.isFinite, size.width > 0, size.height > 0,
-              measuredSize != size else { return }
-        measuredSize = size
     }
 }

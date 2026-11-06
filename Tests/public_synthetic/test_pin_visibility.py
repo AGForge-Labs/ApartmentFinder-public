@@ -141,11 +141,10 @@ class PinVisibilityTests(unittest.TestCase):
         self.assertIn('XCTAssertLessThan(tuscano.frame.minY, envision.frame.minY)', flow)
 
     def test_failed_grouping_is_removed_and_real_selection_acceptance_remains(self):
-        source = (ROOT / 'App/ApartmentDeliveryMap.swift').read_text()
-        button = source.split('private func pinButton(_ pin: Pin, point: CGPoint, viewport: CGSize) -> some View {', 1)[1].split('\n    private func center', 1)[0]
-        self.assertIn('Button { select(pin.stop.id) } label:', button)
-        self.assertNotIn('.accessibilityElement(children: .combine)', button)
-        self.assertIn('.accessibilityIdentifier("mini.pin.\\(pin.stop.sequence).\\(pin.place.id)")', button)
+        source = (ROOT / 'App/NativeDeliveryMap.swift').read_text()
+        self.assertIn('parent.select(pin.stopID)', source)
+        self.assertIn('accessibilityTraits = .button', source)
+        self.assertIn('"mini.pin.\\(pin.sequence).\\(pin.placeID)"', source)
         self.assertNotIn('accessibilityRepresentation', source)
         self.assertNotIn('accessibilityChildren', source)
         ui = (ROOT / 'UITests/OnTracFlowTests.swift').read_text()

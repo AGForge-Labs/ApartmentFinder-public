@@ -1,0 +1,350 @@
+import SwiftUI
+import MapKit
+import ApartmentCore
+
+/// MapKit owns geographic placement and animation. Camera frames never rebuild
+/// the SwiftUI delivery screen or reproject its buttons through a second layout.
+struct NativeDeliveryMap: UIViewRepresentable {
+    struct Pin: Equatable, Identifiable {
+        let id: String
+        let stopID: String
+        let placeID: String
+        let coordinate: Coordinate
+        let sequence: String
+        let unit: String
+        let building: String
+        let status: String
+        let ready: Bool
+        let completed: Bool
+        let selected: Bool
+        let estimated: Bool
+        let referenceLabel: String?
+        let radius: Double
+        let frontage: [Coordinate]
+    }
+    let pins: [Pin]
+    let areas: [Place]
+    let community: Coordinate?
+    let locker: DigitalLockerEvidence?
+    let fix: LocationFix?
+    let direction: NavigationDirection?
+    let camera: MapCameraPosition
+    let style: DeliveryMapStyle
+    let select: (String) -> Void
+    let userMoved: (Double) -> Void
+    let cameraSettled: (MKMapView) -> Void
+    var guides: [[Coordinate]] = []
+    var cameraCommand: UInt64 = 0
+    var selectLocker: (() -> Void)? = nil
+    #if DEBUG && targetEnvironment(simulator)
+    var observe: ((MKMapView) -> Void)? = nil
+    var pinHostSnapshot: ((String) -> Void)? = nil
+    #endif
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    func makeUIView(context: Context) -> MKMapView { context.coordinator.makeMapView() }
+    func updateUIView(_ view: MKMapView, context: Context) { context.coordinator.update(view, model: self) }
+    static func dismantleUIView(_ view: MKMapView, coordinator: Coordinator) {
+        view.delegate = nil
+        view.showsUserLocation = false
+    }
+
+    final class Annotation: NSObject, MKAnnotation {
+        let id: String
+        @objc dynamic var coordinate: CLLocationCoordinate2D
+        var pin: Pin?
+        var locker: DigitalLockerEvidence?
+        var title: String?
+        init(id: String, coordinate: Coordinate, pin: Pin? = nil,
+             locker: DigitalLockerEvidence? = nil, title: String? = nil) {
+            self.id = id; self.coordinate = coordinate.cl; self.pin = pin
+            self.locker = locker; self.title = title
+        }
+    }
+
+    /// Explicitly size the hosting view once per content change, avoiding the
+    /// SwiftUI Map custom-annotation sizing path that previously hid unit pins.
+    final class PinView: MKAnnotationView {
+        private let host = UIHostingController(rootView: AnyView(EmptyView()))
+        override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+            super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+            backgroundColor = .clear
+            host.view.backgroundColor = .clear
+            host.view.isUserInteractionEnabled = false
+            host.view.accessibilityElementsHidden = true
+            addSubview(host.view)
+            isAccessibilityElement = true
+            accessibilityTraits = .button
+            displayPriority = .required
+            collisionMode = .rectangle
+            canShowCallout = false
+        }
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+        func configure(content: AnyView, bottomAnchored: Bool) {
+            host.rootView = content
+            let size = host.sizeThatFits(in: CGSize(width: 320, height: 160))
+            bounds.size = CGSize(width: max(44, size.width), height: max(44, size.height))
+            host.view.frame = bounds
+            centerOffset = CGPoint(x: 0, y: bottomAnchored ? -bounds.height / 2 : 0)
+        }
+    }
+
+    final class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: NativeDeliveryMap
+        private var annotations: [String: Annotation] = [:]
+        private var previousPins: [Pin] = []
+        private var previousAreas: [Place] = []
+        private var previousCommunity: Coordinate?
+        private var previousLocker: DigitalLockerEvidence?
+        private var previousFix: LocationFix?
+        private var previousDirection: NavigationDirection?
+        private var previousStyle: DeliveryMapStyle?
+        private var cameraCommand: UInt64?
+        private var previousGuides: [[Coordinate]] = []
+        private var guideOverlays: [MKPolyline] = []
+        private var gestureInProgress = false
+        private var cameraReportPending = false
+        private var overlays: [String: [MKOverlay]] = [:]
+
+        init(_ parent: NativeDeliveryMap) { self.parent = parent }
+        func makeMapView() -> MKMapView {
+            let view = MKMapView()
+            view.delegate = self
+            view.showsUserLocation = false
+            view.showsCompass = false
+            view.isPitchEnabled = false
+            let compass = MKCompassButton(mapView: view)
+            compass.compassVisibility = .adaptive
+            compass.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(compass)
+            NSLayoutConstraint.activate([
+                compass.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+                compass.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12)
+            ])
+            return view
+        }
+
+        func update(_ view: MKMapView, model: NativeDeliveryMap) {
+            parent = model
+            if previousStyle != model.style {
+                previousStyle = model.style
+                view.preferredConfiguration = model.style == .satellite
+                    ? MKHybridMapConfiguration(elevationStyle: .flat)
+                    : MKStandardMapConfiguration(elevationStyle: .flat)
+            }
+            if previousPins != model.pins || previousAreas != model.areas ||
+                previousCommunity != model.community || previousLocker != model.locker {
+                synchronizeAnnotations(view)
+                synchronizeOverlays(view)
+                previousPins = model.pins; previousAreas = model.areas
+                previousCommunity = model.community; previousLocker = model.locker
+            }
+            if previousGuides != model.guides {
+                view.removeOverlays(guideOverlays)
+                guideOverlays = model.guides.filter { $0.count >= 2 }.map { coordinates in
+                    let line = MKPolyline(coordinates: coordinates.map(\.cl), count: coordinates.count)
+                    line.title = "stop-order"
+                    return line
+                }
+                previousGuides = model.guides
+                view.addOverlays(guideOverlays)
+            }
+            let fix = model.fix.flatMap { $0.usable(at: .now) ? $0 : nil }
+            if previousFix?.timestamp != fix?.timestamp || previousFix?.coordinate != fix?.coordinate ||
+                previousFix?.accuracy != fix?.accuracy || previousDirection != model.direction {
+                previousFix = fix; previousDirection = model.direction
+                if let fix {
+                    upsert(view, id: "user", coordinate: fix.coordinate)
+                } else if let removed = annotations.removeValue(forKey: "user") { view.removeAnnotation(removed) }
+            }
+            applyCamera(view)
+            updateDirection(view)
+        }
+
+        private func synchronizeAnnotations(_ view: MKMapView) {
+            var wanted = Set(parent.pins.map(\.id))
+            for pin in parent.pins {
+                let existing = annotations[pin.id]
+                guard existing?.pin != pin else { continue }
+                upsert(view, id: pin.id, coordinate: pin.coordinate, pin: pin)
+            }
+            if parent.pins.isEmpty {
+                for area in parent.areas {
+                    let id = "area|" + area.id; wanted.insert(id)
+                    upsert(view, id: id, coordinate: area.coordinate,
+                           title: "\(area.building) area · unit location unknown")
+                }
+                if parent.areas.isEmpty, let center = parent.community {
+                    wanted.insert("community")
+                    upsert(view, id: "community", coordinate: center, title: "Community area")
+                }
+            }
+            if let locker = parent.locker, locker.status == .present, let point = locker.point {
+                wanted.insert("locker")
+                upsert(view, id: "locker", coordinate: point.coordinate, locker: locker)
+            }
+            for id in Array(annotations.keys) where id != "user" && !wanted.contains(id) {
+                if let annotation = annotations.removeValue(forKey: id) { view.removeAnnotation(annotation) }
+            }
+        }
+
+        private func upsert(_ view: MKMapView, id: String, coordinate: Coordinate,
+                            pin: Pin? = nil, locker: DigitalLockerEvidence? = nil, title: String? = nil) {
+            if let annotation = annotations[id] {
+                if Coordinate(annotation.coordinate) != coordinate { annotation.coordinate = coordinate.cl }
+                annotation.pin = pin; annotation.locker = locker; annotation.title = title
+                if let pinView = view.view(for: annotation) as? PinView { configure(pinView, annotation: annotation) }
+            } else {
+                let annotation = Annotation(id: id, coordinate: coordinate, pin: pin, locker: locker, title: title)
+                annotations[id] = annotation
+                view.addAnnotation(annotation)
+            }
+        }
+
+        private func synchronizeOverlays(_ view: MKMapView) {
+            let old = Dictionary(uniqueKeysWithValues: previousPins.map { ($0.id, $0) })
+            let current = Dictionary(uniqueKeysWithValues: parent.pins.map { ($0.id, $0) })
+            for id in Array(overlays.keys) {
+                let a = old[id], b = current[id]
+                if a?.coordinate != b?.coordinate || a?.radius != b?.radius || a?.frontage != b?.frontage || b == nil {
+                    if let removed = overlays.removeValue(forKey: id) { view.removeOverlays(removed) }
+                }
+            }
+            for pin in parent.pins where pin.radius > 0 && overlays[pin.id] == nil {
+                let circle = MKCircle(center: pin.coordinate.cl, radius: pin.radius)
+                var additions: [MKOverlay] = [circle]
+                if pin.frontage.count >= 2 {
+                    let line = MKPolyline(coordinates: pin.frontage.map(\.cl), count: pin.frontage.count)
+                    additions.append(line)
+                }
+                overlays[pin.id] = additions
+                view.addOverlays(additions)
+            }
+        }
+
+        private func applyCamera(_ view: MKMapView) {
+            // This is a request, not a binding to every intermediate native frame.
+            // A GPS/selection redraw with the same request cannot undo a user's pan.
+            guard cameraCommand != parent.cameraCommand else { return }
+            cameraCommand = parent.cameraCommand
+            if let camera = parent.camera.camera {
+                view.setCamera(MKMapCamera(lookingAtCenter: camera.centerCoordinate,
+                    fromDistance: camera.distance, pitch: camera.pitch, heading: camera.heading), animated: false)
+            } else if let region = parent.camera.region {
+                view.setRegion(region, animated: false)
+            } else if let rect = parent.camera.rect {
+                view.setVisibleMapRect(rect, animated: false)
+            }
+        }
+
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            guard let annotation = annotation as? Annotation else { return nil }
+            let view = (mapView.dequeueReusableAnnotationView(withIdentifier: "delivery") as? PinView)
+                ?? PinView(annotation: annotation, reuseIdentifier: "delivery")
+            view.annotation = annotation
+            configure(view, annotation: annotation)
+            return view
+        }
+
+        private func configure(_ view: PinView, annotation: Annotation) {
+            // A recycled GPS arrow must never leave a delivery marker rotated.
+            view.transform = .identity
+            if let pin = annotation.pin {
+                let color: Color = pin.completed ? .gray : pin.ready ? .teal : .orange
+                var content = AnyView(DeliveryMapPin(sequence: pin.sequence, unit: pin.unit, building: pin.building,
+                    color: color, selected: pin.selected, estimated: pin.estimated, referenceLabel: pin.referenceLabel))
+                #if DEBUG && targetEnvironment(simulator)
+                if SyntheticPinHostProbe.enabled && pin.placeID == "fictional-position-4102" {
+                    content = AnyView(content.background { SyntheticPinHostProbe { [weak self] in self?.parent.pinHostSnapshot?($0) } })
+                }
+                #endif
+                view.configure(content: content, bottomAnchored: true)
+                view.zPriority = pin.selected ? .max : .defaultUnselected
+                view.accessibilityIdentifier = "mini.pin.\(pin.sequence).\(pin.placeID)"
+                view.accessibilityLabel = "Stop \(pin.sequence), unit \(pin.unit), building \(pin.building), \(pin.status)"
+            } else if let locker = annotation.locker {
+                view.configure(content: AnyView(DigitalLockerMapPin(evidence: locker)), bottomAnchored: true)
+                view.accessibilityIdentifier = "mini.digitalLocker"
+                view.accessibilityLabel = locker.statusLabel
+            } else if annotation.id == "user" {
+                view.configure(content: AnyView(MapLocationDirection(direction: parent.direction,
+                    mapHeading: parent.direction?.degrees ?? 0, accessibilityID: "mini.userLocation")), bottomAnchored: false)
+                view.accessibilityIdentifier = "mini.userLocation"
+                view.accessibilityLabel = parent.direction == nil ? "Your current location" : "Your current location and travel direction"
+                view.accessibilityValue = parent.direction.map { "Direction \(Int($0.degrees.rounded()) % 360) degrees" } ?? "Direction unavailable"
+            } else {
+                view.configure(content: AnyView(Image(systemName: "building.2.fill").font(.title2)
+                    .foregroundStyle(.orange).padding(8).background(.regularMaterial, in: Circle())), bottomAnchored: true)
+                view.accessibilityIdentifier = "mini.communityArea"
+                view.accessibilityLabel = annotation.title
+            }
+            if annotation.pin == nil { view.zPriority = .defaultUnselected }
+            if annotation.id == "user" { view.accessibilityTraits = .image }
+            else { view.accessibilityTraits = .button }
+        }
+
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            guard let annotation = view.annotation as? Annotation else { return }
+            if let pin = annotation.pin { parent.select(pin.stopID) }
+            else if annotation.locker != nil { parent.selectLocker?() }
+            // Selection belongs to the manifest; avoid an unrelated MapKit callout state.
+            mapView.deselectAnnotation(annotation, animated: false)
+        }
+
+        private func updateDirection(_ view: MKMapView) {
+            guard let annotation = annotations["user"], let pin = view.view(for: annotation) else { return }
+            let angle = parent.direction.map { NavigationDirection.relativeAngle(heading: $0.degrees, mapHeading: view.camera.heading) } ?? 0
+            pin.transform = CGAffineTransform(rotationAngle: angle * .pi / 180)
+        }
+
+        func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
+            updateDirection(mapView)
+            if !gestureInProgress && hasActiveGesture(mapView) {
+                gestureInProgress = true
+                parent.userMoved(mapView.camera.centerCoordinateDistance)
+            }
+        }
+        private func hasActiveGesture(_ view: UIView) -> Bool {
+            // Discrete double-tap and two-finger-tap zooms skip began/changed.
+            if view.gestureRecognizers?.contains(where: { $0.state == .began || $0.state == .changed || $0.state == .ended }) == true { return true }
+            return view.subviews.contains(where: hasActiveGesture)
+        }
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            let userGesture = gestureInProgress
+            gestureInProgress = false
+            guard !cameraReportPending else { return }
+            cameraReportPending = true
+            DispatchQueue.main.async { [weak self, weak mapView] in
+                guard let self, let mapView else { return }
+                self.cameraReportPending = false
+                if userGesture { self.parent.userMoved(mapView.camera.centerCoordinateDistance) }
+                self.parent.cameraSettled(mapView)
+                #if DEBUG && targetEnvironment(simulator)
+                self.parent.observe?(mapView)
+                #endif
+            }
+        }
+        func mapView(_ mapView: MKMapView, didAdd views: [MKAnnotationView]) {
+            updateDirection(mapView)
+            #if DEBUG && targetEnvironment(simulator)
+            DispatchQueue.main.async { [weak self, weak mapView] in
+                if let mapView { self?.parent.observe?(mapView) }
+            }
+            #endif
+        }
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let circle = overlay as? MKCircle {
+                let renderer = MKCircleRenderer(circle: circle)
+                renderer.fillColor = UIColor.systemOrange.withAlphaComponent(0.12)
+                renderer.strokeColor = UIColor.systemOrange.withAlphaComponent(0.55)
+                renderer.lineWidth = 1; renderer.lineDashPattern = [4, 3]
+                return renderer
+            }
+            guard let line = overlay as? MKPolyline else { return MKOverlayRenderer(overlay: overlay) }
+            let renderer = MKPolylineRenderer(polyline: line)
+            renderer.strokeColor = line.title == "stop-order" ? UIColor.systemTeal.withAlphaComponent(0.75) : UIColor.systemOrange.withAlphaComponent(0.8)
+            renderer.lineWidth = 3; renderer.lineDashPattern = line.title == "stop-order" ? [6, 5] : [4, 3]
+            return renderer
+        }
+    }
+}
