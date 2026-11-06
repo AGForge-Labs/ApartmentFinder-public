@@ -179,7 +179,7 @@ struct ApartmentDeliveryMap: View {
     private func nativeMap(_ pins: [Pin], guides: [OrderGuide]) -> NativeDeliveryMap {
         var map = NativeDeliveryMap(pins: pins.map { pin in
             .init(id: pin.id, stopID: pin.stop.id, placeID: pin.place.id, coordinate: pin.place.coordinate,
-                sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
+                sequenceID: pin.stop.sequence, sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                 status: pin.status, ready: pin.ready, completed: pin.stop.completed,
                 selected: pin.stop.id == focusedStopID, estimated: pin.place.verification == .estimated,
                 referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · B\(pin.place.building) area" : nil),
