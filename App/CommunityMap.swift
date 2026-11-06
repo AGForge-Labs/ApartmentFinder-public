@@ -208,15 +208,20 @@ private final class LockerAnnotation: NSObject, MKAnnotation {
 }
 
 private final class AppLocationAnnotation: NSObject, MKAnnotation {
-    let coordinate: CLLocationCoordinate2D
+    @objc dynamic var coordinate: CLLocationCoordinate2D
     let title: String? = "Your GPS position"
     init(_ fix: LocationFix) { coordinate = fix.coordinate.cl }
 }
 enum AppOwnedMapLocation {
     static func update(_ view: MKMapView, fix: LocationFix?, at now: Date) {
         view.showsUserLocation = false
-        view.removeAnnotations(view.annotations.filter { $0 is AppLocationAnnotation })
-        if let fix, fix.usable(at: now) { view.addAnnotation(AppLocationAnnotation(fix)) }
+        let existing = view.annotations.compactMap { $0 as? AppLocationAnnotation }
+        if let fix, fix.usable(at: now) {
+            if let annotation = existing.first {
+                if Coordinate(annotation.coordinate) != fix.coordinate { annotation.coordinate = fix.coordinate.cl }
+                view.removeAnnotations(Array(existing.dropFirst()))
+            } else { view.addAnnotation(AppLocationAnnotation(fix)) }
+        } else { view.removeAnnotations(existing) }
     }
 }
 private struct StreetMap: UIViewRepresentable {

@@ -57,6 +57,12 @@ final class AppStore: ObservableObject {
     }
     var knownApartmentAddresses: [String] { communities.flatMap(\.matchingAddresses) + personal.apartmentRules.map(\.address) + personal.apartmentRules.compactMap(\.matchingAddress) }
     var places: [Place] { mergedPlaces }
+    /// Reuse the index rebuilt with catalog/personal changes instead of scanning
+    /// the entire valley on every live-location redraw of Finder.
+    func places(in communityID: String?) -> [Place] {
+        guard let communityID else { return [] }
+        return apartmentPlacesByCommunity[communityID] ?? []
+    }
     var paths: [PathSegment] {
         var records = Dictionary((pack?.paths ?? []).map { ($0.id,$0) }, uniquingKeysWith: { _,last in last })
         for path in personal.paths { records[path.id] = path }
