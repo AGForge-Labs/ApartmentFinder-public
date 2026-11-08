@@ -84,6 +84,7 @@ public enum RouteCSV {
         }
         let ranks = Dictionary(uniqueKeysWithValues: numberedOffsets.enumerated().map { ($0.element, $0.offset + 1) })
         var result = RouteImport(stops: [], errors: []), sequences = Set<Int>()
+        let addresses = DeliveryAddress.Resolver(knownAddresses: knownAddresses)
         if fileOrder && rows.count > 1 { result.warnings.append("Some OnTrac stop numbers are missing. Using the file's order; it may not match your delivery route.") }
         for (offset, parsedRow) in rows.dropFirst().enumerated() {
             let row = parsedRow.fields, label = "Row \(parsedRow.physicalLine)"
@@ -97,7 +98,7 @@ public enum RouteCSV {
             guard let sequence, sequence > 0, !rawAddress.isEmpty else { result.errors.append("\(label): positive sequence and address required."); continue }
             guard sequences.insert(sequence).inserted else { result.errors.append("\(label): duplicate sequence \(sequence)."); continue }
             let unit = isOnTrac ? "" : row[columns.firstIndex(of: "unit")!].trimmingCharacters(in: .whitespacesAndNewlines)
-            let parsed = DeliveryAddress.resolve(rawAddress, unit: unit, knownAddresses: knownAddresses)
+            let parsed = addresses.resolve(rawAddress, unit: unit)
             guard !parsed.hasConflictingUnit else { result.errors.append("\(label): address and unit columns name different apartments."); continue }
             let notes = isOnTrac ? "" : row[columns.firstIndex(of: "notes")!].trimmingCharacters(in: .whitespacesAndNewlines)
             result.stops.append(DeliveryStop(sequence: sequence, address: parsed.address, unit: parsed.unit, notes: notes,

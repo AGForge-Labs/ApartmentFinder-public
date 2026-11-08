@@ -3,7 +3,7 @@ import ApartmentCore
 
 /// A map owns foreground GPS only for its visible lifetime. Multiple maps may overlap in a sheet.
 private struct MapLocationSession: ViewModifier {
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @Environment(\.scenePhase) private var scenePhase
     @State private var owner = UUID()
     @State private var visible = false

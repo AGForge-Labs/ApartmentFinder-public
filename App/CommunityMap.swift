@@ -24,13 +24,19 @@ struct CommunityMap: View {
     var digitalLocker: DigitalLockerEvidence? = nil
     var onSelect: (String) -> Void = { _ in }
     var onPosition: ((Coordinate) -> Void)?
+    var liveLocation: LocationService? = nil
+    private var offlineBounds: MapBounds {
+        MapBounds(coordinates: places.map(\.coordinate) + paths.flatMap(\.coordinates) + route +
+            (focus.map { [$0] } ?? []) + (digitalLocker?.point.map { [$0.coordinate] } ?? []))
+    }
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             if offline {
                 OfflineMap(places: places, paths: paths, route: route, focus: focus, fix: fix,
-                           selectedID: selectedID, digitalLocker: digitalLocker, onSelect: onSelect, onPosition: onPosition)
+                           selectedID: selectedID, digitalLocker: digitalLocker, onSelect: onSelect, onPosition: onPosition,
+                           bounds: offlineBounds, liveLocation: liveLocation)
             } else {
-                StreetMap(places: places, paths: paths, route: route, focus: focus, fix: fix,
+                StreetMap(places: places, paths: paths, route: route, focus: focus, fix: liveLocation?.fix ?? fix,
                           selectedID: selectedID, digitalLocker: digitalLocker, onSelect: onSelect, onPosition: onPosition)
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -49,11 +55,12 @@ private struct OfflineMap: View {
     var focus: Coordinate?; var fix: LocationFix?; var selectedID: String?
     var digitalLocker: DigitalLockerEvidence?
     var onSelect: (String) -> Void; var onPosition: ((Coordinate) -> Void)?
+    let bounds: MapBounds
+    let liveLocation: LocationService?
     @State private var zoom: CGFloat = 1
     @GestureState private var pinch: CGFloat = 1
     @State private var pan = CGSize.zero
     @GestureState private var drag = CGSize.zero
-    private var coordinates: [Coordinate] { places.map(\.coordinate) + paths.flatMap(\.coordinates) + route + (focus.map { [$0] } ?? []) + (digitalLocker?.point.map { [$0.coordinate] } ?? []) }
     private var selectedEstimate: EntranceSideEstimate? { places.first { $0.id == selectedID }?.entranceSideEstimate }
     private var mapAccessibilityLabel: String {
         if let selectedEstimate { return "Offline community map. \(selectedEstimate.compactNotice). Use the search results to select a unit." }
@@ -63,8 +70,8 @@ private struct OfflineMap: View {
         return "Offline community map. Use the search results to select a unit."
     }
     var body: some View {
+        let displayedFix = liveLocation?.fix ?? fix
         GeometryReader { geometry in
-            let bounds = MapBounds(coordinates: coordinates)
             let scale = max(0.5, min(30, zoom * pinch))
             let offset = CGSize(width: pan.width + drag.width, height: pan.height + drag.height)
             Canvas { context, size in
@@ -84,8 +91,12 @@ private struct OfflineMap: View {
                                    style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: path.confirmed ? [] : [5,5]))
                 }
                 context.stroke(line(route), with: .color(.mint), style: .init(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                // Leave room for captions near the edge and keep selected uncertainty
+                // geometry visible wherever it crosses the viewport.
+                let visiblePins = CGRect(origin: .zero, size: size).insetBy(dx: -96, dy: -36)
                 for place in places {
                     let p = point(place.coordinate), chosen = place.id == selectedID
+                    if !chosen && !visiblePins.contains(p) { continue }
                     if chosen, let estimate = place.entranceSideEstimate {
                         let radius = entranceSideSearchRadius(place)
                         let latitudeOffset = radius / 111_195
@@ -120,7 +131,7 @@ private struct OfflineMap: View {
                     let p = point(focus)
                     context.fill(Path(ellipseIn: .init(x: p.x-6,y: p.y-6,width: 12,height: 12)), with: .color(.yellow))
                 }
-                if let fix {
+                if let fix = displayedFix {
                     let p = point(fix.coordinate)
                     context.fill(Path(ellipseIn: .init(x: p.x-8,y: p.y-8,width: 16,height: 16)), with: .color(fix.usable(at: .now) ? .blue : .gray))
                     context.stroke(Path(ellipseIn: .init(x: p.x-8,y: p.y-8,width: 16,height: 16)), with: .color(.white), lineWidth: 2)
@@ -160,9 +171,18 @@ private struct MapBounds {
     var span: Double
     var longitudeScale: Double
     init(coordinates: [Coordinate]) {
-        let values = coordinates.filter(\.isValid)
-        let lowLat = values.map(\.latitude).min() ?? 36.05, highLat = values.map(\.latitude).max() ?? 36.05
-        let lowLon = values.map(\.longitude).min() ?? -115.28, highLon = values.map(\.longitude).max() ?? -115.28
+        var lowLat = Double.infinity, highLat = -Double.infinity
+        var lowLon = Double.infinity, highLon = -Double.infinity
+        for coordinate in coordinates where coordinate.isValid {
+            lowLat = min(lowLat, coordinate.latitude)
+            highLat = max(highLat, coordinate.latitude)
+            lowLon = min(lowLon, coordinate.longitude)
+            highLon = max(highLon, coordinate.longitude)
+        }
+        if lowLat.isInfinite {
+            lowLat = 36.05; highLat = 36.05
+            lowLon = -115.28; highLon = -115.28
+        }
         center = Coordinate(latitude: (lowLat+highLat)/2, longitude: (lowLon+highLon)/2)
         longitudeScale = cos(center.latitude * .pi/180)
         span = max(0.0015, highLat-lowLat, (highLon-lowLon)*longitudeScale)*1.25
@@ -238,17 +258,25 @@ private struct StreetMap: UIViewRepresentable {
         return view
     }
     func updateUIView(_ view: MKMapView, context: Context) {
-        context.coordinator.parent = self
-        view.showsUserLocation = false
-        let selectedEstimate = places.first { $0.id == selectedID && $0.entranceSideEstimate != nil }
-        let signature = places.hashValue ^ paths.hashValue ^ route.hashValue ^ (selectedEstimate?.id.hashValue ?? 0) ^ (digitalLocker?.hashValue ?? 0)
-        if signature != context.coordinator.signature {
-            context.coordinator.signature = signature
-            view.removeAnnotations(view.annotations.filter { !($0 is MKUserLocation) })
+        let coordinator = context.coordinator
+        let previous = coordinator.parent
+        let firstUpdate = !coordinator.hasLoadedContent
+        let placesChanged = firstUpdate || previous.places != places
+        coordinator.parent = self
+        if placesChanged {
+            view.removeAnnotations(view.annotations.filter { $0 is PinAnnotation })
             view.addAnnotations(places.map(PinAnnotation.init))
+        }
+        if firstUpdate || previous.digitalLocker != digitalLocker {
+            view.removeAnnotations(view.annotations.filter { $0 is LockerAnnotation })
             if let locker = digitalLocker, locker.status == .present, let point = locker.point {
                 view.addAnnotation(LockerAnnotation(evidence: locker, point: point))
             }
+        }
+        let selectedEstimate = placesChanged || previous.selectedID != selectedID
+            ? places.first { $0.id == selectedID && $0.entranceSideEstimate != nil }
+            : coordinator.selectedEstimate
+        if firstUpdate || previous.paths != paths || previous.route != route || coordinator.selectedEstimate != selectedEstimate {
             view.removeOverlays(view.overlays)
             for path in paths {
                 let line = MKPolyline(coordinates: path.coordinates.map(\.cl),count: path.coordinates.count)
@@ -266,6 +294,8 @@ private struct StreetMap: UIViewRepresentable {
                 let line = MKPolyline(coordinates: route.map(\.cl),count: route.count); line.title = "route"; view.addOverlay(line)
             }
         }
+        coordinator.selectedEstimate = selectedEstimate
+        coordinator.hasLoadedContent = true
         AppOwnedMapLocation.update(view, fix: fix, at: .now)
         let lockerAnchor = digitalLocker?.status == .present ? digitalLocker?.point?.coordinate : nil
         let anchor = focus ?? places.first?.coordinate ?? lockerAnchor
@@ -278,24 +308,33 @@ private struct StreetMap: UIViewRepresentable {
         view.showsUserLocation = false; view.delegate = nil
     }
     final class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: StreetMap; var signature: Int?; var anchor: Coordinate?
+        var parent: StreetMap
+        var hasLoadedContent = false
+        var selectedEstimate: Place?
+        var anchor: Coordinate?
         init(_ parent: StreetMap) { self.parent = parent }
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
             if annotation is LockerAnnotation {
-                let view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "digital-locker")
+                let view = (mapView.dequeueReusableAnnotationView(withIdentifier: "digital-locker") as? MKMarkerAnnotationView)
+                    ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "digital-locker")
+                view.annotation = annotation
                 view.markerTintColor = .systemPurple; view.glyphImage = UIImage(systemName: "shippingbox.fill")
                 view.canShowCallout = true; view.accessibilityIdentifier = "community.digitalLocker"
                 return view
             }
             if let pin = annotation as? PinAnnotation, pin.isEntranceSideEstimate {
-                let view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "estimated-entry")
+                let view = (mapView.dequeueReusableAnnotationView(withIdentifier: "estimated-entry") as? MKMarkerAnnotationView)
+                    ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "estimated-entry")
+                view.annotation = annotation
                 view.markerTintColor = .systemOrange; view.glyphImage = UIImage(systemName: "exclamationmark.triangle.fill")
                 view.canShowCallout = true
                 view.accessibilityLabel = [pin.title, pin.subtitle].compactMap { $0 }.joined(separator: ". ")
                 return view
             }
             guard annotation is AppLocationAnnotation else { return nil }
-            let view = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "app-location")
+            let view = (mapView.dequeueReusableAnnotationView(withIdentifier: "app-location") as? MKMarkerAnnotationView)
+                ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "app-location")
+            view.annotation = annotation
             view.markerTintColor = .systemBlue; view.glyphImage = UIImage(systemName: "location.fill")
             return view
         }

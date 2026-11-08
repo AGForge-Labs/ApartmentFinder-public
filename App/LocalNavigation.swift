@@ -28,7 +28,7 @@ final class LocalNavigation: ObservableObject {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .voicePrompt, options: [.duckOthers])
         location.start(navigation: true)
         if let announcement = session.announcement { say(announcement) }
-        subscription = location.$fix.receive(on: RunLoop.main).sink { [weak self] fix in self?.lastFix = fix; self?.update() }
+        subscription = location.fixUpdates.receive(on: RunLoop.main).sink { [weak self] fix in self?.lastFix = fix; self?.update() }
         timer = Timer.publish(every: 2, on: .main, in: .common).autoconnect().sink { [weak self] _ in self?.update() }
     }
     func stop() {

@@ -18,36 +18,19 @@ struct SyntheticMiniRouteMapObservation {
 struct ApartmentDeliveryMap: View {
     let group: ApartmentGroup
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     let selectedStopID: String?
     let select: (String) -> Void
     #if DEBUG && targetEnvironment(simulator)
     var syntheticMapObservation: ((SyntheticMiniRouteMapObservation) -> Void)? = nil
     #endif
-    @State private var camera: MapCameraPosition = .automatic
-    @State private var cameraCommand: UInt64 = 0
-    @State private var following = MiniRouteMapFollowingState()
-    @State private var mapHeading: Double = 0
-    @State private var mapDistance: Double = 350
-    @State private var followedHeading: Double = 0
-    @State private var viewport: CGSize = .zero
-    @State private var pinProjectionRevision: UInt64 = 0
-    @State private var showingPropertyForDistantUser = false
-    @State private var showingLockerDetails = false
-    #if DEBUG && targetEnvironment(simulator)
-    @State private var pinHostSnapshot = ""
-    @State private var diagnosticMapCenter: CLLocationCoordinate2D?
-    #endif
-    @AppStorage(DeliveryMapStyle.preferenceKey) private var mapStyle = DeliveryMapStyle.satellite
-    private var focusedStopID: String? { selectedStopID ?? group.nextStop?.id }
 
-    private struct Pin: Identifiable {
+    private struct Pin {
         let stop: DeliveryStop
         let place: Place
         let ready: Bool
         var buildingReference: Bool { place.referenceKind != nil }
         var id: String { stop.id + "|" + place.id }
-        var color: Color { stop.completed ? .gray : ready ? .teal : .orange }
         var estimatedAreaRadius: CLLocationDistance {
             guard let estimate = place.entranceSideEstimate else { return 0 }
             let origin = CLLocation(latitude: place.coordinate.latitude, longitude: place.coordinate.longitude)
@@ -67,11 +50,7 @@ struct ApartmentDeliveryMap: View {
         }
 
     }
-    private struct OrderGuide: Identifiable {
-        let id: String
-        let coordinates: [CLLocationCoordinate2D]
-    }
-    private var pins: [Pin] {
+    private func pins(focusedStopID: String?) -> [Pin] {
         let raw = group.stops.flatMap { stop -> [Pin] in
             let match = store.doorMatch(stop, groupID: group.id)
             let places = match.readyDoor.map { [$0] } ?? match.candidates
@@ -85,21 +64,12 @@ struct ApartmentDeliveryMap: View {
         }
         return raw.filter { !$0.buildingReference || chosen[$0.place.id]?.stop.id == $0.stop.id }
     }
-    private var contextAreas: [Place] { store.buildingAreaReferences(groupID: group.id) }
-    private var fallbackCoordinates: [Coordinate] {
-        let areas = contextAreas.map(\.coordinate)
-        if !areas.isEmpty { return areas }
-        if let coordinate = group.coordinate { return [coordinate] }
-        guard let locker = store.digitalLocker(groupID: group.id), locker.status == .present,
-              let point = locker.point else { return [] }
-        return [point.coordinate]
-    }
-    private func guides(_ pins: [Pin]) -> [OrderGuide] {
+    private func guides(_ pins: [Pin]) -> [[Coordinate]] {
         let byStop = Dictionary(grouping: pins.filter { !$0.buildingReference && $0.place.entranceSideEstimate == nil }, by: { $0.stop.id })
         // Only connect adjacent, unambiguous locations; never bridge a missing unit.
         return zip(group.stops, group.stops.dropFirst()).compactMap { first, second in
             guard let a = byStop[first.id], a.count == 1, let b = byStop[second.id], b.count == 1 else { return nil }
-            return OrderGuide(id: first.id, coordinates: [a[0].place.coordinate.cl, b[0].place.coordinate.cl])
+            return [a[0].place.coordinate, b[0].place.coordinate]
         }
     }
     private func coverage(_ pins: [Pin]) -> String {
@@ -111,15 +81,86 @@ struct ApartmentDeliveryMap: View {
     }
 
     var body: some View {
-        let pins = pins
-        let guides = guides(pins)
-        nativeMap(pins, guides: guides)
+        let focusedStopID = selectedStopID ?? group.nextStop?.id
+        let pins = self.pins(focusedStopID: focusedStopID)
+        let areas = pins.isEmpty ? store.buildingAreaReferences(groupID: group.id) : []
+        let locker = store.digitalLocker(groupID: group.id)
+        let coordinates: [Coordinate]
+        if !pins.isEmpty {
+            coordinates = pins.map { $0.place.coordinate }
+        } else if !areas.isEmpty {
+            coordinates = areas.map(\.coordinate)
+        } else if let coordinate = group.coordinate {
+            coordinates = [coordinate]
+        } else if let locker, locker.status == .present, let point = locker.point {
+            coordinates = [point.coordinate]
+        } else {
+            coordinates = []
+        }
+        let map = ApartmentDeliveryMapScene(
+            groupID: group.id, community: group.coordinate, pins: pins.map { pin in
+                .init(id: pin.id, stopID: pin.stop.id, placeID: pin.place.id, coordinate: pin.place.coordinate,
+                    sequenceID: pin.stop.sequence, sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
+                    status: pin.status, ready: pin.ready, completed: pin.stop.completed,
+                    selected: pin.stop.id == focusedStopID, estimated: pin.place.verification == .estimated,
+                    referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · B\(pin.place.building) area" : nil),
+                    radius: pin.estimatedAreaRadius, frontage: pin.place.entranceSideEstimate?.frontage ?? [])
+            }, guides: guides(pins), areas: areas, frameCoordinates: coordinates, coverage: coverage(pins),
+            locker: locker, location: location, select: select)
+        #if DEBUG && targetEnvironment(simulator)
+        var observedMap = map
+        observedMap.syntheticMapObservation = syntheticMapObservation
+        return observedMap
+        #else
+        return map
+        #endif
+    }
+}
+
+/// Live camera and GPS changes only update this scene. Route pins and uncertainty
+/// geometry are resolved by its parent when the store or selected stop changes.
+private struct ApartmentDeliveryMapScene: View {
+    let groupID: String
+    let community: Coordinate?
+    let pins: [NativeDeliveryMap.Pin]
+    let guides: [[Coordinate]]
+    let areas: [Place]
+    let frameCoordinates: [Coordinate]
+    let coverage: String
+    let locker: DigitalLockerEvidence?
+    let location: LocationService
+    let select: (String) -> Void
+    @State private var camera: MapCameraPosition = .automatic
+    @State private var cameraCommand: UInt64 = 0
+    @State private var following = MiniRouteMapFollowingState()
+    @State private var mapHeading: Double = 0
+    @State private var mapDistance: Double = 350
+    @State private var followedHeading: Double = 0
+    @State private var viewport: CGSize = .zero
+    @State private var showingPropertyForDistantUser = false
+    @State private var showingLockerDetails = false
+    #if DEBUG && targetEnvironment(simulator)
+    var syntheticMapObservation: ((SyntheticMiniRouteMapObservation) -> Void)? = nil
+    @State private var pinProjectionRevision: UInt64 = 0
+    @State private var pinHostSnapshot = ""
+    @State private var diagnosticMapCenter: CLLocationCoordinate2D?
+    #endif
+    @AppStorage(DeliveryMapStyle.preferenceKey) private var mapStyle = DeliveryMapStyle.satellite
+
+    private struct CameraLocation: Equatable {
+        let coordinate: Coordinate?
+        let heading: Double?
+    }
+    private var usableFix: LocationFix? { location.fix.flatMap { $0.usable(at: .now) ? $0 : nil } }
+
+    var body: some View {
+        nativeMap
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 4) {
-                    coverageLabel(pins)
+                    coverageLabel
                     if !guides.isEmpty { Text("Dashed line: stop order only").font(.caption2) }
                     if pins.isEmpty {
-                        Text(!contextAreas.isEmpty ? "Building areas only · unit location unknown" : group.coordinate == nil ? "Community location not mapped" : "Community area · doors not mapped").font(.caption2)
+                        Text(!areas.isEmpty ? "Building areas only · unit location unknown" : community == nil ? "Community location not mapped" : "Community area · doors not mapped").font(.caption2)
                             .accessibilityIdentifier("mini.communityLocation")
                     }
                     if showingPropertyForDistantUser {
@@ -134,7 +175,8 @@ struct ApartmentDeliveryMap: View {
                     DeliveryMapStyleControl(selection: $mapStyle, accessibilityID: "mini.mapStyle")
                         .background(.regularMaterial, in: Circle())
                     Button("Show all stops", systemImage: "arrow.up.left.and.arrow.down.right") {
-                        following.showOverview(); fitAll(pins, includeLocation: true)
+                        following.showOverview()
+                        fitAll(includeLocation: true)
                     }
                     followingControl
                 }.labelStyle(.iconOnly).buttonStyle(DeliveryMapControlButtonStyle())
@@ -148,7 +190,7 @@ struct ApartmentDeliveryMap: View {
             }
             .automaticMapLocation(location)
             .sheet(isPresented: $showingLockerDetails) {
-                if let locker = store.digitalLocker(groupID: group.id) { DigitalLockerDetails(evidence: locker) }
+                if let locker { DigitalLockerDetails(evidence: locker) }
             }
             .background {
                 GeometryReader { geometry in
@@ -158,46 +200,35 @@ struct ApartmentDeliveryMap: View {
                         }
                 }
             }
-            .onAppear { followLocation() }
-            .onChange(of: location.fix?.timestamp) { _, _ in
-                followLocation()
+            .onChange(of: CameraLocation(coordinate: usableFix?.coordinate, heading: location.direction?.degrees)) { old, new in
+                followLocation(headingOnly: old.coordinate == new.coordinate)
             }
-            .onChange(of: location.direction?.degrees) { _, _ in followLocation() }
-            .onChange(of: pins.map { "\($0.id)|\($0.place.coordinate.latitude)|\($0.place.coordinate.longitude)" }) { _, _ in
-                if following.isFollowing {
-                    followLocation()
-                }
-                else if following.mode == .overview { fitAll(pins, includeLocation: true) }
-            }
-            .onChange(of: group.coordinate) { _, _ in
+            .onChange(of: frameCoordinates) { _, _ in
                 if following.isFollowing { followLocation() }
-                else if following.mode == .overview { fitAll(pins, includeLocation: true) }
+                else if following.mode == .overview { fitAll(includeLocation: true) }
             }
             // Choosing/advancing a delivery changes its highlight, not the user's camera/follow choice.
     }
 
-    private func nativeMap(_ pins: [Pin], guides: [OrderGuide]) -> NativeDeliveryMap {
-        var map = NativeDeliveryMap(pins: pins.map { pin in
-            .init(id: pin.id, stopID: pin.stop.id, placeID: pin.place.id, coordinate: pin.place.coordinate,
-                sequenceID: pin.stop.sequence, sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
-                status: pin.status, ready: pin.ready, completed: pin.stop.completed,
-                selected: pin.stop.id == focusedStopID, estimated: pin.place.verification == .estimated,
-                referenceLabel: pin.estimateReferenceLabel ?? (pin.buildingReference ? "Unit \(pin.stop.unit) · B\(pin.place.building) area" : nil),
-                radius: pin.estimatedAreaRadius, frontage: pin.place.entranceSideEstimate?.frontage ?? [])
-        }, areas: pins.isEmpty ? contextAreas : [], community: group.coordinate,
-            locker: store.digitalLocker(groupID: group.id), fix: location.fix, direction: location.direction,
+    private var nativeMap: NativeDeliveryMap {
+        var map = NativeDeliveryMap(pins: pins, areas: areas, community: community,
+            locker: locker, fix: location.fix, direction: location.direction,
             camera: camera, style: mapStyle, select: select,
-            userMoved: { distance in following.userMoved(distance: distance) },
+            userMoved: { distance in
+                var updatedFollowing = following
+                updatedFollowing.userMoved(distance: distance)
+                if updatedFollowing != following { following = updatedFollowing }
+            },
             cameraSettled: { map in
-                mapHeading = map.camera.heading
-                mapDistance = map.camera.centerCoordinateDistance
-                pinProjectionRevision &+= 1
+                if mapHeading != map.camera.heading { mapHeading = map.camera.heading }
+                if mapDistance != map.camera.centerCoordinateDistance { mapDistance = map.camera.centerCoordinateDistance }
                 #if DEBUG && targetEnvironment(simulator)
+                pinProjectionRevision &+= 1
                 diagnosticMapCenter = map.centerCoordinate
                 if SyntheticPinHostProbe.enabled { SyntheticUIDiagnostics.pinHostCameraChanged() }
                 #endif
             })
-        map.guides = guides.map { $0.coordinates.map(Coordinate.init) }
+        map.guides = guides
         map.cameraCommand = cameraCommand
         map.selectLocker = { showingLockerDetails = true }
         #if DEBUG && targetEnvironment(simulator)
@@ -210,8 +241,8 @@ struct ApartmentDeliveryMap: View {
     #if DEBUG && targetEnvironment(simulator)
     private func emitSyntheticMapObservation(map: MKMapView) {
         guard let observe = syntheticMapObservation,
-              group.id == "fictional-locker-only",
-              let locker = store.digitalLocker(groupID: group.id), locker.status == .present,
+              groupID == "fictional-locker-only",
+              let locker, locker.status == .present,
               let point = locker.point else { return }
         let lockerAnnotation = map.annotations.first { ($0 as? NativeDeliveryMap.Annotation)?.id == "locker" }
         observe(SyntheticMiniRouteMapObservation(center: Coordinate(map.centerCoordinate), span: map.region.span,
@@ -221,8 +252,8 @@ struct ApartmentDeliveryMap: View {
     }
     #endif
 
-    @ViewBuilder private func coverageLabel(_ pins: [Pin]) -> some View {
-        let label = Text(coverage(pins)).font(.caption.bold()).accessibilityIdentifier("mini.coverage")
+    @ViewBuilder private var coverageLabel: some View {
+        let label = Text(coverage).font(.caption.bold()).accessibilityIdentifier("mini.coverage")
         #if DEBUG && targetEnvironment(simulator)
         if SyntheticPinHostProbe.enabled {
             label.accessibilityValue(Text(verbatim: pinHostSnapshot.isEmpty ? "pinHostProbe=notObserved" : pinHostSnapshot))
@@ -236,13 +267,14 @@ struct ApartmentDeliveryMap: View {
         if following.isFollowing {
             Button(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? propertyDescription :
                    location.direction == nil ? "Following your location" : "Following your direction",
-                   systemImage: "location.north.fill") { followLocation() }
+                   systemImage: "location.north.fill") { followLocation(force: true) }
                 .tint(.teal).accessibilityIdentifier("mini.recenter")
                 .accessibilityValue(Text(verbatim: "\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? propertyDescription : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")\(cameraChangeDiagnostic)"))
                 .accessibilityHint("Pan or zoom the map to pause following")
         } else {
             Button("Resume following", systemImage: "location.fill") {
-                following.resume(); followLocation()
+                following.resume()
+                followLocation(force: true)
             }
                 .accessibilityIdentifier("mini.recenter")
                 .accessibilityValue(Text(verbatim: "Paused, map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(cameraChangeDiagnostic)"))
@@ -252,8 +284,8 @@ struct ApartmentDeliveryMap: View {
 
     private var propertyDescription: String {
         if !pins.isEmpty { return "Showing apartment pins" }
-        if !contextAreas.isEmpty { return "Showing building areas" }
-        return group.coordinate == nil ? "Community location not mapped" : "Showing community area"
+        if !areas.isEmpty { return "Showing building areas" }
+        return community == nil ? "Community location not mapped" : "Showing community area"
     }
 
     private var cameraChangeDiagnostic: String {
@@ -267,19 +299,33 @@ struct ApartmentDeliveryMap: View {
         #endif
     }
 
-    private func followLocation() {
+    private func followLocation(force: Bool = false, headingOnly: Bool = false) {
         guard following.isFollowing, viewport.width > 0, viewport.height > 0 else { return }
-        let usableFix = location.fix.flatMap { $0.usable(at: .now) ? $0 : nil }
-        if let direction = location.direction { followedHeading = direction.degrees }
-        let positions = pins.map { $0.place.coordinate }
-        let frame = MiniRouteCameraFraming.frame(pins: positions.isEmpty ? fallbackCoordinates : positions,
+        if let direction = location.direction, followedHeading != direction.degrees { followedHeading = direction.degrees }
+        // Turning in place can use the current framing without rescanning pins.
+        if headingOnly, let requested = camera.camera {
+            requestFollowCamera(center: Coordinate(requested.centerCoordinate), distance: requested.distance, force: force)
+            return
+        }
+        let usableFix = self.usableFix
+        let frame = MiniRouteCameraFraming.frame(pins: frameCoordinates,
             fix: usableFix, at: .now, width: Double(viewport.width), height: Double(viewport.height))
-        guard let frame else { fitAll(pins); return }
-        following.adoptInitialFrame(distance: frame.distance, includesUser: frame.includesUser)
-        showingPropertyForDistantUser = usableFix != nil && !frame.includesUser && !following.hasUserChosenZoom
+        guard let frame else { fitAll(); return }
+        var updatedFollowing = following
+        updatedFollowing.adoptInitialFrame(distance: frame.distance, includesUser: frame.includesUser)
+        if updatedFollowing != following { following = updatedFollowing }
+        let distant = usableFix != nil && !frame.includesUser && !following.hasUserChosenZoom
+        if showingPropertyForDistantUser != distant { showingPropertyForDistantUser = distant }
         let center = following.hasUserChosenZoom ? usableFix?.coordinate ?? frame.center : frame.center
+        requestFollowCamera(center: center, distance: following.distance, force: force)
+    }
+
+    private func requestFollowCamera(center: Coordinate, distance: Double, force: Bool) {
+        if !force, let requested = camera.camera,
+           Coordinate(requested.centerCoordinate) == center, requested.distance == distance,
+           requested.heading == followedHeading { return }
         // Direct camera updates avoid interpolating a 359-to-0 degree crossing through a full turn.
-        camera = .camera(MapCamera(centerCoordinate: center.cl, distance: following.distance,
+        camera = .camera(MapCamera(centerCoordinate: center.cl, distance: distance,
                                    heading: followedHeading, pitch: 0))
         cameraCommand &+= 1
     }
@@ -288,16 +334,15 @@ struct ApartmentDeliveryMap: View {
         withAnimation { camera = .region(MKCoordinateRegion(center: coordinate.cl, latitudinalMeters: meters, longitudinalMeters: meters)) }
         cameraCommand &+= 1
     }
-    private func fitAll(_ pins: [Pin], includeLocation: Bool = false) {
-        var coordinates = pins.map { $0.place.coordinate }
-        if coordinates.isEmpty { coordinates = fallbackCoordinates }
+    private func fitAll(includeLocation: Bool = false) {
+        var coordinates = frameCoordinates
         if includeLocation, let fix = location.fix, fix.usable(at: .now),
            MiniRouteCameraFraming.frame(pins: coordinates, fix: fix, at: .now,
                width: Double(viewport.width), height: Double(viewport.height))?.includesUser == true {
             coordinates.append(fix.coordinate)
         }
         guard let first = coordinates.first else {
-            center(group.coordinate ?? Coordinate(latitude: 36.08, longitude: -115.29), meters: 500)
+            center(community ?? Coordinate(latitude: 36.08, longitude: -115.29), meters: 500)
             return
         }
         var rect = MKMapRect(origin: MKMapPoint(first.cl), size: MKMapSize(width: 0, height: 0))

@@ -10,7 +10,40 @@ public struct DeliveryAddress: Equatable, Sendable {
     private static let fullStreetSuffixes = ["rd": "road", "st": "street", "ave": "avenue",
         "dr": "drive", "ln": "lane", "blvd": "boulevard", "ct": "court", "wy": "way", "pkwy": "parkway"]
 
+    private struct KnownStreet: Sendable {
+        let address: String
+        let key: String
+        let length: Int
+
+        init(_ address: String) {
+            self.address = address
+            let key = LocalSearch.addressKey(address)
+            self.key = key
+            length = key.count
+        }
+    }
+
+    /// Prepare the same street matches once for a batch of delivery rows.
+    public struct Resolver: Sendable {
+        private let known: [KnownStreet]
+
+        public init(knownAddresses: [String]) {
+            // The longest street wins, with a stable tie-break for equivalent labels.
+            known = Set(knownAddresses).map(KnownStreet.init).sorted {
+                $0.length == $1.length ? $0.address < $1.address : $0.length > $1.length
+            }
+        }
+
+        public func resolve(_ input: String, unit: String = "") -> DeliveryAddress {
+            DeliveryAddress.resolve(input, unit: unit, known: known)
+        }
+    }
+
     public static func resolve(_ input: String, unit supplied: String = "", knownAddresses: [String]) -> Self {
+        Resolver(knownAddresses: knownAddresses).resolve(input, unit: supplied)
+    }
+
+    private static func resolve(_ input: String, unit supplied: String, known: [KnownStreet]) -> Self {
         var street = input.trimmingCharacters(in: .whitespacesAndNewlines)
         var embedded = ""
         let locality = street.range(of: LocalSearch.localitySuffixPattern, options: .regularExpression)
@@ -26,20 +59,12 @@ public struct DeliveryAddress: Equatable, Sendable {
             street = String(withoutLocality[..<range.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         }
         let key = LocalSearch.addressKey((embedded.isEmpty ? withoutLocality : street).replacingOccurrences(of: ",", with: " "), stripPostalCode: !hadLocality)
-        // Longest exact street prefix wins: "100 Road" must not swallow "100 Road North".
-        let indexed: [(address: String, key: String, length: Int)] = Set(knownAddresses).map { address in
-            let key = LocalSearch.addressKey(address)
-            return (address: address, key: key, length: key.count)
-        }
-        let known = indexed.sorted {
-            $0.length == $1.length ? $0.address < $1.address : $0.length > $1.length
-        }
         for entry in known {
             let candidate = entry.address, candidateKey = entry.key
             guard !candidateKey.isEmpty else { continue }
             if key == candidateKey { street = candidate; break }
             if embedded.isEmpty && key.hasPrefix(candidateKey + " ") {
-                let suffix = String(key.dropFirst(candidateKey.count + 1))
+                let suffix = String(key.dropFirst(entry.length + 1))
                 // A contact address may repeat the same unit on its own line. This is one
                 // address field, not a reason to discard or merge separate delivery rows.
                 let units = suffix.split(separator: " ")

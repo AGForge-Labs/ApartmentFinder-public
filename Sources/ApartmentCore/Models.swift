@@ -222,7 +222,7 @@ public struct CoreError: LocalizedError, Equatable {
     public var errorDescription: String? { message }
 }
 
-public struct LocationFix: Codable, Sendable {
+public struct LocationFix: Codable, Equatable, Sendable {
     public var coordinate: Coordinate
     public var accuracy: Double
     public var timestamp: Date
