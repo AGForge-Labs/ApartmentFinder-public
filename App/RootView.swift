@@ -5,7 +5,7 @@ import ApartmentCore
 @MainActor
 struct RootView: View {
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @StateObject private var imports = ManifestImportCoordinator()
     @StateObject private var finderNavigation = LocalNavigation()
     @AppStorage("offlineMap") private var offline = true
@@ -79,7 +79,7 @@ struct RootView: View {
 
 private struct FinderView: View {
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @ObservedObject var navigation: LocalNavigation
     @Binding var offline: Bool
     @State private var initialized = false
@@ -155,16 +155,15 @@ private struct FinderView: View {
                     if let community {
                         DigitalLockerStatusView(evidence: community.digitalLocker, sources: store.pack?.catalog.sources ?? [])
                         CommunityMap(places: communityPlaces,paths: communityPaths,route: navigation.route?.coordinates ?? [],
-                                     focus: selected?.coordinate ?? community.coordinate,fix: location.fix,selectedID: selected?.id,offline: offline,digitalLocker: community.digitalLocker,
+                                     focus: selected?.coordinate ?? community.coordinate,fix: nil,selectedID: selected?.id,offline: offline,digitalLocker: community.digitalLocker,
                                      onSelect: { id in
                                          if let place = communityPlaces.first(where: { $0.id == id }) { select(place) }
-                                     })
+                                     }, liveLocation: location)
                             .frame(height: 320).clipShape(RoundedRectangle(cornerRadius: 20))
                             .automaticMapLocation(location)
                             .accessibilityIdentifier("finder.map")
                         HStack {
-                            Label(location.status,systemImage: "location").font(.caption).foregroundStyle(.secondary)
-                                .accessibilityIdentifier("finder.locationStatus")
+                            FinderLocationStatus(location: location)
                             Spacer()
                             Button { location.start() } label: { Image(systemName: "location.circle").font(.title2) }.accessibilityLabel("Start GPS")
                             Toggle("Local map",isOn: $offline).font(.caption).fixedSize()
@@ -468,6 +467,17 @@ private struct FinderView: View {
     }
 }
 
+private struct FinderLocationStatus: View {
+    let location: LocationService
+
+    var body: some View {
+        Label(location.status, systemImage: "location")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .accessibilityIdentifier("finder.locationStatus")
+    }
+}
+
 struct PlaceRow: View {
     var place: Place
     private var title: String {
@@ -607,7 +617,7 @@ struct CommunityPicker: View {
 
 struct LocalRoutePlanner: View {
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @ObservedObject var navigation: LocalNavigation
     var destination: Place
     @Environment(\.dismiss) private var dismiss

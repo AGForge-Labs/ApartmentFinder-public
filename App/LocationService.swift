@@ -1,6 +1,7 @@
 import Foundation
 import CoreLocation
 import Combine
+import Observation
 import ApartmentCore
 
 /// Injected only by native/UI tests; the shipping app uses CLLocationManager.
@@ -22,26 +23,29 @@ protocol LocationManaging: AnyObject {
 }
 extension CLLocationManager: LocationManaging {}
 
-final class LocationService: NSObject, ObservableObject, CLLocationManagerDelegate {
-    @Published private(set) var fix: LocationFix?
-    @Published private(set) var direction: NavigationDirection?
-    @Published var status = "Location is off"
-    @Published private(set) var recording = false
-    @Published private(set) var recordingNeedsFinish = false
-    @Published private(set) var recordingInterruption: String?
-    @Published private(set) var recorded: [Coordinate] = []
-    private var tracking = LocationTrackingState()
-    private var directionTracking = NavigationDirectionState()
-    private var pathRecording = ContinuousPathRecording()
-    private var freshnessTimer: AnyCancellable?
+@Observable
+final class LocationService: NSObject, CLLocationManagerDelegate {
+    private(set) var fix: LocationFix?
+    private(set) var direction: NavigationDirection?
+    var status = "Location is off"
+    private(set) var recording = false
+    private(set) var recordingNeedsFinish = false
+    private(set) var recordingInterruption: String?
+    private(set) var recorded: [Coordinate] = []
+    @ObservationIgnored private var tracking = LocationTrackingState()
+    @ObservationIgnored private var directionTracking = NavigationDirectionState()
+    @ObservationIgnored private var pathRecording = ContinuousPathRecording()
+    @ObservationIgnored private var freshnessTimer: AnyCancellable?
+    private let fixes = CurrentValueSubject<LocationFix?, Never>(nil)
+    var fixUpdates: AnyPublisher<LocationFix?, Never> { fixes.eraseToAnyPublisher() }
     private let manager: LocationManaging
     var isTrackingRequested: Bool { requested }
     private var requested: Bool { explicitRequest || mapOwners.values.contains(true) }
-    private var explicitRequest = false
-    private var mapOwners: [UUID: Bool] = [:]
-    private var updating = false
-    private var authorizationRequested = false
-    private var activeNavigation = false
+    @ObservationIgnored private var explicitRequest = false
+    @ObservationIgnored private var mapOwners: [UUID: Bool] = [:]
+    @ObservationIgnored private var updating = false
+    @ObservationIgnored private var authorizationRequested = false
+    @ObservationIgnored private var activeNavigation = false
     override convenience init() {
         #if DEBUG
         if UITestSupport.enabled {
@@ -92,15 +96,25 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     func startRecording() { pathRecording.start(); publishState(); start(navigation: true) }
     func finishRecording() { pathRecording.finish(); stop() }
     private func publishState() {
-        fix = tracking.fix
-        direction = directionTracking.direction
-        recording = pathRecording.collecting; recordingNeedsFinish = pathRecording.needsFinish
-        recordingInterruption = pathRecording.interruption; recorded = pathRecording.coordinates
+        if fix != tracking.fix {
+            fix = tracking.fix
+            fixes.send(fix)
+        }
+        publishDirection()
+        if recording != pathRecording.collecting { recording = pathRecording.collecting }
+        if recordingNeedsFinish != pathRecording.needsFinish { recordingNeedsFinish = pathRecording.needsFinish }
+        if recordingInterruption != pathRecording.interruption { recordingInterruption = pathRecording.interruption }
+        // A recording only appends samples or clears them when a new section starts.
+        if recorded.count != pathRecording.samples.count { recorded = pathRecording.coordinates }
+    }
+    private func publishDirection() {
+        if direction != directionTracking.direction { direction = directionTracking.direction }
     }
     private func refreshFreshness(at now: Date) {
         directionTracking.tick(at: now)
         tracking.tick(at: now); pathRecording.tick(at: now); publishState()
-        status = tracking.fix.map { "GPS ±\(Int($0.accuracy)) m" } ?? "Waiting for a reliable GPS fix"
+        let updatedStatus = tracking.fix.map { "GPS ±\(Int($0.accuracy)) m" } ?? "Waiting for a reliable GPS fix"
+        if status != updatedStatus { status = updatedStatus }
     }
     private func beginIfAllowed() {
         guard requested else {
@@ -157,7 +171,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         let degrees = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
         directionTracking.receiveCompass(degrees: degrees, accuracy: newHeading.headingAccuracy,
                                          timestamp: newHeading.timestamp, at: Date())
-        direction = directionTracking.direction
+        publishDirection()
     }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         guard requested, updating else { return }
@@ -169,7 +183,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
             // Compass interference does not invalidate position updates.
             if failure.code == .headingFailure {
                 directionTracking.compassUnavailable(at: Date())
-                direction = directionTracking.direction
+                publishDirection()
                 return
             }
         }

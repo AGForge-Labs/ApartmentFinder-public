@@ -4,7 +4,7 @@ import ApartmentCore
 
 struct ApartmentDoorPreparationView: View {
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     let groupID: String
     let stopID: String
     @Environment(\.dismiss) private var dismiss

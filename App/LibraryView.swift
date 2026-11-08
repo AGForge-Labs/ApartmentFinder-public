@@ -61,7 +61,7 @@ func importSelectedPrivatePack(_ result: Result<URL, Error>, into store: AppStor
 struct LibraryView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @Binding var offline: Bool
     @State private var exporting = false
     @State private var importing = false

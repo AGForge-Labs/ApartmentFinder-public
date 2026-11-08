@@ -97,13 +97,14 @@ struct NativeDeliveryMap: UIViewRepresentable {
         private var previousAreas: [Place] = []
         private var previousCommunity: Coordinate?
         private var previousLocker: DigitalLockerEvidence?
-        private var previousFix: LocationFix?
-        private var previousDirection: NavigationDirection?
+        private var previousBearing: Double?
         private var previousStyle: DeliveryMapStyle?
         private var cameraCommand: UInt64?
         private var previousGuides: [[Coordinate]] = []
         private var guideOverlays: [MKPolyline] = []
         private var gestureInProgress = false
+        private var applyingCamera = false
+        private var pendingUserMovement = false
         private var cameraReportPending = false
         private var overlays: [String: [MKOverlay]] = [:]
 
@@ -150,14 +151,24 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 previousGuides = model.guides
                 view.addOverlays(guideOverlays)
             }
-            let fix = model.fix.flatMap { $0.usable(at: .now) ? $0 : nil }
-            if previousFix?.timestamp != fix?.timestamp || previousFix?.coordinate != fix?.coordinate ||
-                previousFix?.accuracy != fix?.accuracy || previousDirection != model.direction {
-                previousFix = fix; previousDirection = model.direction
-                if let fix {
+            let bearing = model.direction?.degrees
+            if let fix = model.fix, fix.usable(at: .now) {
+                if let annotation = annotations["user"] {
+                    if Coordinate(annotation.coordinate) != fix.coordinate { annotation.coordinate = fix.coordinate.cl }
+                    if bearing != previousBearing, let marker = view.view(for: annotation) as? PinView {
+                        if (bearing == nil) != (previousBearing == nil) {
+                            configure(marker, annotation: annotation)
+                        } else {
+                            marker.accessibilityValue = directionAccessibilityValue(bearing)
+                        }
+                    }
+                } else {
                     upsert(view, id: "user", coordinate: fix.coordinate)
-                } else if let removed = annotations.removeValue(forKey: "user") { view.removeAnnotation(removed) }
+                }
+            } else if let removed = annotations.removeValue(forKey: "user") {
+                view.removeAnnotation(removed)
             }
+            previousBearing = bearing
             applyCamera(view)
             updateDirection(view)
         }
@@ -228,6 +239,8 @@ struct NativeDeliveryMap: UIViewRepresentable {
             // A GPS/selection redraw with the same request cannot undo a user's pan.
             guard cameraCommand != parent.cameraCommand else { return }
             cameraCommand = parent.cameraCommand
+            applyingCamera = true
+            defer { applyingCamera = false }
             if let camera = parent.camera.camera {
                 view.setCamera(MKMapCamera(lookingAtCenter: camera.centerCoordinate,
                     fromDistance: camera.distance, pitch: camera.pitch, heading: camera.heading), animated: false)
@@ -272,7 +285,7 @@ struct NativeDeliveryMap: UIViewRepresentable {
                     mapHeading: parent.direction?.degrees ?? 0, accessibilityID: "mini.userLocation")), bottomAnchored: false)
                 view.accessibilityIdentifier = "mini.userLocation"
                 view.accessibilityLabel = parent.direction == nil ? "Your current location" : "Your current location and travel direction"
-                view.accessibilityValue = parent.direction.map { "Direction \(Int($0.degrees.rounded()) % 360) degrees" } ?? "Direction unavailable"
+                view.accessibilityValue = directionAccessibilityValue(parent.direction?.degrees)
             } else {
                 view.configure(content: AnyView(Image(systemName: "building.2.fill").font(.title2)
                     .foregroundStyle(.orange).padding(8).background(.regularMaterial, in: Circle())), bottomAnchored: true)
@@ -292,15 +305,20 @@ struct NativeDeliveryMap: UIViewRepresentable {
             mapView.deselectAnnotation(annotation, animated: false)
         }
 
+        private func directionAccessibilityValue(_ bearing: Double?) -> String {
+            bearing.map { "Direction \(Int($0.rounded()) % 360) degrees" } ?? "Direction unavailable"
+        }
+
         private func updateDirection(_ view: MKMapView) {
             guard let annotation = annotations["user"], let pin = view.view(for: annotation) else { return }
             let angle = parent.direction.map { NavigationDirection.relativeAngle(heading: $0.degrees, mapHeading: view.camera.heading) } ?? 0
-            pin.transform = CGAffineTransform(rotationAngle: angle * .pi / 180)
+            let rotation = CGAffineTransform(rotationAngle: angle * .pi / 180)
+            if pin.transform != rotation { pin.transform = rotation }
         }
 
         func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {
             updateDirection(mapView)
-            if !gestureInProgress && hasActiveGesture(mapView) {
+            if !applyingCamera && !gestureInProgress && hasActiveGesture(mapView) {
                 gestureInProgress = true
                 parent.userMoved(mapView.camera.centerCoordinateDistance)
             }
@@ -311,14 +329,17 @@ struct NativeDeliveryMap: UIViewRepresentable {
             return view.subviews.contains(where: hasActiveGesture)
         }
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            let userGesture = gestureInProgress
+            pendingUserMovement = pendingUserMovement || gestureInProgress
             gestureInProgress = false
             guard !cameraReportPending else { return }
             cameraReportPending = true
             DispatchQueue.main.async { [weak self, weak mapView] in
                 guard let self, let mapView else { return }
                 self.cameraReportPending = false
-                if userGesture { self.parent.userMoved(mapView.camera.centerCoordinateDistance) }
+                if self.pendingUserMovement {
+                    self.pendingUserMovement = false
+                    self.parent.userMoved(mapView.camera.centerCoordinateDistance)
+                }
                 self.parent.cameraSettled(mapView)
                 #if DEBUG && targetEnvironment(simulator)
                 self.parent.observe?(mapView)

@@ -32,6 +32,7 @@ final class AppStore: ObservableObject {
     private var apartmentPlacesByCommunity: [String: [Place]] = [:]
     private var scopedApartmentPlaces: [String: [Place]] = [:]
     private var buildingAssociationsByCommunity: [String: [UnitBuildingAssociation]] = [:]
+    private var floorReferencesByCommunity: [String: [UnitFloorReference]] = [:]
     private var scopedBuildingAssociations: [String: [UnitBuildingAssociation]] = [:]
     private struct DoorMatchKey: Hashable { let groupID: String; let stop: DeliveryStop }
     private var cachedDoorMatches: [DoorMatchKey: ApartmentDoorMatch] = [:]
@@ -214,7 +215,7 @@ final class AppStore: ObservableObject {
         publicCatalogUpdateStatus = "Checking public pin data…"
         defer { catalogRefreshPending = false }
         let client = publicCatalogClient
-        let worker = Task.detached(priority: manual ? .userInitiated : .utility) { () async throws -> PublicCatalogUpdateSelection? in
+        let worker = Task.detached(priority: manual ? .userInitiated : .utility) { () async throws -> (PublicCatalogUpdateSelection, Bool)? in
             try Task.checkCancellation()
             let manifestData = try await client.latestManifest()
             let manifest = try PublicCatalogUpdateManifest.read(manifestData)
@@ -222,13 +223,14 @@ final class AppStore: ObservableObject {
             guard try publicCatalogStore.shouldInstall(manifest) else { return nil }
             let payload = try await client.payload(manifestData: manifestData)
             try Task.checkCancellation()
-            return try publicCatalogStore.install(payload)
+            let selected = try publicCatalogStore.install(payload)
+            return (selected, Self.reviewedBundleAllowed(in: publicCatalogStore, for: selected))
         }
         do {
-            let selected = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
+            let result = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
             // A returned selection has committed. Publish it even after late cancellation.
-            if let selected {
-                applyPublicCatalog(selected)
+            if let (selected, bundleAllowed) = result {
+                applyPublicCatalog(selected, bundleAllowed: bundleAllowed)
                 publicCatalogUpdateStatus = "Pin data updated. Your personal pins and deliveries were preserved."
             } else { publicCatalogUpdateStatus = "Pin data is up to date. The saved copy remains available offline." }
         } catch is CancellationError {
@@ -249,19 +251,25 @@ final class AppStore: ObservableObject {
         defer { catalogRefreshPending = false }
         let worker = Task.detached(priority: .userInitiated) {
             try Task.checkCancellation()
-            return try publicCatalogStore.rollback()
+            let selected = try publicCatalogStore.rollback()
+            return (selected, Self.reviewedBundleAllowed(in: publicCatalogStore, for: selected))
         }
         do {
-            let selected = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
-            applyPublicCatalog(selected)
+            let (selected, bundleAllowed) = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
+            applyPublicCatalog(selected, bundleAllowed: bundleAllowed)
             publicCatalogUpdateStatus = "Previous pin data restored. Personal pins and deliveries were preserved."
         } catch {
             publicCatalogUpdateStatus = "The previous pin data could not be restored. The installed map remains available offline."
         }
     }
-    private func applyPublicCatalog(_ selected: PublicCatalogUpdateSelection) {
-        let snapshot = try? publicCatalogStore?.reviewedBundleSelection()
-        let eligible = snapshot?.bundleAllowed == true && snapshot?.selection?.manifest == selected.manifest
+    // The store verifies its generation bytes here. Keep that disk work on the
+    // same worker that installed the update or restored the previous generation.
+    private nonisolated static func reviewedBundleAllowed(in store: PublicCatalogUpdateStore,
+                                                          for selected: PublicCatalogUpdateSelection) -> Bool {
+        let snapshot = try? store.reviewedBundleSelection()
+        return snapshot?.bundleAllowed == true && snapshot?.selection?.manifest == selected.manifest
+    }
+    private func applyPublicCatalog(_ selected: PublicCatalogUpdateSelection, bundleAllowed eligible: Bool) {
         let baseline = reviewedBaseline
         reviewedOverlayAllowed = eligible && reviewedOverlay != nil && baseline != nil &&
             (selected.manifest.sequence > baseline!.manifest.sequence || selected.manifest.sequence < baseline!.manifest.sequence || selected.manifest == baseline!.manifest)
@@ -308,6 +316,7 @@ final class AppStore: ObservableObject {
             .union(backup.paths.map(\.communityID))
             .union(backup.apartmentRules.compactMap(\.communityID))
             .union(backup.miniRouteCompletions.map(\.groupID))
+        guard !owned.isEmpty else { return [] }
         var addresses: [String: Set<String>] = [:]
         for place in backup.places {
             addresses[place.communityID, default: []].insert(LocalSearch.addressKey(place.address))
@@ -315,16 +324,20 @@ final class AppStore: ObservableObject {
         for rule in backup.apartmentRules {
             if let id = rule.communityID { addresses[id, default: []].insert(LocalSearch.addressKey(rule.address)) }
         }
-        let stopsByID = Dictionary(backup.stops.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let knownAddresses = publicCatalogSupplement.catalog.communities.flatMap(\.matchingAddresses) +
-            backup.apartmentRules.map(\.address) + backup.places.map(\.address)
-        for receipt in backup.miniRouteCompletions {
-            for id in receipt.scope.stopIDs {
-                guard let stop = stopsByID[id] else {
-                    addresses[receipt.groupID, default: []].insert(""); continue
+        if !backup.miniRouteCompletions.isEmpty {
+            let stopsByID = Dictionary(backup.stops.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            let knownAddresses = publicCatalogSupplement.catalog.communities.flatMap(\.matchingAddresses) +
+                backup.apartmentRules.map(\.address) + backup.places.map(\.address)
+            let resolver = DeliveryAddress.Resolver(knownAddresses: knownAddresses)
+            for receipt in backup.miniRouteCompletions {
+                for id in receipt.scope.stopIDs {
+                    guard let stop = stopsByID[id] else {
+                        addresses[receipt.groupID, default: []].insert("")
+                        continue
+                    }
+                    let resolved = resolver.resolve(stop.address, unit: stop.unit)
+                    addresses[receipt.groupID, default: []].insert(resolved.hasConflictingUnit ? "" : LocalSearch.addressKey(resolved.address))
                 }
-                let resolved = DeliveryAddress.resolve(stop.address, unit: stop.unit, knownAddresses: knownAddresses)
-                addresses[receipt.groupID, default: []].insert(resolved.hasConflictingUnit ? "" : LocalSearch.addressKey(resolved.address))
             }
         }
         return Set(publicCatalogSupplement.catalog.communities.compactMap { community in
@@ -458,6 +471,7 @@ final class AppStore: ObservableObject {
             mergedPlaces = LocalSearch.merged(seed: pack?.places ?? [], overrides: personal.places)
             apartmentPlacesByCommunity = Dictionary(grouping: mergedPlaces, by: \.communityID)
             buildingAssociationsByCommunity = Dictionary(grouping: pack?.catalog.unitBuildingAssociations ?? [], by: \.communityID)
+            floorReferencesByCommunity = Dictionary(grouping: pack?.catalog.unitFloorReferences ?? [], by: \.communityID)
             scopedApartmentPlaces.removeAll(); scopedBuildingAssociations.removeAll()
             cachedDoorMatches.removeAll()
         }
@@ -511,19 +525,19 @@ final class AppStore: ObservableObject {
         return matches.first?.digitalLocker
     }
     func buildingAreaReferences(groupID: String) -> [Place] {
-        let scoped = apartmentGroup(groupID)?.scopedPlaces(in: apartmentPlacesByCommunity) ?? apartmentPlacesByCommunity[groupID] ?? []
-        return scoped.filter(\.isValidBuildingAreaReference)
+        scopedPlaces(for: groupID).filter(\.isValidBuildingAreaReference)
+    }
+    private func scopedPlaces(for groupID: String) -> [Place] {
+        if let existing = scopedApartmentPlaces[groupID] { return existing }
+        let places = apartmentGroup(groupID)?.scopedPlaces(in: apartmentPlacesByCommunity) ?? apartmentPlacesByCommunity[groupID] ?? []
+        scopedApartmentPlaces[groupID] = places
+        return places
     }
     func doorMatch(_ stop: DeliveryStop, groupID: String) -> ApartmentDoorMatch {
         var identity = stop; identity.completed = false
         let key = DoorMatchKey(groupID: groupID, stop: identity)
         if let found = cachedDoorMatches[key] { return found }
-        let scoped: [Place]
-        if let found = scopedApartmentPlaces[groupID] { scoped = found }
-        else {
-            scoped = apartmentGroup(groupID)?.scopedPlaces(in: apartmentPlacesByCommunity) ?? apartmentPlacesByCommunity[groupID] ?? []
-            scopedApartmentPlaces[groupID] = scoped
-        }
+        let scoped = scopedPlaces(for: groupID)
         let associations: [UnitBuildingAssociation]
         if let found = scopedBuildingAssociations[groupID] { associations = found }
         else {
@@ -531,10 +545,16 @@ final class AppStore: ObservableObject {
             scopedBuildingAssociations[groupID] = associations
         }
         let group = apartmentGroup(groupID)
-        let projectionIDs = Set([groupID, group?.directoryCommunityID, group?.legacyCommunityID].compactMap { $0 })
-        let floors = (pack?.catalog.unitFloorReferences ?? []).filter {
-            $0.communityID == groupID || projectionIDs.contains($0.communityID) && LocalSearch.addressKey($0.address) == LocalSearch.addressKey(group?.address ?? stop.address)
-        }.map { original in var value = original; value.communityID = groupID; return value }
+        let projectionIDs = Set([group?.directoryCommunityID, group?.legacyCommunityID].compactMap { $0 })
+        let streetKey = LocalSearch.addressKey(group?.address ?? stop.address)
+        var floors = floorReferencesByCommunity[groupID] ?? []
+        for sourceID in projectionIDs where sourceID != groupID {
+            for reference in floorReferencesByCommunity[sourceID] ?? [] where LocalSearch.addressKey(reference.address) == streetKey {
+                var projected = reference
+                projected.communityID = groupID
+                floors.append(projected)
+            }
+        }
         let match = ApartmentDoorMatch.resolve(stop: stop, communityID: groupID, places: scoped,
             selectedPlaceID: personal.doorSelections.first { $0.stopID == stop.id }?.placeID,
             buildingAssociations: associations, floorReferences: floors)

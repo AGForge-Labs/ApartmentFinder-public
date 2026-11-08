@@ -5,7 +5,7 @@ import ApartmentCore
 struct ApartmentRoutesView: View {
     @ObservedObject var store: AppStore
     @ObservedObject var imports: ManifestImportCoordinator
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @State private var importing = false
     @State private var settings = false
     @State private var publicCatalogUpdates = false

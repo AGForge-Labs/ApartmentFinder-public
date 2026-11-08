@@ -54,7 +54,7 @@ struct MiniRouteSelection {
 
 struct ApartmentMiniRouteView: View {
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     let groupID: String
     var startActive = false
     var switchNotBeforeUptime: TimeInterval = 0

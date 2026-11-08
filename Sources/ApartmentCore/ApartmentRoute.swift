@@ -88,11 +88,12 @@ public struct ApartmentRoutePlan: Sendable {
             community.matchingAddresses.map { (key: LocalSearch.addressKey($0), community: community) }
         }, by: { $0.key }).mapValues { $0.map(\.community) }
         let known = communities.flatMap(\.matchingAddresses) + rules.map(\.address) + rules.compactMap(\.matchingAddress)
+        let addresses = DeliveryAddress.Resolver(knownAddresses: known)
         var groups: [String: ApartmentGroup] = [:], unmatched: [DeliveryStop] = [], excluded: [DeliveryStop] = []
         for original in stops.sorted(by: { $0.sequence == $1.sequence ? $0.id < $1.id : $0.sequence < $1.sequence }) {
             // Address classification always follows the original delivery, even
             // after a unit correction or a later community-rule change.
-            let resolved = DeliveryAddress.resolve(original.address, unit: original.unit, knownAddresses: known)
+            let resolved = addresses.resolve(original.address, unit: original.unit)
             let addressKey = LocalSearch.addressKey(resolved.address)
             let rule = rulesByAddress[addressKey]
             if rule?.kind == .nonApartment { excluded.append(original); continue }

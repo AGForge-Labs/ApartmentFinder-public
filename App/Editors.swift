@@ -3,7 +3,7 @@ import ApartmentCore
 
 struct PinEditor: View {
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @State var place: Place
     var offline: Bool
     @Environment(\.dismiss) private var dismiss
@@ -101,7 +101,7 @@ struct PinEditor: View {
 
 struct PathEditor: View {
     @ObservedObject var store: AppStore
-    @ObservedObject var location: LocationService
+    let location: LocationService
     @State var path: PathSegment
     var offline: Bool
     @Environment(\.dismiss) private var dismiss

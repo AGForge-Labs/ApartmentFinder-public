@@ -110,7 +110,7 @@ public struct NavigationDirectionState: Sendable {
 }
 
 /// GPS/direction changes do not alter this state: only deliberate camera gestures/controls do.
-public struct MiniRouteMapFollowingState: Sendable {
+public struct MiniRouteMapFollowingState: Equatable, Sendable {
     public enum Mode: Equatable, Sendable { case following, overview, manual }
     public private(set) var mode: Mode = .following
     public private(set) var distance: Double = 350

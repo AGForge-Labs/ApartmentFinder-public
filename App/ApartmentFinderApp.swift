@@ -16,7 +16,7 @@ struct ApartmentFinderApp: App {
         _store = StateObject(wrappedValue: AppStore())
         #endif
     }
-    @StateObject private var location = LocationService()
+    @State private var location = LocationService()
     var body: some Scene {
         WindowGroup {
             RootView(store: store, location: location)
