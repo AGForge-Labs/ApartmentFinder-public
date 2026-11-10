@@ -29,7 +29,7 @@ final class LocationDirectionRenderingTests: XCTestCase {
     private func blueCentroid(direction: NavigationDirection, mapHeading: Double) throws -> CGPoint {
         let size = CGSize(width: 80, height: 80)
         let renderer = ImageRenderer(content:
-            MapLocationDirection(direction: direction, mapHeading: mapHeading, accessibilityID: "test.arrow")
+            MapLocationDirection(bearing: direction.degrees, mapHeading: mapHeading, accessibilityID: "test.arrow")
                 .frame(width: size.width, height: size.height))
         renderer.scale = 1
         let image = try XCTUnwrap(renderer.uiImage, "The real SwiftUI arrow must render successfully")

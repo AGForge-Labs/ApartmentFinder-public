@@ -11,7 +11,7 @@ final class NativeDeliveryMapTests: XCTestCase {
             coordinate: .init(latitude: 36.01, longitude: -115.18), sequenceID: 7, sequence: "7", unit: "1158",
             building: "12", status: "Estimated shared entry", ready: false, completed: false,
             selected: selected, estimated: true, referenceLabel: "1158 · B12", radius: 10, frontage: [])],
-            areas: [], community: nil, locker: nil, fix: nil, direction: nil,
+            areas: [], community: nil, locker: nil, userLocation: nil, bearing: nil,
             camera: .camera(MapCamera(centerCoordinate: .init(latitude: 36.01, longitude: -115.18), distance: 350)),
             style: .standard, select: select, userMoved: { _ in }, cameraSettled: { _ in })
     }

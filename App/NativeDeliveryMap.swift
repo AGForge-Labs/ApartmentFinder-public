@@ -27,8 +27,8 @@ struct NativeDeliveryMap: UIViewRepresentable {
     let areas: [Place]
     let community: Coordinate?
     let locker: DigitalLockerEvidence?
-    let fix: LocationFix?
-    let direction: NavigationDirection?
+    let userLocation: MapUserLocation?
+    let bearing: Double?
     let camera: MapCameraPosition
     let style: DeliveryMapStyle
     let select: (String) -> Void
@@ -41,6 +41,10 @@ struct NativeDeliveryMap: UIViewRepresentable {
     var observe: ((MKMapView) -> Void)? = nil
     var pinHostSnapshot: ((String) -> Void)? = nil
     #endif
+
+    private var displayedBearing: Double? {
+        userLocation?.isCurrent == true ? bearing : nil
+    }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> MKMapView { context.coordinator.makeMapView() }
@@ -97,7 +101,6 @@ struct NativeDeliveryMap: UIViewRepresentable {
         private var previousAreas: [Place] = []
         private var previousCommunity: Coordinate?
         private var previousLocker: DigitalLockerEvidence?
-        private var previousBearing: Double?
         private var previousStyle: DeliveryMapStyle?
         private var cameraCommand: UInt64?
         private var previousGuides: [[Coordinate]] = []
@@ -127,6 +130,8 @@ struct NativeDeliveryMap: UIViewRepresentable {
         }
 
         func update(_ view: MKMapView, model: NativeDeliveryMap) {
+            let previousPosition = parent.userLocation
+            let previousBearing = parent.displayedBearing
             parent = model
             if previousStyle != model.style {
                 previousStyle = model.style
@@ -151,24 +156,23 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 previousGuides = model.guides
                 view.addOverlays(guideOverlays)
             }
-            let bearing = model.direction?.degrees
-            if let fix = model.fix, fix.usable(at: .now) {
+            let bearing = model.displayedBearing
+            if let position = model.userLocation {
                 if let annotation = annotations["user"] {
-                    if Coordinate(annotation.coordinate) != fix.coordinate { annotation.coordinate = fix.coordinate.cl }
-                    if bearing != previousBearing, let marker = view.view(for: annotation) as? PinView {
-                        if (bearing == nil) != (previousBearing == nil) {
+                    if previousPosition?.coordinate != position.coordinate { annotation.coordinate = position.coordinate.cl }
+                    if let marker = view.view(for: annotation) as? PinView {
+                        if previousPosition?.isCurrent != position.isCurrent || (bearing == nil) != (previousBearing == nil) {
                             configure(marker, annotation: annotation)
-                        } else {
+                        } else if bearing != previousBearing {
                             marker.accessibilityValue = directionAccessibilityValue(bearing)
                         }
                     }
                 } else {
-                    upsert(view, id: "user", coordinate: fix.coordinate)
+                    upsert(view, id: "user", coordinate: position.coordinate)
                 }
             } else if let removed = annotations.removeValue(forKey: "user") {
                 view.removeAnnotation(removed)
             }
-            previousBearing = bearing
             applyCamera(view)
             updateDirection(view)
         }
@@ -257,12 +261,14 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 ?? PinView(annotation: annotation, reuseIdentifier: "delivery")
             view.annotation = annotation
             configure(view, annotation: annotation)
+            if annotation.id == "user" { rotateUserMarker(view, mapHeading: mapView.camera.heading) }
             return view
         }
 
         private func configure(_ view: PinView, annotation: Annotation) {
             // A recycled GPS arrow must never leave a delivery marker rotated.
             view.transform = .identity
+            view.isEnabled = annotation.id != "user"
             if let pin = annotation.pin {
                 let color: Color = pin.completed ? .gray : pin.ready ? .teal : .orange
                 var content = AnyView(DeliveryMapPin(sequence: pin.sequence, unit: pin.unit, building: pin.building,
@@ -281,20 +287,29 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 view.accessibilityIdentifier = "mini.digitalLocker"
                 view.accessibilityLabel = locker.statusLabel
             } else if annotation.id == "user" {
-                view.configure(content: AnyView(MapLocationDirection(direction: parent.direction,
-                    mapHeading: parent.direction?.degrees ?? 0, accessibilityID: "mini.userLocation")), bottomAnchored: false)
+                let isCurrent = parent.userLocation?.isCurrent == true
+                let bearing = parent.displayedBearing
+                view.configure(content: AnyView(MapLocationDirection(bearing: bearing,
+                    mapHeading: bearing ?? 0, accessibilityID: "mini.userLocation", isCurrent: isCurrent)),
+                    bottomAnchored: false)
                 view.accessibilityIdentifier = "mini.userLocation"
-                view.accessibilityLabel = parent.direction == nil ? "Your current location" : "Your current location and travel direction"
-                view.accessibilityValue = directionAccessibilityValue(parent.direction?.degrees)
+                view.accessibilityLabel = isCurrent
+                    ? (bearing == nil ? "Your current location" : "Your current location and travel direction")
+                    : "Your last known location"
+                view.accessibilityValue = isCurrent ? directionAccessibilityValue(bearing) : "GPS unavailable"
             } else {
                 view.configure(content: AnyView(Image(systemName: "building.2.fill").font(.title2)
                     .foregroundStyle(.orange).padding(8).background(.regularMaterial, in: Circle())), bottomAnchored: true)
                 view.accessibilityIdentifier = "mini.communityArea"
                 view.accessibilityLabel = annotation.title
             }
-            if annotation.pin == nil { view.zPriority = .defaultUnselected }
-            if annotation.id == "user" { view.accessibilityTraits = .image }
-            else { view.accessibilityTraits = .button }
+            if annotation.id == "user" {
+                view.zPriority = .max
+                view.accessibilityTraits = .image
+            } else {
+                if annotation.pin == nil { view.zPriority = .defaultUnselected }
+                view.accessibilityTraits = .button
+            }
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
@@ -311,9 +326,15 @@ struct NativeDeliveryMap: UIViewRepresentable {
 
         private func updateDirection(_ view: MKMapView) {
             guard let annotation = annotations["user"], let pin = view.view(for: annotation) else { return }
-            let angle = parent.direction.map { NavigationDirection.relativeAngle(heading: $0.degrees, mapHeading: view.camera.heading) } ?? 0
+            rotateUserMarker(pin, mapHeading: view.camera.heading)
+        }
+
+        private func rotateUserMarker(_ marker: MKAnnotationView, mapHeading: Double) {
+            let angle = parent.displayedBearing.map {
+                NavigationDirection.relativeAngle(heading: $0, mapHeading: mapHeading)
+            } ?? 0
             let rotation = CGAffineTransform(rotationAngle: angle * .pi / 180)
-            if pin.transform != rotation { pin.transform = rotation }
+            if marker.transform != rotation { marker.transform = rotation }
         }
 
         func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {

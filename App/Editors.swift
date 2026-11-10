@@ -15,8 +15,9 @@ struct PinEditor: View {
         NavigationStack {
             Form {
                 Section {
-                    CommunityMap(places: [place],paths: paths,focus: place.coordinate,fix: location.fix,selectedID: place.id,
-                                 offline: offline,onPosition: { place.coordinate = $0; observed = false; place.graphNodeID = nil })
+                    CommunityMap(places: [place],paths: paths,focus: place.coordinate,selectedID: place.id,
+                                 offline: offline,onPosition: { place.coordinate = $0; observed = false; place.graphNodeID = nil },
+                                 liveLocation: location)
                         .frame(height: 270).listRowInsets(EdgeInsets())
                         .automaticMapLocation(location)
                     Text(offline ? "Tap the local map to move the pin. Pinch to zoom." : "Hold the map to move the pin.").font(.caption)
@@ -120,7 +121,7 @@ struct PathEditor: View {
             Form {
                 Section {
                     CommunityMap(places: markers,paths: store.paths.filter { $0.communityID == path.communityID && $0.id != path.id },
-                                 route: path.coordinates,fix: location.fix,selectedID: "vertex-\(selectedVertex)",offline: offline,
+                                 route: path.coordinates,selectedID: "vertex-\(selectedVertex)",offline: offline,
                                  onSelect: { id in selectedVertex = Int(id.replacingOccurrences(of: "vertex-",with: "")) ?? 0 },
                                  onPosition: { coordinate in
                                      if addMode { path.coordinates.append(coordinate); selectedVertex = path.coordinates.count-1; path.toNode = UUID().uuidString }
@@ -130,7 +131,7 @@ struct PathEditor: View {
                                          if selectedVertex == path.coordinates.count-1 { path.toNode = UUID().uuidString }
                                      }
                                      confirmed = false
-                                 }).frame(height: 300).listRowInsets(EdgeInsets())
+                                 }, liveLocation: location).frame(height: 300).listRowInsets(EdgeInsets())
                         .automaticMapLocation(location)
                     Text(offline ? "Select a vertex below, then tap the map to move it." : "Select a vertex below, then hold the map to move it.").font(.caption)
                     Stepper("Vertex \(min(selectedVertex+1,path.coordinates.count)) of \(path.coordinates.count)",value: $selectedVertex,in: 0...max(0,path.coordinates.count-1))
