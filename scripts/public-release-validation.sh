@@ -104,10 +104,10 @@ if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='regression':
     assert shard_count in (1,4) and 0 <= shard_index < shard_count
     native,ui=selection['native'],selection['ui']
     original=native+ui
-    assert len(native)==78 and len(ui)==12 and len(set(original))==90
+    assert len(native)==81 and len(ui)==12 and len(set(original))==93
     shards=[{'native':native[i::shard_count],'ui':ui[i::shard_count]} for i in range(shard_count)]
     union=[identity for shard in shards for identity in shard['native']+shard['ui']]
-    assert len(union)==len(set(union))==90 and set(union)==set(original)
+    assert len(union)==len(set(union))==93 and set(union)==set(original)
     selection={**selection,**shards[shard_index]}
 with open(sys.argv[1],'w') as output: json.dump(selection,output)
 PY
@@ -118,7 +118,7 @@ identities=selection['native']+selection['ui']
 shard_count=int(os.environ.get('PUBLIC_TEST_SHARD_COUNT','1'))
 shard_index=int(os.environ.get('PUBLIC_TEST_SHARD_INDEX','0'))
 assert shard_count in (1,4) and 0 <= shard_index < shard_count
-regression_count=(90,) if shard_count==1 else (23,23,22,22)
+regression_count=(93,) if shard_count==1 else (24,23,23,23)
 expected=3 if os.environ['PUBLIC_SYNTHETIC_SCOPE']=='activation-diagnostics' else regression_count[shard_index]
 assert len(identities)==len(set(identities))==expected
 assert all(type(item) is str and re.fullmatch(r'ApartmentFinder(?:UI)?Tests/[A-Za-z0-9_]+/test[A-Za-z0-9_]+',item) for item in identities)
@@ -131,9 +131,9 @@ PY
 FILTERS=()
 while IFS= read -r identity; do FILTERS+=("-only-testing:$identity"); done < "$RUNNER_TEMP/selected-identities.txt"
 case "${PUBLIC_TEST_SHARD_COUNT:-1}:${PUBLIC_TEST_SHARD_INDEX:-0}" in
-  1:0) EXPECTED_NATIVE_COUNT=90 ;;
-  4:0|4:1) EXPECTED_NATIVE_COUNT=23 ;;
-  4:2|4:3) EXPECTED_NATIVE_COUNT=22 ;;
+  1:0) EXPECTED_NATIVE_COUNT=93 ;;
+  4:0) EXPECTED_NATIVE_COUNT=24 ;;
+  4:1|4:2|4:3) EXPECTED_NATIVE_COUNT=23 ;;
   *) echo "Invalid public test shard"; exit 1 ;;
 esac
 if [[ "$PUBLIC_SYNTHETIC_SCOPE" == activation-diagnostics ]]; then EXPECTED_NATIVE_COUNT=3; fi
