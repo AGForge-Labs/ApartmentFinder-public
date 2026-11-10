@@ -6,13 +6,14 @@ import ApartmentCore
 
 @MainActor
 final class NativeDeliveryMapTests: XCTestCase {
-    private func model(selected: Bool = false, select: @escaping (String) -> Void = { _ in }) -> NativeDeliveryMap {
+    private func model(selected: Bool = false, heading: Double = 0,
+                       select: @escaping (String) -> Void = { _ in }) -> NativeDeliveryMap {
         NativeDeliveryMap(pins: [.init(id: "stop|place", stopID: "stop", placeID: "place",
             coordinate: .init(latitude: 36.01, longitude: -115.18), sequenceID: 7, sequence: "7", unit: "1158",
             building: "12", status: "Estimated shared entry", ready: false, completed: false,
             selected: selected, estimated: true, referenceLabel: "1158 · B12", radius: 10, frontage: [])],
             areas: [], community: nil, locker: nil, userLocation: nil, bearing: nil,
-            camera: .camera(MapCamera(centerCoordinate: .init(latitude: 36.01, longitude: -115.18), distance: 350)),
+            camera: .camera(MapCamera(centerCoordinate: .init(latitude: 36.01, longitude: -115.18), distance: 350, heading: heading)),
             style: .standard, select: select, userMoved: { _ in }, cameraSettled: { _ in })
     }
 
@@ -46,6 +47,29 @@ final class NativeDeliveryMapTests: XCTestCase {
         coordinator.update(map, model: resumed)
         XCTAssertEqual(map.centerCoordinate.latitude, 36.01, accuracy: 0.000001)
         XCTAssertEqual(map.centerCoordinate.longitude, -115.18, accuracy: 0.000001)
+    }
+
+    func testAutomaticFitShowsDistantPinsInAShortHeadingUpViewport() {
+        var route = model(heading: 270)
+        route.automaticFitRadius = 250
+        let coordinator = route.makeCoordinator()
+        let map = coordinator.makeMapView()
+        map.frame = .zero
+        coordinator.update(map, model: route)
+        // UIKit can lay out the native view after SwiftUI sends its first camera command.
+        map.frame = CGRect(x: 0, y: 0, width: 320, height: 239)
+        map.setNeedsLayout()
+        map.layoutIfNeeded()
+
+        let clearArea = map.bounds.insetBy(dx: 60, dy: 75)
+        for coordinate in [
+            CLLocationCoordinate2D(latitude: 36.0115, longitude: -115.18),
+            CLLocationCoordinate2D(latitude: 36.01, longitude: -115.1822)
+        ] {
+            XCTAssertTrue(clearArea.contains(map.convert(coordinate, toPointTo: map)))
+        }
+        XCTAssertEqual(map.camera.heading, 270, accuracy: 1)
+        XCTAssertGreaterThan(map.camera.centerCoordinateDistance, 350)
     }
 
     func testSelectionUpdatesExistingPinAndKeepsTheManifestTapTarget() throws {

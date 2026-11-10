@@ -110,9 +110,9 @@ struct ApartmentDeliveryMap: View {
         #if DEBUG && targetEnvironment(simulator)
         var observedMap = map
         observedMap.syntheticMapObservation = syntheticMapObservation
-        return observedMap
+        return observedMap.id(group.id)
         #else
-        return map
+        return map.id(group.id)
         #endif
     }
 }
@@ -196,7 +196,10 @@ private struct ApartmentDeliveryMapScene: View {
                 GeometryReader { geometry in
                     Color.clear.onAppear { viewport = geometry.size; followLocation() }
                         .onChange(of: geometry.size) { _, size in
-                            viewport = size; following.viewportChanged(); followLocation()
+                            viewport = size
+                            following.resetAutomaticFrame()
+                            if following.mode == .overview { fitAll(includeLocation: true) }
+                            else { followLocation(force: true) }
                         }
                 }
             }
@@ -205,7 +208,9 @@ private struct ApartmentDeliveryMapScene: View {
                 guard new.coordinate != nil else { return }
                 followLocation(headingOnly: old.coordinate == new.coordinate)
             }
-            .onChange(of: frameCoordinates) { _, _ in
+            .onChange(of: frameCoordinates) { previous, current in
+                guard Set(previous) != Set(current) else { return }
+                following.resetAutomaticFrame()
                 if following.isFollowing { followLocation() }
                 else if following.mode == .overview { fitAll(includeLocation: true) }
             }
@@ -239,6 +244,9 @@ private struct ApartmentDeliveryMapScene: View {
             })
         map.guides = guides
         map.cameraCommand = cameraCommand
+        if following.isFollowing && !following.hasUserChosenZoom {
+            map.automaticFitRadius = following.automaticRadius
+        }
         map.selectLocker = { showingLockerDetails = true }
         #if DEBUG && targetEnvironment(simulator)
         map.observe = { map in emitSyntheticMapObservation(map: map) }
@@ -286,6 +294,7 @@ private struct ApartmentDeliveryMapScene: View {
         } else {
             Button("Resume following", systemImage: "location.fill") {
                 following.resume()
+                following.resetAutomaticFrame()
                 followLocation(force: true)
             }
                 .accessibilityIdentifier("mini.recenter")
@@ -324,12 +333,22 @@ private struct ApartmentDeliveryMapScene: View {
             fix: usableFix, at: .now, width: Double(viewport.width), height: Double(viewport.height))
         guard let frame else { fitAll(); return }
         var updatedFollowing = following
-        updatedFollowing.adoptInitialFrame(distance: frame.distance, includesUser: frame.includesUser)
+        updatedFollowing.adoptAutomaticFrame(frame)
+        let needsRefit = updatedFollowing.automaticRadius != following.automaticRadius
         if updatedFollowing != following { following = updatedFollowing }
-        let distant = usableFix != nil && !frame.includesUser && !following.hasUserChosenZoom
+        let exceedsAutomaticFrame = frame.radius > (following.automaticRadius ?? frame.radius)
+        let distant = usableFix != nil && (!frame.includesUser || exceedsAutomaticFrame) && !following.hasUserChosenZoom
         if showingPropertyForDistantUser != distant { showingPropertyForDistantUser = distant }
-        let center = following.hasUserChosenZoom ? usableFix?.coordinate ?? frame.center : frame.center
-        requestFollowCamera(center: center, distance: following.distance, force: force)
+        let center: Coordinate
+        if following.hasUserChosenZoom {
+            center = usableFix?.coordinate ?? frame.center
+        } else if exceedsAutomaticFrame, let lastCamera = camera.camera {
+            // This view still contains the same route pins when the driver moves outside the fit.
+            center = Coordinate(lastCamera.centerCoordinate)
+        } else {
+            center = frame.center
+        }
+        requestFollowCamera(center: center, distance: following.distance, force: force || needsRefit)
     }
 
     private func requestFollowCamera(center: Coordinate, distance: Double, force: Bool) {

@@ -36,6 +36,7 @@ struct NativeDeliveryMap: UIViewRepresentable {
     let cameraSettled: (MKMapView) -> Void
     var guides: [[Coordinate]] = []
     var cameraCommand: UInt64 = 0
+    var automaticFitRadius: Double? = nil
     var selectLocker: (() -> Void)? = nil
     #if DEBUG && targetEnvironment(simulator)
     var observe: ((MKMapView) -> Void)? = nil
@@ -94,6 +95,18 @@ struct NativeDeliveryMap: UIViewRepresentable {
         }
     }
 
+    private final class ViewportMapView: MKMapView {
+        var onResize: (() -> Void)?
+        private var measuredSize = CGSize.zero
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            guard bounds.size != measuredSize else { return }
+            measuredSize = bounds.size
+            onResize?()
+        }
+    }
+
     final class Coordinator: NSObject, MKMapViewDelegate {
         var parent: NativeDeliveryMap
         private var annotations: [String: Annotation] = [:]
@@ -103,6 +116,7 @@ struct NativeDeliveryMap: UIViewRepresentable {
         private var previousLocker: DigitalLockerEvidence?
         private var previousStyle: DeliveryMapStyle?
         private var cameraCommand: UInt64?
+        private var automaticFit: (radius: Double, size: CGSize, distance: Double)?
         private var previousGuides: [[Coordinate]] = []
         private var guideOverlays: [MKPolyline] = []
         private var gestureInProgress = false
@@ -113,7 +127,12 @@ struct NativeDeliveryMap: UIViewRepresentable {
 
         init(_ parent: NativeDeliveryMap) { self.parent = parent }
         func makeMapView() -> MKMapView {
-            let view = MKMapView()
+            let view = ViewportMapView()
+            view.onResize = { [weak self, weak view] in
+                guard let self, let view, !view.bounds.isEmpty, self.parent.automaticFitRadius != nil,
+                      !self.applyingCamera, !self.gestureInProgress, !self.pendingUserMovement else { return }
+                self.applyCamera(view, refit: true)
+            }
             view.delegate = self
             view.showsUserLocation = false
             view.showsCompass = false
@@ -238,21 +257,45 @@ struct NativeDeliveryMap: UIViewRepresentable {
             }
         }
 
-        private func applyCamera(_ view: MKMapView) {
+        private func applyCamera(_ view: MKMapView, refit: Bool = false) {
             // This is a request, not a binding to every intermediate native frame.
             // A GPS/selection redraw with the same request cannot undo a user's pan.
-            guard cameraCommand != parent.cameraCommand else { return }
+            guard cameraCommand != parent.cameraCommand || refit else { return }
             cameraCommand = parent.cameraCommand
             applyingCamera = true
             defer { applyingCamera = false }
             if let camera = parent.camera.camera {
+                let distance = fittedCameraDistance(for: camera, in: view)
                 view.setCamera(MKMapCamera(lookingAtCenter: camera.centerCoordinate,
-                    fromDistance: camera.distance, pitch: camera.pitch, heading: camera.heading), animated: false)
+                    fromDistance: distance, pitch: camera.pitch, heading: camera.heading), animated: false)
             } else if let region = parent.camera.region {
                 view.setRegion(region, animated: false)
             } else if let rect = parent.camera.rect {
                 view.setVisibleMapRect(rect, animated: false)
             }
+        }
+
+        private func fittedCameraDistance(for camera: MapCamera, in view: MKMapView) -> Double {
+            let size = view.bounds.size
+            guard let radius = parent.automaticFitRadius, size.width > 0, size.height > 0 else {
+                return camera.distance
+            }
+            if let fit = automaticFit, fit.radius == radius, fit.size == size { return fit.distance }
+
+            // A square around the route's radius encloses its pins at every heading.
+            // Fit it to the native viewport once, then reuse the zoom on GPS and heading updates.
+            let center = MKMapPoint(camera.centerCoordinate)
+            let extent = radius * MKMapPointsPerMeterAtLatitude(camera.centerCoordinate.latitude)
+            let rect = MKMapRect(x: center.x - extent, y: center.y - extent, width: 2 * extent, height: 2 * extent)
+            let horizontal = max(0, min(76, size.width / 2 - 24))
+            let vertical = max(0, min(96, size.height / 2 - 24))
+            let insets = UIEdgeInsets(top: vertical, left: horizontal, bottom: vertical, right: horizontal)
+            view.setVisibleMapRect(rect, edgePadding: insets, animated: false)
+            let fittedDistance = view.camera.centerCoordinateDistance
+            guard fittedDistance.isFinite, fittedDistance > 0 else { return camera.distance }
+            let distance = max(650, fittedDistance)
+            automaticFit = (radius, size, distance)
+            return distance
         }
 
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {

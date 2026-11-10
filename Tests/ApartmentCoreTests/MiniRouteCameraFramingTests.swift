@@ -10,7 +10,8 @@ final class MiniRouteCameraFramingTests: XCTestCase {
     }
     func testNearbyInitialFrameIncludesUserAndPinsBeyondOld350MeterZoomWithControlPadding() throws {
         let frame=try XCTUnwrap(MiniRouteCameraFraming.frame(pins:pins,fix:fix(user),at:now,width:390,height:500))
-        XCTAssertTrue(frame.includesUser);XCTAssertEqual(frame.center,user)
+        XCTAssertTrue(frame.includesUser)
+        XCTAssertLessThan(Geometry.distance(frame.center, user), 0.1)
         XCTAssertGreaterThan(frame.distance,650)
         let radius=try XCTUnwrap(pins.map { Geometry.distance(frame.center,$0) }.max())
         // A 30-degree vertical FOV and measured usable map fraction must contain the
@@ -55,33 +56,53 @@ final class MiniRouteCameraFramingTests: XCTestCase {
             XCTAssertEqual(invalid.distance,defaultHeight.distance)
         }
     }
-    func testRepeatedGPSAndHeadingFramesDoNotKeepOverwritingInitialZoom() {
-        var state=MiniRouteMapFollowingState()
-        state.adoptInitialFrame(distance:1600,includesUser:true)
-        XCTAssertEqual(state.distance,1600)
-        state.adoptInitialFrame(distance:2200,includesUser:true)
-        XCTAssertEqual(state.distance,1600)
+    func testNearbyFixOutsideTheBuildingsSharesTheFrameWithAllPins() throws {
+        let approaching = Coordinate(latitude: 36.073, longitude: -115.28)
+        let frame = try XCTUnwrap(MiniRouteCameraFraming.frame(pins: pins, fix: fix(approaching), at: now,
+            width: 390, height: 500))
+        XCTAssertTrue(frame.includesUser)
+        XCTAssertGreaterThan(frame.center.latitude, user.latitude)
+        XCTAssertLessThan(frame.center.latitude, approaching.latitude)
+        for point in pins + [approaching] {
+            XCTAssertLessThanOrEqual(Geometry.distance(frame.center, point), frame.radius)
+        }
     }
-    func testManualPinchAndResumeKeepChosenZoomAcrossLocationContextChanges() {
-        var state=MiniRouteMapFollowingState()
-        state.adoptInitialFrame(distance:1600,includesUser:true)
-        state.userMoved(distance:900);state.resume()
-        state.adoptInitialFrame(distance:2400,includesUser:false)
-        XCTAssertTrue(state.isFollowing);XCTAssertEqual(state.distance,900)
+
+    func testAutomaticZoomFitsNearbyGPSOnceAndRefitsWhenThePinsChange() {
+        var state = MiniRouteMapFollowingState()
+        state.adoptAutomaticFrame(frame(radius: 100, distance: 850, includesUser: false))
+        let firstZoom = state.distance
+        state.adoptAutomaticFrame(frame(radius: 180, distance: 1500))
+        let nearZoom = state.distance
+        XCTAssertGreaterThan(nearZoom, firstZoom)
+        state.adoptAutomaticFrame(frame(radius: 220, distance: 1800))
+        XCTAssertEqual(state.distance, nearZoom)
+        state.adoptAutomaticFrame(frame(radius: 100, distance: 850, includesUser: false))
+        XCTAssertEqual(state.distance, nearZoom)
+
+        state.resetAutomaticFrame()
+        state.adoptAutomaticFrame(frame(radius: 220, distance: 1800))
+        XCTAssertGreaterThanOrEqual(state.automaticRadius ?? 0, 220)
+        XCTAssertGreaterThan(state.distance, nearZoom)
     }
-    func testApproachingFromFarAwayMayFitOnceBeforeAnyManualCameraGesture() {
-        var state=MiniRouteMapFollowingState()
-        state.adoptInitialFrame(distance:800,includesUser:false)
-        state.adoptInitialFrame(distance:1800,includesUser:true)
-        XCTAssertEqual(state.distance,1800)
-        state.adoptInitialFrame(distance:2100,includesUser:true)
-        XCTAssertEqual(state.distance,1800)
+
+    func testViewportChangeRefitsAutomaticZoomAndManualResumeKeepsChosenZoom() {
+        var state = MiniRouteMapFollowingState()
+        state.adoptAutomaticFrame(frame(radius: 220, distance: 1600))
+        state.resetAutomaticFrame()
+        state.adoptAutomaticFrame(frame(radius: 100, distance: 850))
+        XCTAssertEqual(state.distance, 850 * 1.15, accuracy: 0.01)
+
+        state.userMoved(distance: 900)
+        state.resume()
+        state.resetAutomaticFrame()
+        state.adoptAutomaticFrame(frame(radius: 300, distance: 2400))
+        XCTAssertTrue(state.isFollowing)
+        XCTAssertEqual(state.distance, 900)
+        XCTAssertNil(state.automaticRadius)
     }
-    func testGPSJitterAtFarThresholdDoesNotRepeatedlyChangeAutomaticZoom() {
-        var state=MiniRouteMapFollowingState()
-        state.adoptInitialFrame(distance:1600,includesUser:true)
-        state.adoptInitialFrame(distance:800,includesUser:false)
-        state.adoptInitialFrame(distance:1800,includesUser:true)
-        XCTAssertEqual(state.distance,1600)
+
+    private func frame(radius: Double, distance: Double, includesUser: Bool = true) -> MiniRouteCameraFrame {
+        MiniRouteCameraFrame(center: user, distance: distance, radius: radius, includesUser: includesUser)
     }
 }
