@@ -312,13 +312,16 @@ struct NativeDeliveryMap: UIViewRepresentable {
             let view = (mapView.dequeueReusableAnnotationView(withIdentifier: "delivery") as? PinView)
                 ?? PinView(annotation: annotation, reuseIdentifier: "delivery")
             view.annotation = annotation
+            // Keep delivery markers in the same native layer when the highlight changes.
+            view.zPriority = annotation.id == "user" ? .max : .defaultUnselected
             configure(view, annotation: annotation)
             if annotation.id == "user" { rotateUserMarker(view, mapHeading: mapView.camera.heading) }
             return view
         }
 
         private func configure(_ view: PinView, annotation: Annotation) {
-            view.isEnabled = annotation.id != "user"
+            let isUserLocation = annotation.id == "user"
+            view.isEnabled = !isUserLocation
             if let pin = annotation.pin {
                 let color: Color = pin.completed ? .gray : pin.ready ? .teal : .orange
                 var content = AnyView(DeliveryMapPin(sequence: pin.sequence, unit: pin.unit, building: pin.building,
@@ -329,14 +332,13 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 }
                 #endif
                 view.configure(content: content, bottomAnchored: true)
-                view.zPriority = pin.selected ? .max : .defaultUnselected
                 view.accessibilityIdentifier = "mini.pin.\(pin.sequenceID).\(pin.placeID)"
                 view.accessibilityLabel = "Stop \(pin.sequence), unit \(pin.unit), building \(pin.building), \(pin.status)"
             } else if let locker = annotation.locker {
                 view.configure(content: AnyView(DigitalLockerMapPin(evidence: locker)), bottomAnchored: true)
                 view.accessibilityIdentifier = "mini.digitalLocker"
                 view.accessibilityLabel = locker.statusLabel
-            } else if annotation.id == "user" {
+            } else if isUserLocation {
                 let isCurrent = parent.userLocation?.isCurrent == true
                 let bearing = parent.displayedBearing
                 view.configure(content: AnyView(MapLocationDirection(bearing: bearing,
@@ -353,13 +355,7 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 view.accessibilityIdentifier = "mini.communityArea"
                 view.accessibilityLabel = annotation.title
             }
-            if annotation.id == "user" {
-                view.zPriority = .max
-                view.accessibilityTraits = .image
-            } else {
-                if annotation.pin == nil { view.zPriority = .defaultUnselected }
-                view.accessibilityTraits = .button
-            }
+            view.accessibilityTraits = isUserLocation ? .image : .button
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
