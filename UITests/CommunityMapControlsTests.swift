@@ -106,8 +106,11 @@ final class CommunityMapControlsTests: XCTestCase {
                 XCTAssertTrue(first.waitForExistence(timeout: 5))
                 XCTAssertTrue(second.exists)
                 XCTAssertEqual(pins.count, 2)
-                XCTAssertTrue(first.label.contains("building 15"))
-                XCTAssertTrue(first.label.contains("Estimated shared entry, units 1193/1194"))
+                let firstLabel = first.label
+                XCTAssertTrue(firstLabel.contains("building 15"))
+                XCTAssertTrue(firstLabel.contains("Estimated shared entry"))
+                XCTAssertTrue(firstLabel.contains("unit 1193,"))
+                XCTAssertFalse(firstLabel.contains("1194"))
                 XCTAssertTrue(second.label.contains("building 13"))
                 XCTAssertTrue(second.label.contains("Estimated"))
                 XCTAssertFalse(pins.allElementsBoundByIndex.contains { $0.label.contains("Checked door") })

@@ -45,7 +45,7 @@
     "DigitalLockerTests/testSupplementAddsLocationSourcesWithoutReplacingPrivateEvidenceOrOtherStreet",
     "EntranceSideEstimateTests/testClaimedVerificationOrCalibrationCannotEnterAnEstimatePack",
     "EntranceSideEstimateTests/testCompactNoticePreservesFloorEvidenceAndDoesNotExposeResearchDetails",
-    "EntranceSideEstimateTests/testCompactSharedNoticeIncludesLiteralUnitsAndUncalibratedArea",
+    "EntranceSideEstimateTests/testCompactSharedNoticeOmitsOtherUnitsAndKeepsUncalibratedArea",
     "EntranceSideEstimateTests/testConfirmingEstimateCreatesIndependentPersonalDoorAndClearsEstimateOnlyOnCopy",
     "EntranceSideEstimateTests/testCurrentExplicitDwellingFloorMustMatchAndDoesNotVerifyEntryElevation",
     "EntranceSideEstimateTests/testEstimateCannotBeReinterpretedAsDoorEntranceOperatorPointOrConfidentIdentity",
