@@ -118,18 +118,20 @@ final class FinderTabTests: XCTestCase {
         search(address: "7380 W Russell Rd", unit: "105")
         expectHittable(app.buttons["finder.correct.spanish-ridge-7380-unit-county-2179552-105"])
         XCTAssertEqual(app.staticTexts["finder.matchCount"].label, "1 saved match")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:
-            "label CONTAINS %@ AND label CONTAINS %@", "Building B", "Floor unknown")).firstMatch.exists)
-        XCTAssertFalse(app.staticTexts["Field verified"].exists)
+        XCTAssertTrue(app.staticTexts["Building B"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Floor ")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Map location"].exists)
+        XCTAssertFalse(app.staticTexts["Checked door"].exists)
         screenshot("7380 Russell unit 105 is a source position in building B")
 
         search(address: "7380 W Russell Rd", unit: "201")
         expectHittable(app.buttons["finder.correct.spanish-ridge-7380-unit-county-2179616-201"])
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:
-            "label CONTAINS %@ AND label CONTAINS %@", "Building unknown", "Floor unknown")).firstMatch.exists)
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:
-            "label CONTAINS %@", "Building A for 201 is not asserted")).firstMatch.exists)
-        XCTAssertFalse(app.staticTexts["Field verified"].exists)
+        XCTAssertTrue(app.staticTexts["Unit 201"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Building ")).firstMatch.exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Floor ")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Map location"].exists)
+        XCTAssertFalse(app.staticTexts["Checked door"].exists)
+        revealDisputedSpanishRidgeEvidence()
         screenshot("7380 Russell unit 201 retains the unresolved official map conflict")
 
         search(address: "7380 W Russell Rd", unit: "211")
@@ -157,8 +159,7 @@ final class FinderTabTests: XCTestCase {
         screenshot("7380 partial address queries reveal the separate smaller Russell section")
         search(address: "7380 Russell", unit: "201")
         expectHittable(app.buttons["finder.correct.spanish-ridge-7380-unit-county-2179616-201"])
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:
-            "label CONTAINS %@", "Building A for 201 is not asserted")).firstMatch.exists)
+        revealDisputedSpanishRidgeEvidence()
         screenshot("Partial Finder query keeps unit 201 building uncertainty visible")
         search(address: "7380 Russell 89148", unit: "105")
         XCTAssertEqual(app.staticTexts["finder.matchCount"].label, "No saved match")
@@ -343,6 +344,18 @@ final class FinderTabTests: XCTestCase {
         XCTAssertTrue(tab.waitForExistence(timeout: 5))
         tab.tap()
         XCTAssertTrue(app.buttons["finder.community"].waitForExistence(timeout: 5))
+    }
+
+    private func revealDisputedSpanishRidgeEvidence() {
+        let evidence = app.staticTexts.matching(NSPredicate(format:
+            "label CONTAINS %@", "Building A for 201 is not asserted")).firstMatch
+        XCTAssertFalse(evidence.exists, "Detailed map evidence stays collapsed at first")
+        let disclosure = app.buttons.matching(NSPredicate(format:
+            "identifier == %@ OR label == %@", "finder.evidenceDetails", "Evidence details")).firstMatch
+        expectHittable(disclosure)
+        disclosure.tap()
+        XCTAssertTrue(evidence.waitForExistence(timeout: 5))
+        XCTAssertTrue(evidence.label.contains("Building and floor remain unknown"))
     }
 
     private func search(address: String, unit: String) {

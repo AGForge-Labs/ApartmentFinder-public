@@ -86,5 +86,6 @@ final class NativeDeliveryMapTests: XCTestCase {
         XCTAssertEqual(selected, "stop")
         XCTAssertEqual(view.accessibilityIdentifier, "mini.pin.7.place")
         XCTAssertEqual(view.displayPriority, .required)
+        XCTAssertEqual(view.zPriority, .defaultUnselected)
     }
 }
