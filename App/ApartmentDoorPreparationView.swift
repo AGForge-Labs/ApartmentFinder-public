@@ -94,9 +94,9 @@ struct ApartmentDoorPreparationView: View {
                                                 Marker("Unit \(stop.unit)", coordinate: coordinate.cl).tint(.teal)
                                             }
                                         }
-                                        if let fix = location.fix, fix.usable(at: .now) {
-                                            Annotation("You", coordinate: fix.coordinate.cl) {
-                                                MapLocationDot(accessibilityID: "door.userLocation")
+                                        if let position = location.mapPosition {
+                                            Annotation(position.isCurrent ? "You" : "Last known location", coordinate: position.coordinate.cl) {
+                                                MapLocationDot(accessibilityID: "door.userLocation", isCurrent: position.isCurrent)
                                             }
                                         }
                                     }

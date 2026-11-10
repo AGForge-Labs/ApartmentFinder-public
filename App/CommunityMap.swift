@@ -18,7 +18,6 @@ struct CommunityMap: View {
     var paths: [PathSegment]
     var route: [Coordinate] = []
     var focus: Coordinate?
-    var fix: LocationFix?
     var selectedID: String?
     var offline: Bool
     var digitalLocker: DigitalLockerEvidence? = nil
@@ -32,11 +31,11 @@ struct CommunityMap: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             if offline {
-                OfflineMap(places: places, paths: paths, route: route, focus: focus, fix: fix,
+                OfflineMap(places: places, paths: paths, route: route, focus: focus,
                            selectedID: selectedID, digitalLocker: digitalLocker, onSelect: onSelect, onPosition: onPosition,
                            bounds: offlineBounds, liveLocation: liveLocation)
             } else {
-                StreetMap(places: places, paths: paths, route: route, focus: focus, fix: liveLocation?.fix ?? fix,
+                StreetMap(places: places, paths: paths, route: route, focus: focus, userLocation: liveLocation?.mapPosition,
                           selectedID: selectedID, digitalLocker: digitalLocker, onSelect: onSelect, onPosition: onPosition)
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -52,7 +51,7 @@ struct CommunityMap: View {
 
 private struct OfflineMap: View {
     var places: [Place]; var paths: [PathSegment]; var route: [Coordinate]
-    var focus: Coordinate?; var fix: LocationFix?; var selectedID: String?
+    var focus: Coordinate?; var selectedID: String?
     var digitalLocker: DigitalLockerEvidence?
     var onSelect: (String) -> Void; var onPosition: ((Coordinate) -> Void)?
     let bounds: MapBounds
@@ -70,7 +69,6 @@ private struct OfflineMap: View {
         return "Offline community map. Use the search results to select a unit."
     }
     var body: some View {
-        let displayedFix = liveLocation?.fix ?? fix
         GeometryReader { geometry in
             let scale = max(0.5, min(30, zoom * pinch))
             let offset = CGSize(width: pan.width + drag.width, height: pan.height + drag.height)
@@ -131,10 +129,11 @@ private struct OfflineMap: View {
                     let p = point(focus)
                     context.fill(Path(ellipseIn: .init(x: p.x-6,y: p.y-6,width: 12,height: 12)), with: .color(.yellow))
                 }
-                if let fix = displayedFix {
-                    let p = point(fix.coordinate)
-                    context.fill(Path(ellipseIn: .init(x: p.x-8,y: p.y-8,width: 16,height: 16)), with: .color(fix.usable(at: .now) ? .blue : .gray))
-                    context.stroke(Path(ellipseIn: .init(x: p.x-8,y: p.y-8,width: 16,height: 16)), with: .color(.white), lineWidth: 2)
+            }
+            .overlay {
+                if let liveLocation {
+                    OfflineUserLocation(location: liveLocation, bounds: bounds, size: geometry.size, scale: scale, offset: offset)
+                        .allowsHitTesting(false)
                 }
             }
             .contentShape(Rectangle())
@@ -163,6 +162,22 @@ private struct OfflineMap: View {
                 }
             }
         }.accessibilityLabel(mapAccessibilityLabel)
+    }
+}
+
+/// GPS invalidates only this overlay, leaving the paths and pins in the canvas alone.
+private struct OfflineUserLocation: View {
+    let location: LocationService
+    let bounds: MapBounds
+    let size: CGSize
+    let scale: CGFloat
+    let offset: CGSize
+
+    var body: some View {
+        if let position = location.mapPosition {
+            MapLocationDot(accessibilityID: "community.userLocation", isCurrent: position.isCurrent)
+                .position(bounds.point(position.coordinate, size: size, zoom: scale, offset: offset))
+        }
     }
 }
 
@@ -229,24 +244,45 @@ private final class LockerAnnotation: NSObject, MKAnnotation {
 
 private final class AppLocationAnnotation: NSObject, MKAnnotation {
     @objc dynamic var coordinate: CLLocationCoordinate2D
-    let title: String? = "Your GPS position"
-    init(_ fix: LocationFix) { coordinate = fix.coordinate.cl }
+    var isCurrent: Bool
+
+    init(_ position: MapUserLocation) {
+        coordinate = position.coordinate.cl
+        isCurrent = position.isCurrent
+    }
+
+    @MainActor
+    func configure(_ view: MKMarkerAnnotationView) {
+        view.markerTintColor = isCurrent ? .systemBlue : .systemGray
+        view.accessibilityLabel = isCurrent ? "Your current location" : "Your last known location"
+    }
 }
-enum AppOwnedMapLocation {
-    static func update(_ view: MKMapView, fix: LocationFix?, at now: Date) {
-        view.showsUserLocation = false
-        let existing = view.annotations.compactMap { $0 as? AppLocationAnnotation }
-        if let fix, fix.usable(at: now) {
-            if let annotation = existing.first {
-                if Coordinate(annotation.coordinate) != fix.coordinate { annotation.coordinate = fix.coordinate.cl }
-                view.removeAnnotations(Array(existing.dropFirst()))
-            } else { view.addAnnotation(AppLocationAnnotation(fix)) }
-        } else { view.removeAnnotations(existing) }
+
+final class AppOwnedMapLocation {
+    private var annotation: AppLocationAnnotation?
+
+    @MainActor
+    func update(_ view: MKMapView, position: MapUserLocation?) {
+        guard let position else {
+            if let annotation { view.removeAnnotation(annotation); self.annotation = nil }
+            return
+        }
+        if let annotation {
+            if annotation.isCurrent != position.isCurrent {
+                annotation.isCurrent = position.isCurrent
+                if let marker = view.view(for: annotation) as? MKMarkerAnnotationView { annotation.configure(marker) }
+            }
+            if Coordinate(annotation.coordinate) != position.coordinate { annotation.coordinate = position.coordinate.cl }
+        } else {
+            let marker = AppLocationAnnotation(position)
+            annotation = marker
+            view.addAnnotation(marker)
+        }
     }
 }
 private struct StreetMap: UIViewRepresentable {
     var places: [Place]; var paths: [PathSegment]; var route: [Coordinate]
-    var focus: Coordinate?; var fix: LocationFix?; var selectedID: String?
+    var focus: Coordinate?; var userLocation: MapUserLocation?; var selectedID: String?
     var digitalLocker: DigitalLockerEvidence?
     var onSelect: (String) -> Void; var onPosition: ((Coordinate) -> Void)?
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -296,7 +332,9 @@ private struct StreetMap: UIViewRepresentable {
         }
         coordinator.selectedEstimate = selectedEstimate
         coordinator.hasLoadedContent = true
-        AppOwnedMapLocation.update(view, fix: fix, at: .now)
+        if firstUpdate || previous.userLocation != userLocation {
+            coordinator.locationMarker.update(view, position: userLocation)
+        }
         let lockerAnchor = digitalLocker?.status == .present ? digitalLocker?.point?.coordinate : nil
         let anchor = focus ?? places.first?.coordinate ?? lockerAnchor
         if context.coordinator.anchor != anchor, let anchor {
@@ -310,6 +348,7 @@ private struct StreetMap: UIViewRepresentable {
     final class Coordinator: NSObject, MKMapViewDelegate {
         var parent: StreetMap
         var hasLoadedContent = false
+        let locationMarker = AppOwnedMapLocation()
         var selectedEstimate: Place?
         var anchor: Coordinate?
         init(_ parent: StreetMap) { self.parent = parent }
@@ -331,11 +370,14 @@ private struct StreetMap: UIViewRepresentable {
                 view.accessibilityLabel = [pin.title, pin.subtitle].compactMap { $0 }.joined(separator: ". ")
                 return view
             }
-            guard annotation is AppLocationAnnotation else { return nil }
+            guard let position = annotation as? AppLocationAnnotation else { return nil }
             let view = (mapView.dequeueReusableAnnotationView(withIdentifier: "app-location") as? MKMarkerAnnotationView)
-                ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "app-location")
-            view.annotation = annotation
-            view.markerTintColor = .systemBlue; view.glyphImage = UIImage(systemName: "location.fill")
+                ?? MKMarkerAnnotationView(annotation: position, reuseIdentifier: "app-location")
+            view.annotation = position
+            view.glyphImage = UIImage(systemName: "location.fill")
+            view.displayPriority = .required
+            view.zPriority = .max
+            position.configure(view)
             return view
         }
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {

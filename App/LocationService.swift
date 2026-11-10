@@ -23,10 +23,18 @@ protocol LocationManaging: AnyObject {
 }
 extension CLLocationManager: LocationManaging {}
 
+/// Display only. Actions such as saving a door still require a usable LocationFix.
+struct MapUserLocation: Equatable {
+    let coordinate: Coordinate
+    let isCurrent: Bool
+}
+
 @Observable
 final class LocationService: NSObject, CLLocationManagerDelegate {
     private(set) var fix: LocationFix?
-    private(set) var direction: NavigationDirection?
+    private(set) var mapPosition: MapUserLocation?
+    private(set) var mapBearing: Double?
+    var direction: NavigationDirection? { directionTracking.direction }
     var status = "Location is off"
     private(set) var recording = false
     private(set) var recordingNeedsFinish = false
@@ -60,7 +68,8 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
-        manager.distanceFilter = 2
+        // A movement filter can starve the freshness check while the driver is stopped.
+        manager.distanceFilter = kCLDistanceFilterNone
         manager.activityType = .otherNavigation
         manager.pausesLocationUpdatesAutomatically = false
     }
@@ -87,10 +96,11 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         beginIfAllowed()
     }
     private func suspendUpdates() {
+        let wasUpdating = updating
+        updating = false
         directionTracking.reset()
         tracking.stop(); freshnessTimer = nil; publishState()
-        if updating { manager.stopUpdatingLocation(); manager.stopUpdatingHeading() }
-        updating = false
+        if wasUpdating { manager.stopUpdatingLocation(); manager.stopUpdatingHeading() }
         manager.allowsBackgroundLocationUpdates = false; manager.showsBackgroundLocationIndicator = false
     }
     func startRecording() { pathRecording.start(); publishState(); start(navigation: true) }
@@ -100,6 +110,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
             fix = tracking.fix
             fixes.send(fix)
         }
+        publishMapPosition()
         publishDirection()
         if recording != pathRecording.collecting { recording = pathRecording.collecting }
         if recordingNeedsFinish != pathRecording.needsFinish { recordingNeedsFinish = pathRecording.needsFinish }
@@ -107,13 +118,31 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         // A recording only appends samples or clears them when a new section starts.
         if recorded.count != pathRecording.samples.count { recorded = pathRecording.coordinates }
     }
+    private func publishMapPosition() {
+        let position: MapUserLocation?
+        if let current = tracking.fix {
+            // Suppress sub-metre jitter and timestamp-only changes in the map.
+            if let previous = mapPosition, previous.isCurrent,
+               previous.coordinate == current.coordinate || Geometry.distance(previous.coordinate, current.coordinate) < 1 {
+                return
+            }
+            position = MapUserLocation(coordinate: current.coordinate, isCurrent: true)
+        } else if updating, let previous = mapPosition {
+            position = MapUserLocation(coordinate: previous.coordinate, isCurrent: false)
+        } else {
+            position = nil
+        }
+        if mapPosition != position { mapPosition = position }
+    }
     private func publishDirection() {
-        if direction != directionTracking.direction { direction = directionTracking.direction }
+        let bearing = tracking.fix == nil ? nil : direction?.degrees
+        if mapBearing != bearing { mapBearing = bearing }
     }
     private func refreshFreshness(at now: Date) {
         directionTracking.tick(at: now)
         tracking.tick(at: now); pathRecording.tick(at: now); publishState()
-        let updatedStatus = tracking.fix.map { "GPS ±\(Int($0.accuracy)) m" } ?? "Waiting for a reliable GPS fix"
+        let updatedStatus = tracking.fix.map { "GPS ±\(Int($0.accuracy)) m" }
+            ?? (mapPosition == nil ? "Waiting for a reliable GPS fix" : "GPS weak · Last known location")
         if status != updatedStatus { status = updatedStatus }
     }
     private func beginIfAllowed() {
@@ -188,13 +217,14 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
             }
         }
         // Core Location continues acquiring after transient locationUnknown failures.
-        // Clear the fix, keep acquisition alive, and never bridge a recorded gap.
+        // Invalidate the actionable fix while keeping the last known marker visible.
         tracking.temporarilyUnavailable()
         directionTracking.reset()
         if !pathRecording.samples.isEmpty {
             pathRecording.pause("GPS became unavailable. Finish and save this section before recording another.")
         }
         publishState()
-        status = "Waiting for GPS to recover: \(error.localizedDescription)"
+        status = mapPosition == nil ? "Waiting for GPS to recover: \(error.localizedDescription)"
+            : "GPS weak · Last known location"
     }
 }

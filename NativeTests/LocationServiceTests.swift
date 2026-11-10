@@ -170,17 +170,35 @@ final class LocationServiceTests: XCTestCase {
     func testTransientGPSFailureRecoversAndStaleLocationIsRejected() {
         let manager = TestLocationManager()
         let service = LocationService(manager: manager)
-        service.setMapVisible(UUID(), visible: true, foreground: true)
+        let owner = UUID()
+        service.setMapVisible(owner, visible: true, foreground: true)
+        XCTAssertEqual(manager.distanceFilter, kCLDistanceFilterNone)
         manager.send(latitude: 36.07, timestamp: Date().addingTimeInterval(-60))
         XCTAssertNil(service.fix)
-        manager.send(latitude: 36.07)
-        XCTAssertNotNil(service.fix)
+        XCTAssertNil(service.mapPosition)
+
+        manager.sendCourse(270, accuracy: 8, speed: 1.2)
+        let originalCoordinate = service.fix?.coordinate
+        XCTAssertNotNil(originalCoordinate)
+        XCTAssertEqual(service.mapPosition?.isCurrent, true)
+        XCTAssertEqual(service.mapBearing, 270)
+
         service.locationManager(manager.callbackManager, didFailWithError: CLError(.locationUnknown))
         XCTAssertNil(service.fix)
+        XCTAssertNil(service.mapBearing)
+        XCTAssertEqual(service.mapPosition?.coordinate, originalCoordinate)
+        XCTAssertEqual(service.mapPosition?.isCurrent, false)
         XCTAssertTrue(service.isTrackingRequested)
+
         manager.send(latitude: 36.0701)
         XCTAssertEqual(service.fix?.coordinate.latitude, 36.0701)
-        service.stop()
+        XCTAssertEqual(service.mapPosition?.coordinate.latitude, 36.0701)
+        XCTAssertEqual(service.mapPosition?.isCurrent, true)
+
+        manager.authorizationStatus = .denied
+        service.locationManagerDidChangeAuthorization(manager.callbackManager)
+        XCTAssertNil(service.fix)
+        XCTAssertNil(service.mapPosition)
     }
 
     func testEndingNavigationPreservesVisibleMapsForegroundLocation() {

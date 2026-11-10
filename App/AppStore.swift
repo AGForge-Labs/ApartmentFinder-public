@@ -42,7 +42,7 @@ final class AppStore: ObservableObject {
     private var privatePackStore: PrivateDataPackStore?
     private var publicCatalogSupplement: LocalDataPack?
     private var publicOwnershipView: LocalDataPack?
-    private var reviewedBaseline: PublicCatalogUpdatePayload?
+    private var reviewedBaseline: (manifest: PublicCatalogUpdateManifest, pack: LocalDataPack)?
     private var reviewedOverlay: LocalDataPack?
     private var reviewedOverlayAllowed = false
     private var loadedBasePack: LocalDataPack?
@@ -163,8 +163,9 @@ final class AppStore: ObservableObject {
     private func loadPublicSupplement(resourceBundle: Bundle) {
         // Failure to read history or the reviewed files must never resurrect a rolled-back selection.
         do {
-            let baseline = try ReviewedBundleResources.baseline(from: resourceBundle)
-            reviewedBaseline = baseline
+            // Keep the verified model and identity. Raw resource bytes are only needed during validation.
+            reviewedBaseline = try ReviewedBundleResources.baseline(from: resourceBundle).map { ($0.manifest, $0.pack) }
+            let baseline = reviewedBaseline
             let overlay = try ReviewedBundleResources.overlay(from: resourceBundle)
             let snapshot = try publicCatalogStore?.reviewedBundleSelection()
             if let selected = snapshot?.selection {

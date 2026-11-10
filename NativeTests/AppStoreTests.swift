@@ -239,18 +239,19 @@ final class AppStoreTests: XCTestCase {
         XCTAssertFalse(navigation.canStart(identity))
     }
 
-    func testMapUsesOnlyAppOwnedFixAndRemovesItAfterStopOrExpiry() {
+    func testFinderMapKeepsTheSameLocationAnnotationUntilTrackingStops() throws {
         let map = MKMapView()
-        let now = Date(timeIntervalSince1970: 1_000)
-        // Invented map-location sample, unrelated to the device or any person.
-        let fix = LocationFix(coordinate: Coordinate(latitude: 0.001, longitude: 0.002), accuracy: 5, timestamp: now)
-        AppOwnedMapLocation.update(map, fix: fix, at: now)
+        let marker = AppOwnedMapLocation()
+        let coordinate = Coordinate(latitude: 0.001, longitude: 0.002)
+        marker.update(map, position: MapUserLocation(coordinate: coordinate, isCurrent: true))
         XCTAssertFalse(map.showsUserLocation)
         XCTAssertEqual(map.annotations.count, 1)
-        XCTAssertEqual(map.annotations.first?.coordinate.latitude, 0.001)
-        AppOwnedMapLocation.update(map, fix: nil, at: now)
-        XCTAssertTrue(map.annotations.isEmpty)
-        AppOwnedMapLocation.update(map, fix: fix, at: now.addingTimeInterval(16))
+        let live = try XCTUnwrap(map.annotations.first)
+        XCTAssertEqual(live.coordinate.latitude, 0.001)
+        marker.update(map, position: MapUserLocation(coordinate: coordinate, isCurrent: false))
+        let lastKnown = try XCTUnwrap(map.annotations.first)
+        XCTAssertTrue((live as AnyObject) === (lastKnown as AnyObject))
+        marker.update(map, position: nil)
         XCTAssertTrue(map.annotations.isEmpty)
         XCTAssertFalse(map.showsUserLocation)
     }

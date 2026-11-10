@@ -155,7 +155,7 @@ private struct FinderView: View {
                     if let community {
                         DigitalLockerStatusView(evidence: community.digitalLocker, sources: store.pack?.catalog.sources ?? [])
                         CommunityMap(places: communityPlaces,paths: communityPaths,route: navigation.route?.coordinates ?? [],
-                                     focus: selected?.coordinate ?? community.coordinate,fix: nil,selectedID: selected?.id,offline: offline,digitalLocker: community.digitalLocker,
+                                     focus: selected?.coordinate ?? community.coordinate,selectedID: selected?.id,offline: offline,digitalLocker: community.digitalLocker,
                                      onSelect: { id in
                                          if let place = communityPlaces.first(where: { $0.id == id }) { select(place) }
                                      }, liveLocation: location)

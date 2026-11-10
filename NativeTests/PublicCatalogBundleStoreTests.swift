@@ -317,7 +317,7 @@ final class PublicCatalogBundleStoreTests: XCTestCase {
         XCTAssertEqual(store.digitalLocker(groupID: group.id), evidence)
         let before = store.personal
         var selections: [String] = []
-        let finder = CommunityMap(places: [], paths: [], focus: nil, fix: nil, selectedID: nil,
+        let finder = CommunityMap(places: [], paths: [], focus: nil, selectedID: nil,
             offline: false, digitalLocker: evidence, onSelect: { selections.append($0) }, onPosition: nil)
         try await assertHostedMapFramesLocker(finder, target: target, label: "Finder locker-only") { finderMap in
             let amenity = try XCTUnwrap(finderMap.annotations.first { annotation in

@@ -200,7 +200,9 @@ private struct ApartmentDeliveryMapScene: View {
                         }
                 }
             }
-            .onChange(of: CameraLocation(coordinate: usableFix?.coordinate, heading: location.direction?.degrees)) { old, new in
+            .onChange(of: cameraLocation) { old, new in
+                // Hold the current view through a GPS gap instead of snapping away from the marker.
+                guard new.coordinate != nil else { return }
                 followLocation(headingOnly: old.coordinate == new.coordinate)
             }
             .onChange(of: frameCoordinates) { _, _ in
@@ -210,9 +212,16 @@ private struct ApartmentDeliveryMapScene: View {
             // Choosing/advancing a delivery changes its highlight, not the user's camera/follow choice.
     }
 
+    private var cameraLocation: CameraLocation {
+        guard let position = location.mapPosition, position.isCurrent else {
+            return CameraLocation(coordinate: nil, heading: nil)
+        }
+        return CameraLocation(coordinate: position.coordinate, heading: location.mapBearing)
+    }
+
     private var nativeMap: NativeDeliveryMap {
         var map = NativeDeliveryMap(pins: pins, areas: areas, community: community,
-            locker: locker, fix: location.fix, direction: location.direction,
+            locker: locker, userLocation: location.mapPosition, bearing: location.mapBearing,
             camera: camera, style: mapStyle, select: select,
             userMoved: { distance in
                 var updatedFollowing = following
@@ -265,11 +274,14 @@ private struct ApartmentDeliveryMapScene: View {
 
     @ViewBuilder private var followingControl: some View {
         if following.isFollowing {
-            Button(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? propertyDescription :
-                   location.direction == nil ? "Following your location" : "Following your direction",
+            let waitingForGPS = location.mapPosition?.isCurrent == false && !showingPropertyForDistantUser
+            let showingProperty = showingPropertyForDistantUser || location.mapPosition?.isCurrent != true
+            let description = waitingForGPS ? "Waiting for GPS" : propertyDescription
+            Button(showingProperty ? description :
+                   location.mapBearing == nil ? "Following your location" : "Following your direction",
                    systemImage: "location.north.fill") { followLocation(force: true) }
                 .tint(.teal).accessibilityIdentifier("mini.recenter")
-                .accessibilityValue(Text(verbatim: "\(showingPropertyForDistantUser || location.fix?.usable(at: .now) != true ? propertyDescription : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.direction == nil ? ", direction unavailable" : "")\(cameraChangeDiagnostic)"))
+                .accessibilityValue(Text(verbatim: "\(showingProperty ? description : "Following"), map heading \(Int(mapHeading.rounded()) % 360) degrees, map distance \(Int(mapDistance.rounded())) meters\(location.mapBearing == nil ? ", direction unavailable" : "")\(cameraChangeDiagnostic)"))
                 .accessibilityHint("Pan or zoom the map to pause following")
         } else {
             Button("Resume following", systemImage: "location.fill") {
@@ -301,7 +313,7 @@ private struct ApartmentDeliveryMapScene: View {
 
     private func followLocation(force: Bool = false, headingOnly: Bool = false) {
         guard following.isFollowing, viewport.width > 0, viewport.height > 0 else { return }
-        if let direction = location.direction, followedHeading != direction.degrees { followedHeading = direction.degrees }
+        if let bearing = location.mapBearing, followedHeading != bearing { followedHeading = bearing }
         // Turning in place can use the current framing without rescanning pins.
         if headingOnly, let requested = camera.camera {
             requestFollowCamera(center: Coordinate(requested.centerCoordinate), distance: requested.distance, force: force)

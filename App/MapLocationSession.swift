@@ -33,36 +33,38 @@ extension View {
 
 struct MapLocationDot: View {
     let accessibilityID: String
+    var isCurrent = true
     var body: some View {
-        Circle().fill(.blue).frame(width: 16, height: 16)
+        Circle().fill(isCurrent ? Color.blue : Color.gray).frame(width: 16, height: 16)
             .overlay(Circle().stroke(.white, lineWidth: 3))
             .shadow(color: .black.opacity(0.5), radius: 2)
             .accessibilityElement()
-            .accessibilityLabel("Your current location")
+            .accessibilityLabel(isCurrent ? "Your current location" : "Your last known location")
             .accessibilityIdentifier(accessibilityID)
     }
 }
 
 /// A direction is shown only while the shared location service has a reliable, current bearing.
 struct MapLocationDirection: View {
-    let direction: NavigationDirection?
+    let bearing: Double?
     let mapHeading: Double
     let accessibilityID: String
+    var isCurrent = true
 
     var body: some View {
-        if let direction {
+        if isCurrent, let bearing {
             LocationArrowShape().fill(.blue)
                 .overlay(LocationArrowShape().stroke(.white, style: StrokeStyle(lineWidth: 3, lineJoin: .round)))
                 .frame(width: 28, height: 34)
-                .rotationEffect(.degrees(NavigationDirection.relativeAngle(heading: direction.degrees, mapHeading: mapHeading)))
+                .rotationEffect(.degrees(NavigationDirection.relativeAngle(heading: bearing, mapHeading: mapHeading)))
                 .shadow(color: .black.opacity(0.5), radius: 2)
                 .accessibilityElement()
                 .accessibilityLabel("Your current location and travel direction")
-                .accessibilityValue("Direction \(Int(direction.degrees.rounded()) % 360) degrees")
+                .accessibilityValue("Direction \(Int(bearing.rounded()) % 360) degrees")
                 .accessibilityIdentifier(accessibilityID)
         } else {
-            MapLocationDot(accessibilityID: accessibilityID)
-                .accessibilityValue("Direction unavailable")
+            MapLocationDot(accessibilityID: accessibilityID, isCurrent: isCurrent)
+                .accessibilityValue(isCurrent ? "Direction unavailable" : "GPS unavailable")
         }
     }
 }
