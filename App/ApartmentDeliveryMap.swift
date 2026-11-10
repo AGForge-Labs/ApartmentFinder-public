@@ -98,7 +98,7 @@ struct ApartmentDeliveryMap: View {
             coordinates = []
         }
         let map = ApartmentDeliveryMapScene(
-            groupID: group.id, community: group.coordinate, pins: pins.map { pin in
+            community: group.coordinate, pins: pins.map { pin in
                 .init(id: pin.id, stopID: pin.stop.id, placeID: pin.place.id, coordinate: pin.place.coordinate,
                     sequenceID: pin.stop.sequence, sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                     status: pin.status, ready: pin.ready, completed: pin.stop.completed,
@@ -110,9 +110,9 @@ struct ApartmentDeliveryMap: View {
         #if DEBUG && targetEnvironment(simulator)
         var observedMap = map
         observedMap.syntheticMapObservation = syntheticMapObservation
-        return observedMap
+        return observedMap.id(group.id)
         #else
-        return map
+        return map.id(group.id)
         #endif
     }
 }
@@ -120,7 +120,6 @@ struct ApartmentDeliveryMap: View {
 /// Live camera and GPS changes only update this scene. Route pins and uncertainty
 /// geometry are resolved by its parent when the store or selected stop changes.
 private struct ApartmentDeliveryMapScene: View {
-    let groupID: String
     let community: Coordinate?
     let pins: [NativeDeliveryMap.Pin]
     let guides: [[Coordinate]]
@@ -196,7 +195,10 @@ private struct ApartmentDeliveryMapScene: View {
                 GeometryReader { geometry in
                     Color.clear.onAppear { viewport = geometry.size; followLocation() }
                         .onChange(of: geometry.size) { _, size in
-                            viewport = size; following.viewportChanged(); followLocation()
+                            viewport = size
+                            following.viewportChanged()
+                            if following.mode == .overview { fitAll(includeLocation: true) }
+                            else { followLocation(force: true) }
                         }
                 }
             }
@@ -239,6 +241,9 @@ private struct ApartmentDeliveryMapScene: View {
             })
         map.guides = guides
         map.cameraCommand = cameraCommand
+        if following.isFollowing && !following.hasUserChosenZoom {
+            map.automaticFitRadius = following.automaticRadius
+        }
         map.selectLocker = { showingLockerDetails = true }
         #if DEBUG && targetEnvironment(simulator)
         map.observe = { map in emitSyntheticMapObservation(map: map) }
@@ -324,12 +329,13 @@ private struct ApartmentDeliveryMapScene: View {
             fix: usableFix, at: .now, width: Double(viewport.width), height: Double(viewport.height))
         guard let frame else { fitAll(); return }
         var updatedFollowing = following
-        updatedFollowing.adoptInitialFrame(distance: frame.distance, includesUser: frame.includesUser)
+        updatedFollowing.adoptAutomaticFrame(frame)
+        let needsRefit = updatedFollowing.automaticRadius != following.automaticRadius
         if updatedFollowing != following { following = updatedFollowing }
         let distant = usableFix != nil && !frame.includesUser && !following.hasUserChosenZoom
         if showingPropertyForDistantUser != distant { showingPropertyForDistantUser = distant }
         let center = following.hasUserChosenZoom ? usableFix?.coordinate ?? frame.center : frame.center
-        requestFollowCamera(center: center, distance: following.distance, force: force)
+        requestFollowCamera(center: center, distance: following.distance, force: force || needsRefit)
     }
 
     private func requestFollowCamera(center: Coordinate, distance: Double, force: Bool) {

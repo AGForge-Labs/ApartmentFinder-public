@@ -109,23 +109,24 @@ public struct NavigationDirectionState: Sendable {
     }
 }
 
-/// GPS/direction changes do not alter this state: only deliberate camera gestures/controls do.
+/// Only deliberate gestures and controls change the mode or choose a manual zoom.
 public struct MiniRouteMapFollowingState: Equatable, Sendable {
     public enum Mode: Equatable, Sendable { case following, overview, manual }
     public private(set) var mode: Mode = .following
     public private(set) var distance: Double = 350
     public private(set) var hasUserChosenZoom = false
-    private var initialFrameIncludesUser: Bool?
+    public private(set) var automaticRadius: Double?
     public var isFollowing: Bool { mode == .following }
     public init() {}
-    public mutating func adoptInitialFrame(distance: Double, includesUser: Bool) {
-        guard isFollowing, !hasUserChosenZoom,
-              initialFrameIncludesUser == nil || (initialFrameIncludesUser == false && includesUser),
-              distance.isFinite, distance > 0 else { return }
-        self.distance = distance; initialFrameIncludesUser = includesUser
+    public mutating func adoptAutomaticFrame(_ frame: MiniRouteCameraFrame) {
+        guard isFollowing, !hasUserChosenZoom, frame.radius.isFinite, frame.radius > (automaticRadius ?? -1),
+              frame.distance.isFinite, frame.distance > 0 else { return }
+        // Keep some room for movement so GPS does not continuously change the zoom.
+        automaticRadius = max(60, frame.radius * 1.15)
+        distance = frame.distance * 1.15
     }
     public mutating func viewportChanged() {
-        if !hasUserChosenZoom { initialFrameIncludesUser = nil }
+        automaticRadius = nil
     }
     public mutating func userMoved(distance: Double) {
         mode = .manual
