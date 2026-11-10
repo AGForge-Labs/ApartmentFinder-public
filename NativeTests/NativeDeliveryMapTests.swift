@@ -54,9 +54,12 @@ final class NativeDeliveryMapTests: XCTestCase {
         route.automaticFitRadius = 250
         let coordinator = route.makeCoordinator()
         let map = coordinator.makeMapView()
-        map.frame = CGRect(x: 0, y: 0, width: 320, height: 239)
-        map.layoutIfNeeded()
+        map.frame = .zero
         coordinator.update(map, model: route)
+        // UIKit can lay out the native view after SwiftUI sends its first camera command.
+        map.frame = CGRect(x: 0, y: 0, width: 320, height: 239)
+        map.setNeedsLayout()
+        map.layoutIfNeeded()
 
         let clearArea = map.bounds.insetBy(dx: 60, dy: 75)
         for coordinate in [

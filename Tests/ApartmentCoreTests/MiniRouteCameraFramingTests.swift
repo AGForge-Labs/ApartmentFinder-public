@@ -68,40 +68,41 @@ final class MiniRouteCameraFramingTests: XCTestCase {
         }
     }
 
-    func testAutomaticZoomExpandsForWiderPinsAndKeepsRoomForSmallGPSChanges() {
+    func testAutomaticZoomFitsNearbyGPSOnceAndRefitsWhenThePinsChange() {
         var state = MiniRouteMapFollowingState()
-        state.adoptAutomaticFrame(frame(radius: 100, distance: 850))
-        let firstRadius = state.automaticRadius
+        state.adoptAutomaticFrame(frame(radius: 100, distance: 850, includesUser: false))
         let firstZoom = state.distance
-        state.adoptAutomaticFrame(frame(radius: 103, distance: 870))
-        XCTAssertEqual(state.automaticRadius, firstRadius)
-        XCTAssertEqual(state.distance, firstZoom)
+        state.adoptAutomaticFrame(frame(radius: 180, distance: 1500))
+        let nearZoom = state.distance
+        XCTAssertGreaterThan(nearZoom, firstZoom)
+        state.adoptAutomaticFrame(frame(radius: 220, distance: 1800))
+        XCTAssertEqual(state.distance, nearZoom)
+        state.adoptAutomaticFrame(frame(radius: 100, distance: 850, includesUser: false))
+        XCTAssertEqual(state.distance, nearZoom)
 
-        state.adoptAutomaticFrame(frame(radius: 220, distance: 1600))
-        let expandedZoom = state.distance
+        state.resetAutomaticFrame()
+        state.adoptAutomaticFrame(frame(radius: 220, distance: 1800))
         XCTAssertGreaterThanOrEqual(state.automaticRadius ?? 0, 220)
-        XCTAssertGreaterThan(expandedZoom, firstZoom)
-        state.adoptAutomaticFrame(frame(radius: 100, distance: 850))
-        XCTAssertEqual(state.distance, expandedZoom)
+        XCTAssertGreaterThan(state.distance, nearZoom)
     }
 
     func testViewportChangeRefitsAutomaticZoomAndManualResumeKeepsChosenZoom() {
         var state = MiniRouteMapFollowingState()
         state.adoptAutomaticFrame(frame(radius: 220, distance: 1600))
-        state.viewportChanged()
+        state.resetAutomaticFrame()
         state.adoptAutomaticFrame(frame(radius: 100, distance: 850))
         XCTAssertEqual(state.distance, 850 * 1.15, accuracy: 0.01)
 
         state.userMoved(distance: 900)
         state.resume()
-        state.viewportChanged()
+        state.resetAutomaticFrame()
         state.adoptAutomaticFrame(frame(radius: 300, distance: 2400))
         XCTAssertTrue(state.isFollowing)
         XCTAssertEqual(state.distance, 900)
         XCTAssertNil(state.automaticRadius)
     }
 
-    private func frame(radius: Double, distance: Double) -> MiniRouteCameraFrame {
-        MiniRouteCameraFrame(center: user, distance: distance, radius: radius, includesUser: true)
+    private func frame(radius: Double, distance: Double, includesUser: Bool = true) -> MiniRouteCameraFrame {
+        MiniRouteCameraFrame(center: user, distance: distance, radius: radius, includesUser: includesUser)
     }
 }

@@ -98,7 +98,7 @@ struct ApartmentDeliveryMap: View {
             coordinates = []
         }
         let map = ApartmentDeliveryMapScene(
-            community: group.coordinate, pins: pins.map { pin in
+            groupID: group.id, community: group.coordinate, pins: pins.map { pin in
                 .init(id: pin.id, stopID: pin.stop.id, placeID: pin.place.id, coordinate: pin.place.coordinate,
                     sequenceID: pin.stop.sequence, sequence: pin.stop.sequenceLabel, unit: pin.stop.unit, building: pin.place.building,
                     status: pin.status, ready: pin.ready, completed: pin.stop.completed,
@@ -120,6 +120,7 @@ struct ApartmentDeliveryMap: View {
 /// Live camera and GPS changes only update this scene. Route pins and uncertainty
 /// geometry are resolved by its parent when the store or selected stop changes.
 private struct ApartmentDeliveryMapScene: View {
+    let groupID: String
     let community: Coordinate?
     let pins: [NativeDeliveryMap.Pin]
     let guides: [[Coordinate]]
@@ -196,7 +197,7 @@ private struct ApartmentDeliveryMapScene: View {
                     Color.clear.onAppear { viewport = geometry.size; followLocation() }
                         .onChange(of: geometry.size) { _, size in
                             viewport = size
-                            following.viewportChanged()
+                            following.resetAutomaticFrame()
                             if following.mode == .overview { fitAll(includeLocation: true) }
                             else { followLocation(force: true) }
                         }
@@ -208,6 +209,7 @@ private struct ApartmentDeliveryMapScene: View {
                 followLocation(headingOnly: old.coordinate == new.coordinate)
             }
             .onChange(of: frameCoordinates) { _, _ in
+                following.resetAutomaticFrame()
                 if following.isFollowing { followLocation() }
                 else if following.mode == .overview { fitAll(includeLocation: true) }
             }
@@ -291,6 +293,7 @@ private struct ApartmentDeliveryMapScene: View {
         } else {
             Button("Resume following", systemImage: "location.fill") {
                 following.resume()
+                following.resetAutomaticFrame()
                 followLocation(force: true)
             }
                 .accessibilityIdentifier("mini.recenter")
@@ -332,9 +335,18 @@ private struct ApartmentDeliveryMapScene: View {
         updatedFollowing.adoptAutomaticFrame(frame)
         let needsRefit = updatedFollowing.automaticRadius != following.automaticRadius
         if updatedFollowing != following { following = updatedFollowing }
-        let distant = usableFix != nil && !frame.includesUser && !following.hasUserChosenZoom
+        let exceedsAutomaticFrame = frame.radius > (following.automaticRadius ?? frame.radius)
+        let distant = usableFix != nil && (!frame.includesUser || exceedsAutomaticFrame) && !following.hasUserChosenZoom
         if showingPropertyForDistantUser != distant { showingPropertyForDistantUser = distant }
-        let center = following.hasUserChosenZoom ? usableFix?.coordinate ?? frame.center : frame.center
+        let center: Coordinate
+        if following.hasUserChosenZoom {
+            center = usableFix?.coordinate ?? frame.center
+        } else if exceedsAutomaticFrame, let lastCamera = camera.camera {
+            // This view still contains the same route pins when the driver moves outside the fit.
+            center = Coordinate(lastCamera.centerCoordinate)
+        } else {
+            center = frame.center
+        }
         requestFollowCamera(center: center, distance: following.distance, force: force || needsRefit)
     }
 

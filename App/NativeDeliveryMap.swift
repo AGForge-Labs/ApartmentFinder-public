@@ -95,6 +95,18 @@ struct NativeDeliveryMap: UIViewRepresentable {
         }
     }
 
+    private final class ViewportMapView: MKMapView {
+        var onResize: (() -> Void)?
+        private var measuredSize = CGSize.zero
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            guard bounds.size != measuredSize else { return }
+            measuredSize = bounds.size
+            onResize?()
+        }
+    }
+
     final class Coordinator: NSObject, MKMapViewDelegate {
         var parent: NativeDeliveryMap
         private var annotations: [String: Annotation] = [:]
@@ -115,7 +127,12 @@ struct NativeDeliveryMap: UIViewRepresentable {
 
         init(_ parent: NativeDeliveryMap) { self.parent = parent }
         func makeMapView() -> MKMapView {
-            let view = MKMapView()
+            let view = ViewportMapView()
+            view.onResize = { [weak self, weak view] in
+                guard let self, let view, !view.bounds.isEmpty, self.parent.automaticFitRadius != nil,
+                      !self.applyingCamera, !self.gestureInProgress, !self.pendingUserMovement else { return }
+                self.applyCamera(view, refit: true)
+            }
             view.delegate = self
             view.showsUserLocation = false
             view.showsCompass = false
@@ -240,10 +257,10 @@ struct NativeDeliveryMap: UIViewRepresentable {
             }
         }
 
-        private func applyCamera(_ view: MKMapView) {
+        private func applyCamera(_ view: MKMapView, refit: Bool = false) {
             // This is a request, not a binding to every intermediate native frame.
             // A GPS/selection redraw with the same request cannot undo a user's pan.
-            guard cameraCommand != parent.cameraCommand else { return }
+            guard cameraCommand != parent.cameraCommand || refit else { return }
             cameraCommand = parent.cameraCommand
             applyingCamera = true
             defer { applyingCamera = false }

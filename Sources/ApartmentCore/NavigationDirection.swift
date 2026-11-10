@@ -116,17 +116,22 @@ public struct MiniRouteMapFollowingState: Equatable, Sendable {
     public private(set) var distance: Double = 350
     public private(set) var hasUserChosenZoom = false
     public private(set) var automaticRadius: Double?
+    private var automaticFrameIncludesUser = false
     public var isFollowing: Bool { mode == .following }
     public init() {}
     public mutating func adoptAutomaticFrame(_ frame: MiniRouteCameraFrame) {
-        guard isFollowing, !hasUserChosenZoom, frame.radius.isFinite, frame.radius > (automaticRadius ?? -1),
+        guard isFollowing, !hasUserChosenZoom, frame.radius.isFinite, frame.radius >= 0,
               frame.distance.isFinite, frame.distance > 0 else { return }
-        // Keep some room for movement so GPS does not continuously change the zoom.
+        // Fit the route, then admit nearby GPS once. Movement alone must not keep changing zoom.
+        guard automaticRadius == nil || (frame.includesUser && !automaticFrameIncludesUser) else { return }
+        automaticFrameIncludesUser = frame.includesUser
+        guard frame.radius > (automaticRadius ?? -1) else { return }
         automaticRadius = max(60, frame.radius * 1.15)
         distance = frame.distance * 1.15
     }
-    public mutating func viewportChanged() {
+    public mutating func resetAutomaticFrame() {
         automaticRadius = nil
+        automaticFrameIncludesUser = false
     }
     public mutating func userMoved(distance: Double) {
         mode = .manual
