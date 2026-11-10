@@ -375,6 +375,7 @@ private struct StreetMap: UIViewRepresentable {
                 ?? MKMarkerAnnotationView(annotation: position, reuseIdentifier: "app-location")
             view.annotation = position
             view.glyphImage = UIImage(systemName: "location.fill")
+            view.isEnabled = false
             view.displayPriority = .required
             view.zPriority = .max
             position.configure(view)
