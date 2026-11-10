@@ -87,11 +87,20 @@ struct NativeDeliveryMap: UIViewRepresentable {
         }
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
         func configure(content: AnyView, bottomAnchored: Bool) {
+            setContentRotation(0)
             host.rootView = content
             let size = host.sizeThatFits(in: CGSize(width: 320, height: 160))
-            bounds.size = CGSize(width: max(44, size.width), height: max(44, size.height))
-            host.view.frame = bounds
-            centerOffset = CGPoint(x: 0, y: bottomAnchored ? -bounds.height / 2 : 0)
+            let measuredSize = CGSize(width: max(44, size.width), height: max(44, size.height))
+            // A highlight change keeps the same geographic anchor and layout.
+            // Avoid invalidating MapKit's placement when only the content changes.
+            if bounds.size != measuredSize { bounds.size = measuredSize }
+            if host.view.frame != bounds { host.view.frame = bounds }
+            let offset = CGPoint(x: 0, y: bottomAnchored ? -bounds.height / 2 : 0)
+            if centerOffset != offset { centerOffset = offset }
+        }
+        func setContentRotation(_ angle: Double) {
+            let rotation = CGAffineTransform(rotationAngle: angle * .pi / 180)
+            if host.view.transform != rotation { host.view.transform = rotation }
         }
     }
 
@@ -309,8 +318,6 @@ struct NativeDeliveryMap: UIViewRepresentable {
         }
 
         private func configure(_ view: PinView, annotation: Annotation) {
-            // A recycled GPS arrow must never leave a delivery marker rotated.
-            view.transform = .identity
             view.isEnabled = annotation.id != "user"
             if let pin = annotation.pin {
                 let color: Color = pin.completed ? .gray : pin.ready ? .teal : .orange
@@ -368,16 +375,15 @@ struct NativeDeliveryMap: UIViewRepresentable {
         }
 
         private func updateDirection(_ view: MKMapView) {
-            guard let annotation = annotations["user"], let pin = view.view(for: annotation) else { return }
+            guard let annotation = annotations["user"], let pin = view.view(for: annotation) as? PinView else { return }
             rotateUserMarker(pin, mapHeading: view.camera.heading)
         }
 
-        private func rotateUserMarker(_ marker: MKAnnotationView, mapHeading: Double) {
+        private func rotateUserMarker(_ marker: PinView, mapHeading: Double) {
             let angle = parent.displayedBearing.map {
                 NavigationDirection.relativeAngle(heading: $0, mapHeading: mapHeading)
             } ?? 0
-            let rotation = CGAffineTransform(rotationAngle: angle * .pi / 180)
-            if marker.transform != rotation { marker.transform = rotation }
+            marker.setContentRotation(angle)
         }
 
         func mapViewDidChangeVisibleRegion(_ mapView: MKMapView) {

@@ -60,32 +60,42 @@ final class MapAppearanceTests: XCTestCase {
         let bottom = min(mapFrame.maxY, nextFrame.minY - 24)
         let visibleMap = CGRect(x: mapFrame.minX, y: top, width: mapFrame.width, height: bottom - top)
         guard visibleMap.height > 0 else { XCTFail("No visible map above the stop card"); return }
-        let clearance = (app.buttons.allElementsBoundByIndex + [coverage, locationStatus])
-            .filter { $0.exists && $0.isHittable }.map { $0.frame.insetBy(dx: -24, dy: -24) }
-        let startX = mapFrame.minX + mapFrame.width * 0.50
+        let blockedFrames = blocked.map { element in
+            XCTAssertTrue(element.exists, "A map annotation or overlay needed for clearance is missing")
+            let frame = element.frame
+            XCTAssertFalse(frame.isEmpty, "A map annotation or overlay has no usable bounds")
+            return frame
+        }
+        let visibleButtonFrames = app.buttons.allElementsBoundByIndex.filter { $0.isHittable }.map(\.frame)
+        let clearance = (blockedFrames + visibleButtonFrames).map { $0.insetBy(dx: -24, dy: -24) }
+        let topOverlayLimit = coverage.frame.maxY + 24
+        let bottomOverlayLimit = locationStatus.frame.minY - 24
         let pinEnvelope = initialPinFrames.reduce(CGRect.null) { $0.union($1) }
         let rightRoom = visibleMap.maxX - pinEnvelope.maxX - 24
         let leftRoom = pinEnvelope.minX - visibleMap.minX - 24
         let directions = [(direction: CGFloat(1), room: rightRoom),
                           (direction: CGFloat(-1), room: leftRoom)].sorted { $0.room > $1.room }
         let candidateY = [0.5, 0.35, 0.65].map { visibleMap.minY + visibleMap.height * $0 }
-        var chosenPan: (y: CGFloat, dx: CGFloat)?
+        let candidateStarts = [0.50, 0.25, 0.75].flatMap { fraction in
+            candidateY.map { CGPoint(x: mapFrame.minX + mapFrame.width * fraction, y: $0) }
+        }
+        var chosenPan: (start: CGPoint, dx: CGFloat)?
         for option in directions {
             // Reserve half the available pin room for MapKit's post-drag motion.
             let distance = min(mapFrame.width * 0.20, option.room * 0.5)
             guard distance > 5 else { continue }
             let dx = option.direction * distance
-            let endX = startX + dx
-            guard endX > mapFrame.minX + 44,
-                  initialPinFrames.allSatisfy({
+            guard initialPinFrames.allSatisfy({
                       $0.minX + dx >= visibleMap.minX && $0.maxX + dx <= visibleMap.maxX
                   }) else { continue }
-            if let y = candidateY.first(where: { y in
-                let path = CGRect(x: min(startX, endX), y: y - 1, width: abs(dx), height: 2)
-                return visibleMap.contains(path) && !clearance.contains { $0.intersects(path) } &&
-                    y > coverage.frame.maxY + 24 && y < locationStatus.frame.minY - 24
+            if let start = candidateStarts.first(where: { point in
+                let endX = point.x + dx
+                let path = CGRect(x: min(point.x, endX), y: point.y - 1, width: abs(dx), height: 2)
+                return path.minX > mapFrame.minX + 44 && visibleMap.contains(path) &&
+                    !clearance.contains { $0.intersects(path) } &&
+                    point.y > topOverlayLimit && point.y < bottomOverlayLimit
             }) {
-                chosenPan = (y, dx)
+                chosenPan = (start, dx)
                 break
             }
         }
@@ -95,24 +105,22 @@ final class MapAppearanceTests: XCTestCase {
             XCTFail("No unobstructed style-test pan retaining both pin bounds inside visible map \(visibleMap)")
             return
         }
-        let y = pan.y, endX = startX + pan.dx
-        let startOffset = CGVector(dx: 0.50, dy: (y - mapFrame.minY) / mapFrame.height)
-        let endOffset = CGVector(dx: (endX - mapFrame.minX) / mapFrame.width, dy: startOffset.dy)
-        let start = CGPoint(x: startX, y: y), end = CGPoint(x: endX, y: y)
+        let start = pan.start
+        let end = CGPoint(x: start.x + pan.dx, y: start.y)
+        let startOffset = CGVector(dx: (start.x - mapFrame.minX) / mapFrame.width,
+                                   dy: (start.y - mapFrame.minY) / mapFrame.height)
+        let endOffset = CGVector(dx: (end.x - mapFrame.minX) / mapFrame.width, dy: startOffset.dy)
         let segment = CGRect(x: min(start.x, end.x), y: start.y - 1, width: abs(end.x - start.x), height: 2)
         XCTAssertGreaterThan(abs(end.x - start.x), 5, "The adaptive background drag must exercise a real pan")
         XCTAssertTrue(visibleMap.contains(segment), "The entire drag must stay above the stop card")
         XCTAssertTrue(mapFrame.contains(segment), "The entire drag must stay inside the map bounds")
         XCTAssertGreaterThan(start.x, mapFrame.minX + 44, "Avoid the navigation back-swipe edge")
-        for element in blocked {
-            XCTAssertTrue(element.exists, "A map annotation or overlay needed for clearance is missing")
-            let frame = element.frame
-            XCTAssertFalse(frame.isEmpty, "A map annotation or overlay has no usable bounds")
+        for frame in blockedFrames {
             XCTAssertFalse(segment.intersects(frame.insetBy(dx: -24, dy: -24)),
                            "The entire drag must stay on clear map background: \(frame)")
         }
-        XCTAssertGreaterThan(start.y, coverage.frame.maxY + 24, "Stay below the map's top overlay")
-        XCTAssertLessThan(start.y, locationStatus.frame.minY - 24, "Stay above the map's bottom overlay")
+        XCTAssertGreaterThan(start.y, topOverlayLimit, "Stay below the map's top overlay")
+        XCTAssertLessThan(start.y, bottomOverlayLimit, "Stay above the map's bottom overlay")
         let initialCameraValue = String(describing: app.buttons["mini.recenter"].value)
         print("MAP-APPEARANCE background drag map=\(mapFrame) visible=\(visibleMap) start=\(start) end=\(end), initialPins=\(initialPinFrames), rightRoom=\(rightRoom), leftRoom=\(leftRoom), camera=\(initialCameraValue)")
         map.coordinate(withNormalizedOffset: startOffset)
@@ -203,7 +211,10 @@ final class MapAppearanceTests: XCTestCase {
         func visit(_ node: XCUIElementSnapshot) {
             guard visited < 4096 else { truncated = true; return }
             visited += 1
-            if node.elementType == .button && identifiers.contains(node.identifier) {
+            // MapKit mirrors each native annotation in the accessibility tree.
+            // Keep one copy of identical geometry, while distinct frames still fail.
+            if node.elementType == .button && identifiers.contains(node.identifier),
+               !framesByIdentifier[node.identifier, default: []].contains(node.frame) {
                 framesByIdentifier[node.identifier, default: []].append(node.frame)
             }
             for child in node.children {

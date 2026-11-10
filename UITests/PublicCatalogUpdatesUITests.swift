@@ -96,8 +96,9 @@ final class PublicCatalogUpdatesUITests: XCTestCase {
                       "The isolated Finder fixture must start with an empty unit field")
         unit.tap()
         unit.typeText("2066")
-        let entered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "2066"), object: unit)
-        let entryWaitResult = XCTWaiter.wait(for: [entered], timeout: 3)
+        let entered = app.scrollViews["finder.page"].textFields.matching(
+            NSPredicate(format: "identifier == %@ AND value == %@", "finder.unit", "2066")).firstMatch
+        let entryWaitResult: XCTWaiter.Result = entered.waitForExistence(timeout: 3) ? .completed : .timedOut
         if entryWaitResult != .completed {
             // The original result is final. Failure diagnostics must not issue
             // new value/placeholder/keyboard/hierarchy AX reads after its deadline.

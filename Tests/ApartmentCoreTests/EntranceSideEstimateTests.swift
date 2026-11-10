@@ -168,14 +168,15 @@ final class EntranceSideEstimateTests: XCTestCase {
         }
     }
 
-    func testCompactSharedNoticeIncludesLiteralUnitsAndUncalibratedArea() throws {
+    func testCompactSharedNoticeOmitsOtherUnitsAndKeepsUncalibratedArea() throws {
         var estimate = metadata
         estimate["sharedUnits"] = ["001", "002"]
         estimate["frontage"] = []
         estimate["workingAllowanceMeters"] = 12.5
         let loaded = try XCTUnwrap(read(pointJSON(estimate)).places.first)
         let typed = try XCTUnwrap(loaded.entranceSideEstimate)
-        XCTAssertEqual(typed.compactNotice, "Shared units 001/002 · Unit floor unknown · Door unverified · 12.5 m working allowance (uncalibrated)")
+        XCTAssertEqual(typed.sharedUnits, ["001", "002"])
+        XCTAssertEqual(typed.compactNotice, "Unit floor unknown · Door unverified · 12.5 m working allowance (uncalibrated)")
     }
 
     func testSharedEstimateSummaryNamesThePairAndDoesNotClaimAThresholdOrKnownFloor() throws {
