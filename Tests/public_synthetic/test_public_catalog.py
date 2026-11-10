@@ -243,26 +243,27 @@ class PublicCatalogExportTests(unittest.TestCase):
                 self.run_export(valid=False)
                 self.assertFalse(self.output.exists())
 
-    def test_large_public_catalog_uses_compact_json_within_native_loader_limit(self):
+    def test_large_public_feed_catalog_uses_compact_json_within_reader_limit(self):
         self.catalog['sources'][0]['title'] = 'x' * 1900
         self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(11_500)]
         self.run_export(); self.run_validate()
         path = self.output / 'public-catalog.json'
-        self.assertLessEqual(path.stat().st_size, 3_000_000)
+        self.assertLessEqual(path.stat().st_size, 16_000_000)
         value = json.loads(path.read_bytes())
         self.assertEqual(value['communities'][0]['aliases'], self.catalog['communities'][0]['aliases'])
         self.output = self.directory / 'reviewed-public-growth'
-        self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(17_000)]
+        self.catalog['communities'][0]['aliases'] = ['Public alias ' + str(i) + ' ' + 'x'*150 for i in range(90_000)]
         self.run_export(); self.run_validate()
         path = self.output / 'public-catalog.json'
-        self.assertGreater(path.stat().st_size, 2_000_000)
-        self.assertLessEqual(path.stat().st_size, 3_000_000)
-        self.assertNotIn(b'\n  "', path.read_bytes(), 'Reviewed growth must use compact JSON before increasing the bounded budget')
+        self.assertGreater(path.stat().st_size, 15_000_000)
+        self.assertLessEqual(path.stat().st_size, 16_000_000)
+        self.assertNotIn(b'\n  "', path.read_bytes(), 'Public feed growth must use compact JSON before exceeding its reader budget')
         self.assertEqual(json.loads(path.read_bytes())['communities'][0]['aliases'],
                          self.catalog['communities'][0]['aliases'])
         self.output = self.directory / 'oversized-catalog'
         self.catalog['communities'][0]['aliases'] *= 2
-        self.run_export(valid=False)
+        rejected = self.run_export(valid=False)
+        self.assertIn("Public resource exceeds native loader limit: public-catalog.json", rejected.stderr)
         self.assertFalse(self.output.exists())
 
     def test_unperformed_field_verification_is_rejected(self):

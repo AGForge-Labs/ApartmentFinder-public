@@ -41,7 +41,7 @@ class PublicShardingTests(unittest.TestCase):
         profile = json.loads((ROOT / 'scripts/public-synthetic-tests.json').read_text())
         for path in (PUBLIC, SCRIPT):
             union = []
-            for index, count in enumerate((23, 23, 22, 22)):
+            for index, count in enumerate((24, 23, 23, 23)):
                 status, selected = self.run_selection(path, 4, index)
                 self.assertEqual(status, 0)
                 self.assertEqual(selected['native'], profile['native'][index::4])
@@ -81,7 +81,8 @@ class PublicShardingTests(unittest.TestCase):
         for path, job, child in ((PUBLIC,'synthetic','synthetic_shard'),(RELEASE,'validate','validate_shard')):
             body=(ROOT/path).read_text().split('  '+job+':\n',1)[1].split('\n  release:',1)[0]
             self.assertIn('needs: '+child,body)
-            self.assertIn('if: ${{ always() }}',body)
+            condition = 'always()' if path == PUBLIC else 'always() && !inputs.skip_regression_tests'
+            self.assertIn('if: ${{ ' + condition + ' }}',body)
             block=textwrap.dedent(body.split('        run: |\n',1)[1])
             for result in ('success','failure','cancelled','skipped',''):
                 run=subprocess.run([shutil.which('bash'),'--noprofile','--norc','-c',block],env={**os.environ,'VALIDATION_RESULT':result},capture_output=True,timeout=5)
