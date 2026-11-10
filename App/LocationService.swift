@@ -121,9 +121,9 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     private func publishMapPosition() {
         let position: MapUserLocation?
         if let current = tracking.fix {
-            // Suppress sub-metre jitter and timestamp-only changes in the map.
+            // Keep the 2 m display threshold without withholding fresh fixes from the app.
             if let previous = mapPosition, previous.isCurrent,
-               previous.coordinate == current.coordinate || Geometry.distance(previous.coordinate, current.coordinate) < 1 {
+               previous.coordinate == current.coordinate || Geometry.distance(previous.coordinate, current.coordinate) < 2 {
                 return
             }
             position = MapUserLocation(coordinate: current.coordinate, isCurrent: true)
