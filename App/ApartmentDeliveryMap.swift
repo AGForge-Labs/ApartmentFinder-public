@@ -208,7 +208,8 @@ private struct ApartmentDeliveryMapScene: View {
                 guard new.coordinate != nil else { return }
                 followLocation(headingOnly: old.coordinate == new.coordinate)
             }
-            .onChange(of: frameCoordinates) { _, _ in
+            .onChange(of: frameCoordinates) { previous, current in
+                guard Set(previous) != Set(current) else { return }
                 following.resetAutomaticFrame()
                 if following.isFollowing { followLocation() }
                 else if following.mode == .overview { fitAll(includeLocation: true) }
