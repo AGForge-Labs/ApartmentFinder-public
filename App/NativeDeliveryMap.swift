@@ -187,7 +187,9 @@ struct NativeDeliveryMap: UIViewRepresentable {
             let bearing = model.displayedBearing
             if let position = model.userLocation {
                 if let annotation = annotations["user"] {
-                    if previousPosition?.coordinate != position.coordinate { annotation.coordinate = position.coordinate.cl }
+                    if previousPosition?.coordinate != position.coordinate {
+                        annotation.coordinate = annotationCoordinate(for: position.coordinate).cl
+                    }
                     if let marker = view.view(for: annotation) as? PinView {
                         if previousPosition?.isCurrent != position.isCurrent || (bearing == nil) != (previousBearing == nil) {
                             configure(marker, annotation: annotation)
@@ -232,14 +234,23 @@ struct NativeDeliveryMap: UIViewRepresentable {
             }
         }
 
+        private func annotationCoordinate(for coordinate: Coordinate) -> Coordinate {
+            guard coordinate.latitude == 0, coordinate.longitude == 0 else { return coordinate }
+            // MapKit can place an annotation at the wrong world origin for exact (0, 0).
+            // Offset only the native annotation by one map point on each axis.
+            let point = MKMapPoint(coordinate.cl)
+            return Coordinate(MKMapPoint(x: point.x + 1, y: point.y + 1).coordinate)
+        }
+
         private func upsert(_ view: MKMapView, id: String, coordinate: Coordinate,
                             pin: Pin? = nil, locker: DigitalLockerEvidence? = nil, title: String? = nil) {
+            let renderedCoordinate = annotationCoordinate(for: coordinate)
             if let annotation = annotations[id] {
-                if Coordinate(annotation.coordinate) != coordinate { annotation.coordinate = coordinate.cl }
+                if Coordinate(annotation.coordinate) != renderedCoordinate { annotation.coordinate = renderedCoordinate.cl }
                 annotation.pin = pin; annotation.locker = locker; annotation.title = title
                 if let pinView = view.view(for: annotation) as? PinView { configure(pinView, annotation: annotation) }
             } else {
-                let annotation = Annotation(id: id, coordinate: coordinate, pin: pin, locker: locker, title: title)
+                let annotation = Annotation(id: id, coordinate: renderedCoordinate, pin: pin, locker: locker, title: title)
                 annotations[id] = annotation
                 view.addAnnotation(annotation)
             }
@@ -312,16 +323,13 @@ struct NativeDeliveryMap: UIViewRepresentable {
             let view = (mapView.dequeueReusableAnnotationView(withIdentifier: "delivery") as? PinView)
                 ?? PinView(annotation: annotation, reuseIdentifier: "delivery")
             view.annotation = annotation
-            // Keep delivery markers in the same native layer when the highlight changes.
-            view.zPriority = annotation.id == "user" ? .max : .defaultUnselected
             configure(view, annotation: annotation)
             if annotation.id == "user" { rotateUserMarker(view, mapHeading: mapView.camera.heading) }
             return view
         }
 
         private func configure(_ view: PinView, annotation: Annotation) {
-            let isUserLocation = annotation.id == "user"
-            view.isEnabled = !isUserLocation
+            view.isEnabled = annotation.id != "user"
             if let pin = annotation.pin {
                 let color: Color = pin.completed ? .gray : pin.ready ? .teal : .orange
                 var content = AnyView(DeliveryMapPin(sequence: pin.sequence, unit: pin.unit, building: pin.building,
@@ -332,13 +340,14 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 }
                 #endif
                 view.configure(content: content, bottomAnchored: true)
+                view.zPriority = pin.selected ? .max : .defaultUnselected
                 view.accessibilityIdentifier = "mini.pin.\(pin.sequenceID).\(pin.placeID)"
                 view.accessibilityLabel = "Stop \(pin.sequence), unit \(pin.unit), building \(pin.building), \(pin.status)"
             } else if let locker = annotation.locker {
                 view.configure(content: AnyView(DigitalLockerMapPin(evidence: locker)), bottomAnchored: true)
                 view.accessibilityIdentifier = "mini.digitalLocker"
                 view.accessibilityLabel = locker.statusLabel
-            } else if isUserLocation {
+            } else if annotation.id == "user" {
                 let isCurrent = parent.userLocation?.isCurrent == true
                 let bearing = parent.displayedBearing
                 view.configure(content: AnyView(MapLocationDirection(bearing: bearing,
@@ -355,7 +364,13 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 view.accessibilityIdentifier = "mini.communityArea"
                 view.accessibilityLabel = annotation.title
             }
-            view.accessibilityTraits = isUserLocation ? .image : .button
+            if annotation.id == "user" {
+                view.zPriority = .max
+                view.accessibilityTraits = .image
+            } else {
+                if annotation.pin == nil { view.zPriority = .defaultUnselected }
+                view.accessibilityTraits = .button
+            }
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
