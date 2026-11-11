@@ -327,7 +327,7 @@ final class OnTracFlowTests: XCTestCase {
         let obstacles = (app.buttons.allElementsBoundByIndex + [app.staticTexts["mini.coverage"],
                          app.staticTexts["mini.locationStatus"]]).filter { $0.exists && $0.isHittable }
             .map { $0.frame.insetBy(dx: -12, dy: -12) }
-        let blankX = [0.5, 0.3, 0.7].first { x in
+        let blankX = [0.5, 0.3, 0.7, 0.2, 0.8].first { x in
             let path = CGRect(x: mapFrame.minX + mapFrame.width * x - 4,
                               y: gestureBounds.midY - panDistance / 2, width: 8, height: panDistance)
             return gestureBounds.contains(path) && !obstacles.contains { $0.intersects(path) }
@@ -337,7 +337,8 @@ final class OnTracFlowTests: XCTestCase {
         onTracMapStateDiagnostics(stage: "before existing map pan",
             context: "map=\(mapFrame);visible=\(gestureBounds);start=\(start);end=\(end);beforePin=\(beforePanFrame)")
         map.coordinate(withNormalizedOffset: start)
-            .press(forDuration: 0.1, thenDragTo: map.coordinate(withNormalizedOffset: end))
+            .press(forDuration: 0.1, thenDragTo: map.coordinate(withNormalizedOffset: end),
+                   withVelocity: XCUIGestureVelocity(rawValue: 100), thenHoldForDuration: 0.35)
         onTracMapStateDiagnostics(stage: "after existing map pan, before original Paused expectation")
         let paused = NSPredicate(format: "value BEGINSWITH %@", "Paused")
         expectation(for: paused, evaluatedWith: app.buttons["mini.recenter"])
