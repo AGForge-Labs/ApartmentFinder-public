@@ -57,7 +57,11 @@ enum UITestSupport {
         let catalog = #"{"schemaVersion":1,"packVersion":"fictional-ontrac-v1","generatedAt":"2026-01-01","scopeZIPs":["89113","89148"],"sources":[{"id":"fictional-source","title":"Invented regression fixture","url":"https://example.invalid/fictional-map","retrievedAt":"2026-01-01"}],"communities":[{"id":"fictional-courtyard","name":"Fictional Courtyard","address":"1200 Fictional Courtyard Way","zip":"89113","aliases":[],"sourceIDs":["fictional-source"],"researchStatus":"fictional","gapNotes":["Entirely invented parser and storage test fixture."]}],"coverage":{"inventoryComplete":false,"notes":["Fictional test data only."]}}"#
         let locations = #"{"type":"FeatureCollection","schemaVersion":1,"packVersion":"fictional-ontrac-v1","features":[{"type":"Feature","id":"fictional-position-4102","geometry":{"type":"Point","coordinates":[0.0,0.0]},"properties":{"communityID":"fictional-courtyard","address":"1200 Fictional Courtyard Way","building":"F","unit":"4102","floor":"1","kind":"unitPosition","verification":"sourceMapped","sourceIDs":["fictional-source"],"notes":"Invented regression coordinates; no real location is asserted."}},{"type":"Feature","id":"fictional-position-4108","geometry":{"type":"Point","coordinates":[0.001,0.001]},"properties":{"communityID":"fictional-courtyard","address":"1200 Fictional Courtyard Way","building":"F","unit":"4108","floor":"1","kind":"unitPosition","verification":"sourceMapped","sourceIDs":["fictional-source"],"notes":"Invented regression coordinates; no real location is asserted."}}]}"#
         let paths = #"{"type":"FeatureCollection","schemaVersion":1,"packVersion":"fictional-ontrac-v1","features":[]}"#
-        return try DataPackPayload(catalog: Data(catalog.utf8), locations: Data(locations.utf8), paths: Data(paths.utf8))
+        let translated = enabled && storeURL() != nil && !loadPublicCatalog &&
+            ProcessInfo.processInfo.arguments.contains("--synthetic-pin-translation")
+        let pinLocations = translated ? locations.replacingOccurrences(of: "[0.0,0.0]", with: "[-115.18,36.01]")
+            .replacingOccurrences(of: "[0.001,0.001]", with: "[-115.179,36.011]") : locations
+        return try DataPackPayload(catalog: Data(catalog.utf8), locations: Data(pinLocations.utf8), paths: Data(paths.utf8))
     }
     static func manifestURL() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("OnTrac-simulation.zip")

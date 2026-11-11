@@ -133,6 +133,9 @@ struct NativeDeliveryMap: UIViewRepresentable {
         private var pendingUserMovement = false
         private var cameraReportPending = false
         private var overlays: [String: [MKOverlay]] = [:]
+        #if DEBUG && targetEnvironment(simulator)
+        private var pinTraceCount = 0
+        #endif
 
         init(_ parent: NativeDeliveryMap) { self.parent = parent }
         func makeMapView() -> MKMapView {
@@ -167,7 +170,8 @@ struct NativeDeliveryMap: UIViewRepresentable {
                     ? MKHybridMapConfiguration(elevationStyle: .flat)
                     : MKStandardMapConfiguration(elevationStyle: .flat)
             }
-            if previousPins != model.pins || previousAreas != model.areas ||
+            let changedPins = previousPins != model.pins
+            if changedPins || previousAreas != model.areas ||
                 previousCommunity != model.community || previousLocker != model.locker {
                 synchronizeAnnotations(view)
                 synchronizeOverlays(view)
@@ -203,6 +207,14 @@ struct NativeDeliveryMap: UIViewRepresentable {
             }
             applyCamera(view)
             updateDirection(view)
+            #if DEBUG && targetEnvironment(simulator)
+            if changedPins {
+                traceFictionalPins("model-updated", map: view)
+                DispatchQueue.main.async { [weak self, weak view] in
+                    if let view { self?.traceFictionalPins("model-settled", map: view) }
+                }
+            }
+            #endif
         }
 
         private func synchronizeAnnotations(_ view: MKMapView) {
@@ -360,6 +372,9 @@ struct NativeDeliveryMap: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             guard let annotation = view.annotation as? Annotation else { return }
+            #if DEBUG && targetEnvironment(simulator)
+            traceFictionalPins("native-selection", map: mapView)
+            #endif
             if let pin = annotation.pin { parent.select(pin.stopID) }
             else if annotation.locker != nil { parent.selectLocker?() }
             // Selection belongs to the manifest; avoid an unrelated MapKit callout state.
@@ -409,6 +424,7 @@ struct NativeDeliveryMap: UIViewRepresentable {
                 self.parent.cameraSettled(mapView)
                 #if DEBUG && targetEnvironment(simulator)
                 self.parent.observe?(mapView)
+                self.traceFictionalPins("camera-settled", map: mapView)
                 #endif
             }
         }
@@ -416,10 +432,32 @@ struct NativeDeliveryMap: UIViewRepresentable {
             updateDirection(mapView)
             #if DEBUG && targetEnvironment(simulator)
             DispatchQueue.main.async { [weak self, weak mapView] in
-                if let mapView { self?.parent.observe?(mapView) }
+                if let mapView {
+                    self?.parent.observe?(mapView)
+                    self?.traceFictionalPins("annotations-added", map: mapView)
+                }
             }
             #endif
         }
+        #if DEBUG && targetEnvironment(simulator)
+        private func traceFictionalPins(_ stage: String, map: MKMapView) {
+            guard pinTraceCount < 28, UITestSupport.storeURL() != nil, !UITestSupport.loadPublicCatalog,
+                  ProcessInfo.processInfo.arguments.contains("--synthetic-map-origin-trace") else { return }
+            let fixtureIDs = ["fictional-position-4102", "fictional-position-4108"]
+            for annotation in map.annotations.compactMap({ $0 as? Annotation }) {
+                guard let pin = annotation.pin, fixtureIDs.contains(pin.placeID) else { continue }
+                pinTraceCount += 1
+                let projected = map.convert(annotation.coordinate, toPointTo: map)
+                let view = map.view(for: annotation)
+                let frame = view.map { String(describing: $0.convert($0.bounds, to: map)) } ?? "missing"
+                let transform = view.map { String(describing: $0.transform) } ?? "missing"
+                let coordinate = annotation.coordinate
+                let center = map.centerCoordinate
+                NSLog("AFPINTRACE stage=\(stage) id=\(pin.placeID) focused=\(pin.selected) coordinate=\(coordinate.latitude),\(coordinate.longitude) center=\(center.latitude),\(center.longitude) projected=\(projected) attached=\(view?.window != nil) frame=\(frame) transform=\(transform)")
+            }
+        }
+        #endif
+
         func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
             if let circle = overlay as? MKCircle {
                 let renderer = MKCircleRenderer(circle: circle)

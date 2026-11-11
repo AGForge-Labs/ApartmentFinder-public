@@ -15,6 +15,10 @@ final class OnTracFlowTests: XCTestCase {
             name.contains("testZIPPreviewCancellationEmptyDayAndApartmentNavigation") {
             app.launchArguments.append("--without-public-catalog")
         }
+        if name.contains("testSourceUnitPinAppearsOnMapAfterOnTracImport") {
+            app.launchArguments.append("--synthetic-map-origin-trace")
+        }
+        if name.contains("AwayFromOrigin") { app.launchArguments.append("--synthetic-pin-translation") }
         if syntheticDiagnosticsEnabled {
             app.launchArguments += ["--synthetic-ui-diagnostics", "--synthetic-diagnostic-probe", "toolbar"]
             print("syntheticHarness=toolbar;event=beforeLaunch")
@@ -265,6 +269,14 @@ final class OnTracFlowTests: XCTestCase {
         return "sourcePinButtons=\(min(buttons.count, 3));sourcePinAny=\(min(elements.count, 3));sourcePinType=\(type);maps=\(min(app.maps.count, 3));coverage=\(coverage);mapUnitTitle=\(min(titles.count, 3));mapUnitTitleType=\(titleType);mapPinLabel=\(min(labels.count, 3));mapPinLabelType=\(labelType)"
     }
     func testSourceUnitPinAppearsOnMapAfterOnTracImport() {
+        exerciseOnTracPins()
+    }
+
+    func testSourceUnitPinAppearsOnMapAfterOnTracImportAwayFromOrigin() {
+        exerciseOnTracPins()
+    }
+
+    private func exerciseOnTracPins() {
         let packImport = app.buttons["Import private map pack"]
         XCTAssertTrue(packImport.waitForExistence(timeout: 5))
         XCTAssertTrue(packImport.isEnabled)
@@ -294,8 +306,10 @@ final class OnTracFlowTests: XCTestCase {
         XCTAssertTrue(laterPin.label.contains("4108"))
         XCTAssertTrue(laterPin.isHittable)
         XCTAssertTrue(app.maps.firstMatch.frame.contains(CGPoint(x: laterPin.frame.midX, y: laterPin.frame.midY)))
+        print("AFPINOBSERVE stage=before-selection first=\(pin.frame) second=\(laterPin.frame) firstHittable=\(pin.isHittable)")
         laterPin.tap()
         XCTAssertTrue(app.staticTexts["Unit 4108"].waitForExistence(timeout: 5))
+        print("AFPINOBSERVE stage=after-selection first=\(pin.frame) second=\(laterPin.frame) firstHittable=\(pin.isHittable)")
         XCTAssertTrue(app.buttons["mini.delivered"].label.contains("4108"))
         XCTAssertTrue(pin.isHittable)
         XCTAssertTrue(app.maps.firstMatch.frame.contains(CGPoint(x: pin.frame.midX, y: pin.frame.midY)))

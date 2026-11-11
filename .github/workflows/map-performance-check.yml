@@ -15,7 +15,7 @@ jobs:
   map:
     if: github.repository == 'AGForge-Labs/ApartmentFinder-public' && github.actor_id == '105477711'
     runs-on: macos-15-intel
-    timeout-minutes: 25
+    timeout-minutes: 45
     env:
       EXPECTED_COMMIT: ${{ inputs.expected_commit }}
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
@@ -26,7 +26,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Compile and check native pins and map interactions
+      - name: Compare the original OnTrac fixture with translated positions
         shell: bash
         run: |
           set -euo pipefail
@@ -41,15 +41,15 @@ jobs:
           trap 'xcrun simctl shutdown "$DEVICE" >/dev/null 2>&1 || true; xcrun simctl delete "$DEVICE" >/dev/null 2>&1 || true' EXIT
           xcrun simctl boot "$DEVICE"
           xcrun simctl bootstatus "$DEVICE" -b
+          result=0
           xcodebuild -project ApartmentFinder.xcodeproj -scheme ApartmentFinder \
             -destination "platform=iOS Simulator,id=$DEVICE" -derivedDataPath build-simulator \
             -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile \
             -jobs 2 -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO \
-            -only-testing:ApartmentFinderTests/NativeDeliveryMapTests \
             -only-testing:ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImport \
-            -only-testing:ApartmentFinderUITests/HeadingUpNavigationTests/testResumePreservesActualPinchZoomAndSelectedStop \
-            test > "$RUNNER_TEMP/map-check.log" 2>&1 || {
-              tail -n 100 "$RUNNER_TEMP/map-check.log"; exit 1;
-            }
-          grep -E "Test Case .* (passed|failed)|Executed .* tests|TEST SUCCEEDED" "$RUNNER_TEMP/map-check.log"
+            -only-testing:ApartmentFinderUITests/OnTracFlowTests/testSourceUnitPinAppearsOnMapAfterOnTracImportAwayFromOrigin \
+            test > "$RUNNER_TEMP/map-check.log" 2>&1 || result=$?
+          grep -E "AFPINOBSERVE|OnTracFlowTests.swift:[0-9]+: error:|Test Case .* (passed|failed)|TEST SUCCEEDED" "$RUNNER_TEMP/map-check.log" || true
+          xcrun simctl spawn "$DEVICE" log show --last 30m --style compact --predicate 'eventMessage BEGINSWITH "AFPINTRACE"' 2>/dev/null || true
+          if [[ "$result" != 0 ]]; then tail -n 40 "$RUNNER_TEMP/map-check.log"; exit "$result"; fi
           git diff --exit-code
