@@ -228,7 +228,7 @@ final class PublicCatalogUpdateTests: XCTestCase {
         let client = PublicCatalogUpdateClient { url, maximum in
             XCTAssertEqual(url.scheme, "https"); XCTAssertEqual(url.host, "raw.githubusercontent.com")
             XCTAssertNil(url.user); XCTAssertNil(url.password); XCTAssertNil(url.query)
-            if url.lastPathComponent == "latest-v2.json" { XCTAssertEqual(maximum, 16_384); return header }
+            if url.lastPathComponent == "latest-v3.json" { XCTAssertEqual(maximum, 16_384); return header }
             XCTAssertTrue(url.path.contains("/catalog-data/revisions/revision-1/"))
             let bytes = try XCTUnwrap(raw[url.lastPathComponent]); XCTAssertLessThanOrEqual(bytes.count, maximum); return bytes
         }
@@ -276,6 +276,63 @@ final class PublicCatalogUpdateTests: XCTestCase {
         let accepted = try PublicCatalogUpdatePayload(manifestData: manifest(raw, version: version), files: raw)
         XCTAssertEqual(accepted.pack.catalog.packVersion, version)
         XCTAssertFalse(accepted.pack.places.contains { $0.verification == .fieldVerified })
+    }
+
+    func testV3GzipManifestDownloadsVerifiesDecompressesAndRejectsBombsOrTampering() async throws {
+        #if !canImport(CryptoKit) || !(canImport(Compression) || canImport(zlib))
+        throw XCTSkip("Compressed public catalog verification requires CryptoKit and Compression or zlib")
+        #else
+        let raw = try files(version: "fictional-v3")
+        let compressed = try Dictionary(uniqueKeysWithValues: raw.map { ($0.key, try PublicCatalogGzip.compress($0.value)) })
+        let descriptors: [String: Any] = try Dictionary(uniqueKeysWithValues: raw.map { name, data in
+            let gz = compressed[name]!
+            return (name, [
+                "bytes": data.count,
+                "sha256": try PublicCatalogUpdateIntegrity.digest(data),
+                "compressedBytes": gz.count,
+                "compressedSHA256": try PublicCatalogUpdateIntegrity.digest(gz),
+                "encoding": "gzip"
+            ] as [String: Any])
+        })
+        let v3Header = try JSONSerialization.data(withJSONObject: [
+            "schemaVersion": 2, "revision": "revision-v3", "sequence": 3, "packVersion": "fictional-v3", "files": descriptors
+        ], options: [.sortedKeys])
+
+        let client = PublicCatalogUpdateClient { url, maximum in
+            XCTAssertNoThrow(try PublicCatalogUpdateTransport.validateURL(url))
+            if url.lastPathComponent == "latest-v3.json" { return v3Header }
+            XCTAssertTrue(url.lastPathComponent.hasSuffix(".gz"))
+            let base = String(url.lastPathComponent.dropLast(3))
+            let gz = try XCTUnwrap(compressed[base])
+            XCTAssertEqual(maximum, gz.count)
+            return gz
+        }
+        let downloadedHeader = try await client.latestManifest()
+        let downloaded = try await client.payload(manifestData: downloadedHeader)
+        XCTAssertEqual(downloaded.manifest.schemaVersion, 2)
+        XCTAssertEqual(downloaded.manifest.revision, "revision-v3")
+        XCTAssertEqual(downloaded.pack.catalog.packVersion, "fictional-v3")
+        let installed = try store.install(downloaded)
+        XCTAssertEqual(installed.manifest.revision, "revision-v3")
+        XCTAssertEqual(try store.load()?.manifest.sequence, 3)
+
+        // Reject unsupported schemaVersion 3 and gzip-bomb oversized decompressed outputs.
+        XCTAssertThrowsError(try PublicCatalogUpdateManifest.read(mutate(v3Header) { $0["schemaVersion"] = 3 }))
+        let bombInput = Data(repeating: 0x41, count: 100_000)
+        let bombGz = try PublicCatalogGzip.compress(bombInput)
+        XCTAssertThrowsError(try PublicCatalogGzip.decompress(bombGz, expectedBytes: 1_000, maximumBytes: 2_000))
+        var tampered = compressed["public-locations.geojson"]!
+        tampered[tampered.count - 1] ^= 0xff
+        let tamperedClient = PublicCatalogUpdateClient { url, _ in
+            if url.lastPathComponent == "latest-v3.json" { return v3Header }
+            let base = String(url.lastPathComponent.dropLast(3))
+            return base == "public-locations.geojson" ? tampered : compressed[base]!
+        }
+        do {
+            _ = try await tamperedClient.payload(manifestData: v3Header)
+            XCTFail("Tampered compressed payload accepted")
+        } catch { }
+        #endif
     }
 }
 

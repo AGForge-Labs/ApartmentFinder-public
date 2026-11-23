@@ -179,6 +179,7 @@
     "PublicCatalogUpdateTests/testReviewedCompletePublicSnapshotPassesIndependentDeviceAdmission",
     "PublicCatalogUpdateTests/testRevisionAndSequenceReuseOrReplayCannotReplaceActiveData",
     "PublicCatalogUpdateTests/testRollbackRejectsBadRevisionAndIntermediateReplayThenAllowsGenuinelyNewerData",
+    "PublicCatalogUpdateTests/testV3GzipManifestDownloadsVerifiesDecompressesAndRejectsBombsOrTampering",
     "Reviewed89123GeographyTests/testAdditionalCountyAreasKeepRepeatedPostalUnitsAndHistoricalAliasesDistinct",
     "Reviewed89123GeographyTests/testOneLasVegasFloorOnlyEvidenceDoesNotGuessATower",
     "Reviewed89123GeographyTests/testParksideRepeatedBadgesAndParamountExistingJoinsRetainExactAreas",

@@ -52,7 +52,7 @@ COVERAGE_NOTES = [
     'Public map geometry is unconfirmed. OpenStreetMap contributors attribution and ODbL requirements apply to retained OSM paths.',
 ]
 # Live public-feed preparation budget; immutable bundles and private imports keep their separate reader limits.
-RESOURCE_LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 64_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
+RESOURCE_LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 256_000_000, 'public-paths.geojson': 16_000_000, 'known-addresses.json': 2_000_000}
 RESOURCE_NAMES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson', 'known-addresses.json')
 
 
@@ -223,7 +223,7 @@ def json_bytes(value):
     return (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode()
 
 
-def read_json(path, maximum=64_000_000):
+def read_json(path, maximum=256_000_000):
     require(path.is_file() and not path.is_symlink() and path.stat().st_size <= maximum, 'Missing, linked or oversized input')
     return json.loads(path.read_bytes())
 

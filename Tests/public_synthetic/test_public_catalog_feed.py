@@ -119,6 +119,30 @@ class PublicCatalogFeedTests(unittest.TestCase):
         self.run_prepare(revision='unsafe-legacy', sequence=3, valid=False)
         self.assertEqual((self.output / 'latest.json').read_bytes(), before['latest.json'])
 
+    def test_v3_gzip_pointer_preserves_legacy_and_v2_and_writes_deterministic_compressed_blobs(self):
+        import gzip
+        self.run_prepare(revision='legacy', sequence=1)
+        self.run_prepare(revision='v2-rel', sequence=2, latest_name='latest-v2.json')
+        before = self.tree()
+        self.run_prepare(revision='v3-gzip', sequence=3, latest_name='latest-v3.json')
+        for name, body in before.items():
+            self.assertEqual(self.tree()[name], body)
+        selected = json.loads((self.output / 'latest-v3.json').read_bytes())
+        self.assertEqual(selected['schemaVersion'], 2)
+        self.assertEqual(selected['revision'], 'v3-gzip')
+        rev_dir = self.output / 'revisions' / 'v3-gzip'
+        for name in FILES:
+            gz_path = rev_dir / (name + '.gz')
+            self.assertTrue(gz_path.is_file())
+            gz_bytes = gz_path.read_bytes()
+            raw = gzip.decompress(gz_bytes)
+            self.assertEqual(selected['files'][name]['encoding'], 'gzip')
+            self.assertEqual(selected['files'][name]['compressedBytes'], len(gz_bytes))
+            self.assertEqual(selected['files'][name]['compressedSHA256'], hashlib.sha256(gz_bytes).hexdigest())
+            self.assertEqual(selected['files'][name]['bytes'], len(raw))
+            self.assertEqual(selected['files'][name]['sha256'], hashlib.sha256(raw).hexdigest())
+            self.assertEqual(json.loads(raw), self.documents[name])
+
     def tree(self):
         return {str(p.relative_to(self.output)): p.read_bytes() for p in self.output.rglob('*') if p.is_file()}
 
@@ -273,12 +297,12 @@ class PublicCatalogFeedTests(unittest.TestCase):
 
     def test_native_resource_budgets_are_checked_before_reading_and_output_creation(self):
         for name, maximum in (('public-catalog.json', 16_000_000),
-                ('public-locations.geojson', 64_000_000), ('public-paths.geojson', 16_000_000)):
+                ('public-locations.geojson', 256_000_000), ('public-paths.geojson', 16_000_000)):
             with self.subTest(name=name):
                 self.write_source()
                 with (self.source / name).open('wb') as stream:
                     stream.truncate(maximum + 1)
-                self.run_prepare(valid=False)
+                self.run_prepare(valid=False, latest_name='latest-v3.json')
                 self.assertFalse(self.output.exists())
 
     def test_previous_manifest_has_closed_schema_strict_int64_and_bounded_descriptors(self):

@@ -143,7 +143,7 @@ final class DigitalLockerTests: XCTestCase {
         let client = PublicCatalogUpdateClient { url, _ in await recorder.add(url); return data }
         _ = try await client.latestManifest()
         let requested = await recorder.urls
-        XCTAssertEqual(requested.map(\.absoluteString), ["https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest-v2.json"])
+        XCTAssertEqual(requested.map(\.absoluteString), ["https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest-v3.json"])
         XCTAssertNoThrow(try PublicCatalogUpdateTransport.validateURL(PublicCatalogUpdateClient.latestURL))
         XCTAssertThrowsError(try PublicCatalogUpdateTransport.validateURL(URL(string: "https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest.json")!))
     }
