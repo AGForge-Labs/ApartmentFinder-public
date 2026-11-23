@@ -279,8 +279,8 @@ final class PublicCatalogUpdateTests: XCTestCase {
     }
 
     func testV3GzipManifestDownloadsVerifiesDecompressesAndRejectsBombsOrTampering() async throws {
-        #if !canImport(CryptoKit) || !canImport(zlib)
-        throw XCTSkip("Compressed public catalog verification requires CryptoKit and zlib")
+        #if !canImport(CryptoKit) || !(canImport(Compression) || canImport(zlib))
+        throw XCTSkip("Compressed public catalog verification requires CryptoKit and Compression or zlib")
         #else
         let raw = try files(version: "fictional-v3")
         let compressed = try Dictionary(uniqueKeysWithValues: raw.map { ($0.key, try PublicCatalogGzip.compress($0.value)) })
