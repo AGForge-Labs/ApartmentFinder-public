@@ -5,7 +5,7 @@ import FoundationNetworking
 
 public struct PublicCatalogUpdateClient: Sendable {
     public typealias Fetch = @Sendable (URL, Int) async throws -> Data
-    public static let latestURL = URL(string: "https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest-v2.json")!
+    public static let latestURL = URL(string: "https://raw.githubusercontent.com/AGForge-Labs/ApartmentFinder-public/catalog-data/latest-v3.json")!
     private let fetch: Fetch
     public init(fetch: @escaping Fetch = PublicCatalogUpdateTransport.fetch) { self.fetch = fetch }
 
@@ -21,11 +21,27 @@ public struct PublicCatalogUpdateClient: Sendable {
         var files: [String: Data] = [:]
         for name in PublicCatalogUpdateManifest.fileNames {
             try Task.checkCancellation()
-            let url = Self.latestURL.deletingLastPathComponent().appendingPathComponent("revisions").appendingPathComponent(manifest.revision).appendingPathComponent(name)
-            let maximum = manifest.files[name]!.bytes
-            let data = try await fetch(url, maximum)
-            guard data.count == maximum else { throw CoreError("The downloaded public catalog file has an unexpected length.") }
-            files[name] = data
+            let descriptor = manifest.files[name]!
+            if manifest.schemaVersion == 2 {
+                guard descriptor.encoding == "gzip",
+                      let compressedBytes = descriptor.compressedBytes,
+                      let compressedSHA256 = descriptor.compressedSHA256 else {
+                    throw CoreError("Invalid compressed public catalog descriptor.")
+                }
+                let url = Self.latestURL.deletingLastPathComponent().appendingPathComponent("revisions").appendingPathComponent(manifest.revision).appendingPathComponent(name + ".gz")
+                let compressed = try await fetch(url, compressedBytes)
+                guard compressed.count == compressedBytes,
+                      try PublicCatalogUpdateIntegrity.digest(compressed) == compressedSHA256 else {
+                    throw CoreError("The downloaded compressed public catalog file does not match its manifest.")
+                }
+                files[name] = try PublicCatalogGzip.decompress(compressed, expectedBytes: descriptor.bytes, maximumBytes: PublicCatalogUpdateManifest.limits[name]!)
+            } else {
+                let url = Self.latestURL.deletingLastPathComponent().appendingPathComponent("revisions").appendingPathComponent(manifest.revision).appendingPathComponent(name)
+                let maximum = descriptor.bytes
+                let data = try await fetch(url, maximum)
+                guard data.count == maximum else { throw CoreError("The downloaded public catalog file has an unexpected length.") }
+                files[name] = data
+            }
         }
         try Task.checkCancellation()
         return try PublicCatalogUpdatePayload(manifestData: manifestData, files: files)
@@ -39,7 +55,7 @@ public enum PublicCatalogUpdateTransport {
     }
     static func fetch(_ url: URL, maximum: Int, configuration: URLSessionConfiguration) async throws -> Data {
         try validateURL(url)
-        guard (1...64_000_000).contains(maximum) else { throw CoreError("Unsupported public download budget.") }
+        guard (1...256_000_000).contains(maximum) else { throw CoreError("Unsupported public download budget.") }
         let request = BoundedRequest(url: url, maximum: maximum, configuration: configuration)
         return try await request.run()
     }
@@ -53,8 +69,9 @@ public enum PublicCatalogUpdateTransport {
         let prefix = "/AGForge-Labs/ApartmentFinder-public/catalog-data/revisions/"
         guard parts.percentEncodedPath.hasPrefix(prefix) else { throw CoreError("Unsupported public catalog path.") }
         let suffix = String(parts.percentEncodedPath.dropFirst(prefix.count)).split(separator: "/", omittingEmptySubsequences: false)
+        let allowedFiles = Set(PublicCatalogUpdateManifest.fileNames + PublicCatalogUpdateManifest.fileNames.map { $0 + ".gz" })
         guard suffix.count == 2, PublicCatalogUpdateManifest.isRevision(String(suffix[0])),
-              PublicCatalogUpdateManifest.fileNames.contains(String(suffix[1])) else { throw CoreError("Unsafe public catalog revision path.") }
+              allowedFiles.contains(String(suffix[1])) else { throw CoreError("Unsafe public catalog revision path.") }
     }
     static func validateResponse(statusCode: Int, finalURL: URL?, expectedURL: URL, declaredLength: Int64, maximum: Int) throws {
         guard statusCode == 200, finalURL == expectedURL else { throw CoreError("The public catalog server returned an unsupported response or redirect.") }

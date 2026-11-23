@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prepare a local JSON-only public catalog feed; never publish or access credentials."""
 import argparse
+import gzip
 import hashlib
 import importlib.util
 import json
@@ -17,12 +18,17 @@ ADMISSION = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(ADMISSION)
 FILES = ('public-catalog.json', 'public-locations.geojson', 'public-paths.geojson')
 LEGACY_CATALOG_LIMIT = 3_000_000
-LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 64_000_000,
+V2_LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 64_000_000,
+             'public-paths.geojson': 16_000_000}
+LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 256_000_000,
           'public-paths.geojson': 16_000_000}
+COMPRESSED_LIMITS = {'public-catalog.json': 16_000_000, 'public-locations.geojson': 64_000_000,
+                     'public-paths.geojson': 16_000_000}
 INPUT_LIMITS = dict(LIMITS, **{'known-addresses.json': 2_000_000, 'public-catalog-review.json': 100_000})
 MANIFEST_LIMIT = 16_384
 INT64_MAX = 2 ** 63 - 1
 MANIFEST_FIELDS = {'schemaVersion', 'revision', 'sequence', 'packVersion', 'files'}
+POINTER_NAMES = ('latest.json', 'latest-v2.json', 'latest-v3.json')
 REVISION_PATTERN = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]{0,79}')
 
 
@@ -101,16 +107,28 @@ def positive_int64(value):
 
 
 def validate_manifest(value):
-    require(set(value) == MANIFEST_FIELDS and type(value['schemaVersion']) is int and value['schemaVersion'] == 1,
+    require(set(value) == MANIFEST_FIELDS and type(value['schemaVersion']) is int and value['schemaVersion'] in (1, 2),
             'Unexpected feed manifest schema or fields')
+    schema = value['schemaVersion']
     revision_segment(value['revision'])
     positive_int64(value['sequence'])
     ADMISSION.validate_version(value['packVersion'])
     require(isinstance(value['files'], dict) and set(value['files']) == set(FILES), 'Unexpected feed payload files')
     for name in FILES:
         descriptor = value['files'][name]
-        require(isinstance(descriptor, dict) and set(descriptor) == {'bytes', 'sha256'}, 'Unexpected file descriptor fields')
-        require(type(descriptor['bytes']) is int and 1 <= descriptor['bytes'] <= LIMITS[name], 'Invalid payload byte length')
+        require(isinstance(descriptor, dict), 'Unexpected file descriptor fields')
+        if schema == 1:
+            require(set(descriptor) == {'bytes', 'sha256'}, 'Unexpected file descriptor fields')
+            require(type(descriptor['bytes']) is int and 1 <= descriptor['bytes'] <= V2_LIMITS[name], 'Invalid payload byte length')
+        else:
+            require(set(descriptor) == {'bytes', 'sha256', 'compressedBytes', 'compressedSHA256', 'encoding'},
+                    'Unexpected compressed file descriptor fields')
+            require(descriptor['encoding'] == 'gzip', 'Unsupported payload compression encoding')
+            require(type(descriptor['bytes']) is int and 1 <= descriptor['bytes'] <= LIMITS[name], 'Invalid payload byte length')
+            require(type(descriptor['compressedBytes']) is int and 1 <= descriptor['compressedBytes'] <= COMPRESSED_LIMITS[name],
+                    'Invalid compressed payload byte length')
+            require(isinstance(descriptor['compressedSHA256'], str) and re.fullmatch(r'[0-9a-f]{64}', descriptor['compressedSHA256']) is not None,
+                    'Invalid lowercase compressed SHA-256')
         require(isinstance(descriptor['sha256'], str) and re.fullmatch(r'[0-9a-f]{64}', descriptor['sha256']) is not None,
                 'Invalid lowercase SHA-256')
 
@@ -147,14 +165,29 @@ def admitted_source(directory):
 
 def verify_revision(directory):
     plain(directory, directory=True)
-    require({entry.name for entry in directory.iterdir()} == set(FILES) | {'manifest.json'},
-            'Revision directories must contain only their manifest and three public JSON payloads')
     manifest, manifest_bytes = read_manifest(directory / 'manifest.json')
     require(manifest['revision'] == directory.name, 'Revision directory and manifest disagree')
-    bodies = {name: read_bytes(directory / name, LIMITS[name]) for name in FILES}
-    for name, body in bodies.items():
-        require(manifest['files'][name] == dict(bytes=len(body), sha256=hashlib.sha256(body).hexdigest()),
-                'Stored revision length or hash mismatch')
+    if manifest['schemaVersion'] == 2:
+        expected_names = {name + '.gz' for name in FILES} | {'manifest.json'}
+        require({entry.name for entry in directory.iterdir()} == expected_names,
+                'Compressed revision directories must contain only their manifest and three gzipped public JSON payloads')
+        bodies = {}
+        for name in FILES:
+            desc = manifest['files'][name]
+            gz_body = read_bytes(directory / (name + '.gz'), COMPRESSED_LIMITS[name])
+            require(len(gz_body) == desc['compressedBytes'] and hashlib.sha256(gz_body).hexdigest() == desc['compressedSHA256'],
+                    'Stored compressed revision length or hash mismatch')
+            body = gzip.decompress(gz_body)
+            require(len(body) <= LIMITS[name] and len(body) == desc['bytes'] and hashlib.sha256(body).hexdigest() == desc['sha256'],
+                    'Stored decompressed revision length or hash mismatch')
+            bodies[name] = body
+    else:
+        require({entry.name for entry in directory.iterdir()} == set(FILES) | {'manifest.json'},
+                'Revision directories must contain only their manifest and three public JSON payloads')
+        bodies = {name: read_bytes(directory / name, V2_LIMITS[name]) for name in FILES}
+        for name, body in bodies.items():
+            require(manifest['files'][name] == dict(bytes=len(body), sha256=hashlib.sha256(body).hexdigest()),
+                    'Stored revision length or hash mismatch')
     objects = public_objects(bodies)
     ADMISSION.validate_payload(*(objects[name] for name in FILES))
     require(objects['public-catalog.json']['packVersion'] == manifest['packVersion'], 'Manifest and catalog packVersion disagree')
@@ -166,7 +199,7 @@ def existing_feed(output):
         unlinked_ancestors(output.parent)
         return []
     unlinked_ancestors(output)
-    require({entry.name for entry in output.iterdir()} <= {'latest.json', 'latest-v2.json', 'revisions'}, 'Staging feed must remain JSON-only')
+    require({entry.name for entry in output.iterdir()} <= set(POINTER_NAMES) | {'revisions'}, 'Staging feed must remain JSON-only')
     history = []
     revisions = output / 'revisions'
     if present(revisions):
@@ -176,12 +209,14 @@ def existing_feed(output):
             history.append(verify_revision(directory))
     require(len({item['revision'].casefold() for item, _ in history}) == len(history), 'Case-colliding revision directories')
     require(len({item['sequence'] for item, _ in history}) == len(history), 'Duplicate revision sequences')
-    pointers = [output / name for name in ('latest.json', 'latest-v2.json') if present(output / name)]
+    pointers = [output / name for name in POINTER_NAMES if present(output / name)]
     for latest in pointers:
         current, body = read_manifest(latest)
         if latest.name == 'latest.json':
-            require(current['files']['public-catalog.json']['bytes'] <= LEGACY_CATALOG_LIMIT,
+            require(current['schemaVersion'] == 1 and current['files']['public-catalog.json']['bytes'] <= LEGACY_CATALOG_LIMIT,
                     'Legacy public catalog exceeds its byte limit')
+        elif latest.name == 'latest-v2.json':
+            require(current['schemaVersion'] == 1, 'v2 feed pointer requires schemaVersion 1')
         require(any(item == current and stored == body for item, stored in history), 'Latest manifest has no identical verified revision')
     require(pointers or not history, 'Existing revisions have no selected manifest; inspect the incomplete staging feed')
     return [item for item, _ in history]
@@ -199,7 +234,7 @@ def prepare(directory, output, revision, sequence, previous_manifest=None, lates
     output = Path(os.path.abspath(output))
     revision_segment(revision)
     positive_int64(sequence)
-    require(latest_name in ("latest.json", "latest-v2.json"), "Unsupported manifest pointer")
+    require(latest_name in POINTER_NAMES, "Unsupported manifest pointer")
     source_path, output_path = directory.resolve(), output.resolve()
     require(not source_path.is_relative_to(output_path) and not output_path.is_relative_to(source_path),
             'Feed output and public input directories must not overlap')
@@ -220,11 +255,24 @@ def prepare(directory, output, revision, sequence, previous_manifest=None, lates
     if latest_name == 'latest.json':
         require(len(bodies['public-catalog.json']) <= LEGACY_CATALOG_LIMIT,
                 'Larger catalogs require latest-v2.json; preserve the legacy catalog byte limit')
+    active_limits = LIMITS if latest_name == 'latest-v3.json' else V2_LIMITS
     for name, body in bodies.items():
-        require(len(body) <= LIMITS[name] and decode(body) == objects[name], 'Canonical payload exceeds its limit or changed JSON values')
-    manifest = dict(schemaVersion=1, revision=revision, sequence=sequence,
-        packVersion=objects['public-catalog.json']['packVersion'],
-        files={name: dict(bytes=len(body), sha256=hashlib.sha256(body).hexdigest()) for name, body in bodies.items()})
+        require(len(body) <= active_limits[name] and decode(body) == objects[name], 'Canonical payload exceeds its limit or changed JSON values')
+    if latest_name == 'latest-v3.json':
+        compressed = {name: gzip.compress(body, compresslevel=9, mtime=0) for name, body in bodies.items()}
+        for name, gz in compressed.items():
+            require(len(gz) <= COMPRESSED_LIMITS[name], 'Compressed payload exceeds its limit')
+        manifest = dict(schemaVersion=2, revision=revision, sequence=sequence,
+            packVersion=objects['public-catalog.json']['packVersion'],
+            files={name: dict(bytes=len(bodies[name]), sha256=hashlib.sha256(bodies[name]).hexdigest(),
+                              compressedBytes=len(compressed[name]),
+                              compressedSHA256=hashlib.sha256(compressed[name]).hexdigest(),
+                              encoding='gzip') for name in FILES})
+    else:
+        compressed = None
+        manifest = dict(schemaVersion=1, revision=revision, sequence=sequence,
+            packVersion=objects['public-catalog.json']['packVersion'],
+            files={name: dict(bytes=len(body), sha256=hashlib.sha256(body).hexdigest()) for name, body in bodies.items()})
     validate_manifest(manifest)
     manifest_bytes = compact(manifest)
     require(len(manifest_bytes) <= MANIFEST_LIMIT, 'Feed manifest exceeds its byte limit')
@@ -235,8 +283,12 @@ def prepare(directory, output, revision, sequence, previous_manifest=None, lates
     plain(revisions, directory=True)
     destination = revisions / revision
     destination.mkdir(exist_ok=False)
-    for name, body in bodies.items():
-        write_new(destination / name, body)
+    if compressed is not None:
+        for name, gz in compressed.items():
+            write_new(destination / (name + '.gz'), gz)
+    else:
+        for name, body in bodies.items():
+            write_new(destination / name, body)
     write_new(destination / 'manifest.json', manifest_bytes)
     verified, verified_bytes = verify_revision(destination)
     require(verified == manifest and verified_bytes == manifest_bytes, 'Written revision failed verification')
@@ -264,7 +316,7 @@ def main():
     command.add_argument('--revision', required=True)
     command.add_argument('--sequence', type=int, required=True)
     command.add_argument('--previous-manifest', type=Path)
-    command.add_argument('--latest-name', choices=['latest.json', 'latest-v2.json'], default='latest.json')
+    command.add_argument('--latest-name', choices=list(POINTER_NAMES), default='latest.json')
     args = parser.parse_args()
     try:
         manifest = prepare(args.directory, args.output, args.revision, args.sequence, args.previous_manifest, args.latest_name)
